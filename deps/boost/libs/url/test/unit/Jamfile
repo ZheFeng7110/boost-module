@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2019 Vinnie Falco (vinnie.falco@gmail.com)
+#
+# Distributed under the Boost Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+# Official repository: https://github.com/boostorg/url
+#
+
+import testing ;
+
+project
+    : requirements
+      <library>/boost/filesystem//boost_filesystem/<warnings>off
+      <library>/boost/url//boost_url
+      <source>../../extra/test_suite/test_main.cpp
+      <source>../../extra/test_suite/test_suite.cpp
+      <include>.
+      <include>../../extra/test_suite
+      <include>../../example/router
+    ;
+
+for local f in [ glob-tree-ex . : *.cpp : doc_grammar.cpp doc_3_urls.cpp example ]
+{
+    run $(f) ;
+}
+run doc_grammar.cpp /boost/url//boost_url : : : <warnings>off ;
+run doc_3_urls.cpp /boost/url//boost_url : : : <warnings>off ;
+run example/router/router.cpp ../../example/router/impl/matches.cpp ../../example/router/detail/impl/router.cpp /boost/url//boost_url : : : <warnings>off ;
