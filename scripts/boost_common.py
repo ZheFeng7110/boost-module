@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#     "libclang",
+# ]
+# ///
 """boost_common.py — shared plumbing for the M2 module-export generators.
 
 Handles the M1 vendored layout: all library headers live under deps/boost/boost/

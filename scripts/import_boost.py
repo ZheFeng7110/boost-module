@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.9"
+# dependencies = []
+# ///
 """import_boost.py — import the pinned official Boost release into deps/boost/.
 
 Fetches boost_1_91_0.tar.gz (verified against a pinned SHA-256), then extracts

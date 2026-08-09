@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#     "libclang",
+# ]
+# ///
 """gen_exports.py — generate export using-lists for the Boost module layer.
 
 For each target library, parses one "bundle" TU that includes all of the
