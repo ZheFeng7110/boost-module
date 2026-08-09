@@ -22,11 +22,11 @@ boost-module/                       # = mcpp 包仓库
 │   └── *_fns.inc                   # 手工替代文件 (目标库 static-inline≈0, 预计极少)
 ├── include/boost-module/macros.hpp # 宏旁路头: BOOST_VERSION 等, 消费者 import 前 include
 ├── deps/boost/                     # vendored 1.91.0, 含 boost/ 汇总根 (M1 重做)
-├── tools/
-│   ├── vendor/import_boost.ps1     # 固定 sha256 + 调用 clean-boost.ps1
-│   ├── gen_exports.py              # libclang AST 枚举 + 依赖闭包
-│   ├── gen_audit.py                # static-inline/内部链接审计
-│   └── curated/<mod>.txt           # 生成器看不见的兜底清单
+├── scripts/                         # 脚本统一放这里
+│   ├── import_boost.py              # 下载(固定 sha256) + 选择性导入 + 裁剪, 落位 deps/boost/
+│   ├── gen_exports.py               # libclang AST 枚举 + 依赖闭包
+│   ├── gen_audit.py                 # static-inline/内部链接审计
+│   └── curated/<mod>.txt            # 生成器看不见的兜底清单
 ├── tests/                          # 每库 smoke test (mcpp workspace)
 ├── examples/                       # import boost; 示例项目
 ├── docs/architecture.md
@@ -44,13 +44,18 @@ boost-module/                       # = mcpp 包仓库
 - 编译库声明/定义链接模式成立 (filesystem 10 cpp 验证)
 - 后续里程碑按此结论推进, 生成器规则见报告第 7 节
 
-### M1 — Vendoring 重做
-当前 deps/boost 缺顶层 boost/ 根 (b2 headers 产物, 被 gitignore)。改从官方 tarball 导入:
-tools/vendor/import_boost.ps1: 下载 boost-1.91.0.tar.gz (固定 sha256, GitHub/gitcode 双镜像仿 import_opencv.sh),
-解压后保留 libs/ + boost/ + tools/cmake + LICENSE_1_0.txt + CMakeLists.txt, 再跑 script/clean-boost.ps1 -Force。
-提交 boost/ 根, 修正 .gitignore。
+### M1 — Vendoring 重做 ✅ 计划调整 (2026-08-09)
+原方案 (scripts/vendor/import_boost.ps1 + scripts/clean-boost.ps1) 调整为用户指定的实现:
+**`scripts/import_boost.py` 单脚本完成全部工作**, `scripts/clean-boost.ps1` 删除。
+- 固定源: https://archives.boost.io/release/1.91.0/source/boost_1_91_0.tar.gz
+  SHA256=5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463
+- 压缩包落位 target/vendor-import/ (已存在, 校验通过)
+- 每次运行: 删除旧 deps/boost/ → 校验 sha256 → 选择性解压导入:
+  - 导入: boost/ 汇总 include 根 (关键, 修复 M0 缺根问题) + libs/ (裁剪后) + tools/cmake + CMakeLists.txt + LICENSE_1_0.txt + README.md
+  - 裁剪规则沿用 clean-boost.ps1 语义: 任意深度的 doc/docs/example/examples/more/status/.github 等目录、
+    Jamfile 系文件、*.htm/*.html、根级图片样式文件一律不导入
 
-### M2 — 生成器 tools/gen_exports.py
+### M2 — 生成器 scripts/gen_exports.py
 libclang AST dump 目标库公共头 → 收集 boost:: 外部链接实体;
 依赖闭包 (filesystem 连带导出 boost::system::error_code — opencv-m dependency-closure 先例);
 跨模块去重 (first wins); 产出 export using 列表 (写法以 M0 验证结果为准)。
