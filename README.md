@@ -1,6 +1,6 @@
 # boost-module
 
-使用 [mcpp](https://github.com/mcpp-community/mcpp) 构建工具对 Boost 库进行模块化封装
+使用 [mcpp](https://github.com/mcpp-community/mcpp) 构建工具对 [Boost 库](https://www.boost.org/)进行模块化封装
 （C++23 named modules），思路参考 [opencv-m](https://github.com/Sunrisepeak/opencv-m)：
 把 Boost 的头文件 API 以模块接口（`.cppm` + `export using`）的形式导出，让消费者可以
 `import boost.filesystem;`（或汇总 `import boost;`），API 拼写与上游一致，无需
@@ -71,8 +71,11 @@ Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`�
 
 ## 许可证
 
-模块封装部分与 Boost 的许可证一致：均为 **BSL**（Boost Software License）。
-仓库内其他第三方库保留各自的原始许可。
+模块封装部分采用 [BSL (Boost Software License)](./LICENSE)。
+
+仓库内其他第三方库保留各自的原始许可：
+- Boost - [BSL (Boost Software License)](deps/boost/LICENSE_1_0.txt)
+- libclang - [Apache License v2.0 with LLVM Exceptions](https://llvm.org/docs/DeveloperPolicy.html#new-llvm-project-license-framework)
 
 ## 相关文档
 
