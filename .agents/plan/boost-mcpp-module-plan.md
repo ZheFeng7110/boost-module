@@ -47,6 +47,16 @@ boost-module/                       # = mcpp 包仓库
 ### M1 — Vendoring 重做 ✅ 计划调整 (2026-08-09)
 原方案 (scripts/vendor/import_boost.ps1 + scripts/clean-boost.ps1) 调整为用户指定的实现:
 **`scripts/import_boost.py` 单脚本完成全部工作**, `scripts/clean-boost.ps1` 删除。
+
+> **源码布局来龙去脉 (防后续 Agent 重复踩坑)**:
+> 最初仓库用的是 GitHub 源码包, 其头文件分散在 `libs/<lib>/include/boost/...` (superproject 检出,
+> 且缺顶层 `boost/` 汇总 include 根, 被 .gitignore 排除 — M0 只能拼 161 个 libs 路径作联合 include)。
+> M1 改用官方 release tarball (archives.boost.io) 后**布局完全不同**: 所有库的头文件统一收在
+> 顶层 **`boost/boost/` 汇总 include 根**下 (`boost/optional.hpp`、`boost/filesystem/...` 都在这里),
+> `libs/<lib>/` 下**没有** `include/` 目录, 只保留 CMakeLists.txt / meta / test 等构建元数据。
+> 因此 **deps/boost/boost/ 才是唯一 include 根** (消费者 `-I deps/boost`), 库与头文件的对应关系
+> 需通过 `libs/<lib>/meta/libraries.json` 的 headers 字段或 `boost/` 下同名目录/单头推断
+> (M2 生成器输入, 详见 M2 设计文档)。当前 deps/boost 落盘结构即为此布局, 勿再按 libs/*/include 找头。
 - 固定源: https://archives.boost.io/release/1.91.0/source/boost_1_91_0.tar.gz
   SHA256=5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463
 - 压缩包落位 target/vendor-import/ (已存在, 校验通过)
@@ -55,11 +65,22 @@ boost-module/                       # = mcpp 包仓库
   - 裁剪规则沿用 clean-boost.ps1 语义: 任意深度的 doc/docs/example/examples/more/status/.github 等目录、
     Jamfile 系文件、*.htm/*.html、根级图片样式文件一律不导入
 
-### M2 — 生成器 scripts/gen_exports.py
+### M2 — 生成器 scripts/gen_exports.py ✅ 已完成 (2026-08-09)
 libclang AST dump 目标库公共头 → 收集 boost:: 外部链接实体;
 依赖闭包 (filesystem 连带导出 boost::system::error_code — opencv-m dependency-closure 先例);
 跨模块去重 (first wins); 产出 export using 列表 (写法以 M0 验证结果为准)。
 gen_audit.py 输出需手工替代的 static-inline 清单。
+
+> 实现与关键差异详见 [2026-08-09-m2-gen-exports-design.md](../docs/2026-08-09-m2-gen-exports-design.md) §10/§11:
+> - 产出: scripts/{gen_exports,gen_audit,boost_common}.py + scripts/libs.json (root 头集, 938 头) +
+>   src/gen_exports/*.inc (27 库 4009 实体) + *.deps (export-import 提示) + src/*.cppm 草稿 (M3 定稿)
+> - GMF = include-DAG 源点聚合头 (detail 不自足, 必须走 umbrella; 顺序由上游聚合保证);
+>   clang 构建不用 -fmodules (mingw 双重包含); draft .cppm 无 module :private (gcc 未实现)
+> - 编译正确性由 clang++ 驱动 gate 保证 (libclang 缺失头报告不可靠), 失败自动裁剪 GFM
+>   (thread 平台头、regex ICU 头、json src.hpp 保留等, 详见 §11)
+> - 审计: static=6 (thread 1 + json 5, 模块 TU 内部辅助), M3 19 库为 0
+> - 冒烟: 27/27 模块 clang 预编译通过; optional/system/algorithm/json 消费者运行通过;
+>   gcc 模块构建通过 (消费者 std 表面按 M0 §2 用 import std; 路径)
 
 ### M3 — 纯头库模块层 (19 库)
 optional / variant / variant2 / any / core / container_hash / mp11 / static_string / scope /
