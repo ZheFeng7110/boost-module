@@ -17,7 +17,7 @@
 | M0 | Spike 验证 (opencv 式 `export namespace boost { using ...; }` 成立) | ✅ |
 | M1 | 官方 tarball vendoring 重做 (`scripts/import_boost.py`) | ✅ |
 | M2 | 生成器 `scripts/gen_exports.py` + `scripts/gen_audit.py` | ✅ |
-| M3 | 纯头库模块层 (19 库) + 每库 smoke 测试 | ⏳ |
+| M3 | 纯头库模块层 (19 库) + 每库 smoke 测试 | ✅ |
 | M4 | 编译库接入 (8 库) | ⏳ |
 | M5 | 汇总模块 `import boost;` 与消费者验证 | ⏳ |
 | M6 | CI 与发布 | ⏳ |

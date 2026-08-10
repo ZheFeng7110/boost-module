@@ -1,5 +1,6 @@
 boost.core
 boost.iterator
 boost.range
+boost.regex
 boost.tuple
 boost.type_traits

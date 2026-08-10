@@ -46,6 +46,7 @@ EXPORT_KINDS = (
     "ENUM_CONSTANT_DECL",
     "FUNCTION_DECL", "FUNCTION_TEMPLATE", "VAR_DECL",
     "TYPEDEF_DECL", "TYPE_ALIAS_DECL", "TYPE_ALIAS_TEMPLATE_DECL",
+    "CLASS_TEMPLATE", "CLASS_TEMPLATE_PARTIAL_SPECIALIZATION",
     "CONCEPT_DECL",
 )
 
@@ -117,7 +118,24 @@ def _is_scoped_enum(cursor, tu):
 
 DECL_KINDS = set(EXPORT_KINDS) | set(MEMBER_KINDS) | {
     "PARM_DECL", "CXX_BASE_SPECIFIER", "ENUM_DECL", "NAMESPACE",
+    # using-declarations / directives: namespace-scope `using boost::X;` /
+    # `using namespace boost::X;` re-exports that give entities their public
+    # spelling (ADL-barrier pattern — see collect_injections).
+    "USING_DECLARATION", "USING_DIRECTIVE",
 }
+
+
+def _index_key(cursor):
+    """usr_index key — real USRs for entities; a location-based fallback for
+    using-directives (clang gives them no USR at all)."""
+    usr = bc.usr_of(cursor)
+    if usr:
+        return usr
+    if _kind_name(cursor) == "USING_DIRECTIVE":
+        f = bc.cursor_file(cursor)
+        if f is not None:
+            return "dir:{}:{}".format(f, cursor.location.line)
+    return None
 
 
 def build_usr_index(tu):
@@ -131,9 +149,9 @@ def build_usr_index(tu):
 
     def rec(cursor):
         if _kind_name(cursor) in DECL_KINDS:
-            usr = bc.usr_of(cursor)
-            if usr and usr not in idx:
-                idx[usr] = cursor
+            key = _index_key(cursor)
+            if key and key not in idx:
+                idx[key] = cursor
         for child in cursor.get_children():
             if bc.kind_of(child) == ci.CursorKind.FRIEND_DECL:
                 continue
@@ -221,6 +239,201 @@ def collect_candidates(lib, tu, file_to_lib, usr_index):
     for usr, cursor in usr_index.items():
         visit(cursor)
     return found
+
+
+# ---------------------------------------------------------------------------
+# using-injection collection (M3 round-3 generator fix)
+# ---------------------------------------------------------------------------
+
+def _enclosing_ns(cursor):
+    """Namespace chain of a using-* declaration's lexical parent, e.g.
+    ['boost','tuples'] — the scope the injected name lands in."""
+    parts = []
+    cur = cursor.lexical_parent
+    while cur is not None:
+        if bc.kind_of(cur) != ci.CursorKind.NAMESPACE:
+            break
+        try:
+            if cur.is_anonymous():
+                return []
+        except Exception:
+            return []
+        parts.append(cur.spelling)
+        cur = cur.semantic_parent
+    return parts[::-1]
+
+
+def _using_target_name(cursor, tu):
+    """Injected name of a namespace-scope using-declaration, derived from its
+    token stream. Boost writes two shapes:
+
+      `using boost::iterators::counting_iterator;`   (fully qualified)
+      `using range::count;`  inside `namespace boost` (relative — injects
+      boost::range::count into boost::count)
+
+    libclang's USING_DECLARATION carries no usable referenced target, its
+    spelling holds only the last name segment, and the token extent starts at
+    'using' and often omits the trailing ';' — so the tokens are joined and
+    the missing prefix is reconstructed from the lexical parent chain.
+
+    Returns the injected qualified name ('' when the shape is not usable)."""
+    try:
+        toks = bc.tokens_of(tu, cursor)
+    except Exception:
+        return ""
+    toks = [t.spelling for t in toks]
+    if not toks or toks[0] != "using" or (len(toks) > 1 and toks[1] == "namespace"):
+        return ""
+    rel = "".join(toks[1:]).rstrip(";")
+    if not rel or rel.startswith("::") or rel.startswith("std::"):
+        return ""
+    if rel.startswith("boost::"):
+        return rel
+    # Relative: prefix with the enclosing namespace chain.
+    parts = _enclosing_ns(cursor)
+    if not parts or parts[0] != "boost":
+        return ""
+    return "::".join(parts) + "::" + rel.split("::")[-1]
+
+
+def _using_namespace_target(cursor, tu):
+    """Target namespace of a namespace-scope `using namespace X;` directive
+    (boost's ADL-barrier variant: `using namespace range_adl_barrier;` inside
+    namespace boost). Returns the target's qualified name (''
+    when unusable)."""
+    try:
+        toks = bc.tokens_of(tu, cursor)
+    except Exception:
+        return ""
+    toks = [t.spelling for t in toks]
+    if len(toks) < 3 or toks[0] != "using" or toks[1] != "namespace":
+        return ""
+    rel = "".join(toks[2:]).rstrip(";")
+    if not rel or rel.startswith("::") or rel.startswith("std::"):
+        return ""
+    if rel.startswith("boost::"):
+        return rel
+    parts = _enclosing_ns(cursor)
+    if not parts or parts[0] != "boost":
+        return ""
+    return "::".join(parts) + "::" + rel
+
+
+def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
+    """Namespace-scope `using boost::X;` declarations that re-export entities
+    under their public spelling. Boost uses this pervasively to hide
+    implementation namespaces while keeping the API at a fixed qualified name:
+      - boost::range_adl_barrier::{count,find,...}  → boost::count
+      - boost::iterators::{counting_iterator,...}   → boost::counting_iterator
+      - boost::system::detail::*, boost::optional_detail::* → boost::*
+
+    Such names never appear as declaration entities (the generator would only
+    see boost::range_adl_barrier::count), so consumers would lose the public
+    spelling. The public name is collected as its own record: the module
+    purview can `export using boost::count;` because the GMF (which includes
+    exactly the bundle headers) makes the name visible — using-declarations
+    are reachable exactly when their file is in the GFM include-DAG, so a
+    record produced here always compiles.
+
+    claimed: {public_qname: lib} — cross-module dedup for injected names
+    (first wins, like USR claiming). Returns {qname: record}."""
+    out = {}
+    directives = []          # (target_chain, inject_prefix) pairs
+    for usr, cursor in usr_index.items():
+        kind = _kind_name(cursor)
+        if kind not in ("USING_DECLARATION", "USING_DIRECTIVE"):
+            continue
+        if _kind_name(cursor.lexical_parent) != "NAMESPACE":
+            continue
+        f = bc.cursor_file(cursor)
+        if f is None:
+            continue
+        if bc.home_lib_of_file(f, file_to_lib) not in (lib, "shared"):
+            continue
+        if kind == "USING_DECLARATION":
+            q = _using_target_name(cursor, tu)
+            if not q:
+                continue
+            if q in claimed:
+                continue
+            claimed[q] = lib
+            out[q] = {
+                "name": q.rsplit("::", 1)[-1],
+                "qname": q,
+                "usr": "inject:" + q,      # not a real USR — excluded from closure
+                "ns": q.split("::")[:-1],
+                "file": str(f),
+                "home": lib,
+                "kind": "USING_INJECT",
+            }
+        else:
+            tgt = _using_namespace_target(cursor, tu)
+            if not tgt:
+                continue
+            parts = _enclosing_ns(cursor)
+            if not parts:
+                continue
+            directives.append((tgt.split("::"), "::".join(parts), f))
+    for tgt_chain, prefix, df in directives:
+        for usr, cursor in usr_index.items():
+            if not is_export_kind(cursor):
+                continue
+            try:
+                chain = bc.namespace_chain(cursor)
+            except Exception:
+                continue
+            if chain != tgt_chain:
+                continue
+            q = prefix + "::" + cursor.spelling
+            if not q.startswith("boost::") or q in claimed:
+                continue
+            claimed[q] = lib
+            out[q] = {
+                "name": cursor.spelling,
+                "qname": q,
+                "usr": "inject:" + q,
+                "ns": q.split("::")[:-1],
+                "file": str(df),
+                "home": lib,
+                "kind": "USING_INJECT",
+            }
+    return out
+
+
+def collect_curated(lib, claimed):
+    """scripts/curated/<lib>.txt — hand-written blind-spot overrides (M2 §2.3,
+    read-out implemented in M3). One qualified name per line; lines starting
+    with '#' are comments. Records are emitted exactly like using-injections
+    (`export using boost::xxx;`), so every listed name must be visible in the
+    module's GMF (it is, when the header chain that declares it is included).
+
+    Use cases:
+      - entities reachable only through template bodies (closure walks
+        declarations, not bodies — e.g. boost::typeindex::* behind
+        any_cast's body in boost/any.hpp);
+      - boost-namespace aliases of std entities that the canonicalization in
+        the closure resolves away (type_info → std::type_info)."""
+    f = bc.CURATED_DIR / (lib + ".txt")
+    if not f.exists():
+        return {}
+    out = {}
+    for line in f.read_text(encoding="utf-8").splitlines():
+        q = line.strip()
+        if not q or q.startswith("#"):
+            continue
+        if not q.startswith("boost::") or q in claimed:
+            continue
+        claimed[q] = lib
+        out[q] = {
+            "name": q.rsplit("::", 1)[-1],
+            "qname": q,
+            "usr": "inject:" + q,
+            "ns": q.split("::")[:-1],
+            "file": str(f),
+            "home": lib,
+            "kind": "CURATED",
+        }
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -518,6 +731,7 @@ def main() -> int:
     print("processing order: {}".format(" -> ".join(order)))
 
     claimed = {}
+    claimed_inject = {}
     summary = {}
     for lib in order:
         if lib not in libs:
@@ -532,9 +746,13 @@ def main() -> int:
             return 1
         usr_index = build_usr_index(tu)
         cands = collect_candidates(lib, tu, _FILE_TO_LIB, usr_index)
-        records = closure_from(cands, tu, usr_index)
+        injects = collect_injections(tu, lib, _FILE_TO_LIB, claimed_inject,
+                                     usr_index)
+        curated = collect_curated(lib, claimed_inject)
+        records = closure_from(dict(cands, **injects, **curated), tu, usr_index)
         if args.full_closure:
             claimed.clear()
+            claimed_inject.clear()
         exports, deps = emit_inc(lib, records, args.out, args.full_closure,
                                  claimed, extra_deps=bc.dep_graph()[lib])
         for rec in records.values():

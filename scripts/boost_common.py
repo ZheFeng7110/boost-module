@@ -42,6 +42,11 @@ LIBS_M4 = [
 TARGET_LIBS = LIBS_M3 + LIBS_M4
 
 # clang command-line used for every bundle TU (same as M0 probe 4).
+# The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
+# load time: without it libclang cannot find its own builtin headers (e.g.
+# mm_malloc.h), the mingw <malloc.h> chain breaks, the std surface degrades,
+# and every declaration touching std::size_t/std types silently drops out of
+# the AST (mp11's mp_at_c/mp_iota_c were lost this way in M2).
 CLANG_ARGS = [
     "-std=c++23",
     "-Ideps/boost",
@@ -50,6 +55,36 @@ CLANG_ARGS = [
     "-D_WIN32_WINNT=0x0A00",
     "-w",
 ]
+
+
+def _append_resource_dir():
+    """Locate the libclang.dll's bundled clang resource dir (bin/libclang.dll
+    ↔ ../lib/clang/<ver>/include) and add it to CLANG_ARGS (idempotent).
+    pip's libclang wheel ships no resource dir at all — then the caller must
+    point LIBCLANG_PATH at a full LLVM install; without it parses degrade
+    silently (see CLANG_ARGS note)."""
+    try:
+        import clang.cindex as ci
+        dll = Path(ci.Config.library_path) / "libclang.dll"
+    except Exception:
+        return
+    if not dll.is_file():
+        return
+    for base in (dll.parent.parent / "lib" / "clang",
+                 dll.parent / "lib" / "clang",
+                 dll.parent.parent / "include" / "clang"):
+        try:
+            vers = sorted([p for p in base.glob("*/include")
+                           if (p / "stddef.h").is_file()],
+                          key=lambda p: p.name, reverse=True)
+        except Exception:
+            continue
+        if not vers:
+            continue
+        inc = "-I{}".format(vers[0])
+        if inc not in CLANG_ARGS:
+            CLANG_ARGS.append(inc)
+        return
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +129,7 @@ def get_ci():
     global _CI
     if _CI is None:
         _CI = load_libclang()
+        _append_resource_dir()
     return _CI
 
 
@@ -379,8 +415,14 @@ def kind_of(cursor):
 
 def linkage_ok(cursor):
     """External linkage only (static / anonymous-namespace entities cannot be
-    exported through a using-declaration)."""
+    exported through a using-declaration). Typedefs/aliases have no linkage
+    concept at all (libclang reports NO_LINKAGE for them), yet a namespace-
+    scope typedef name is a namespace member that a using-declaration can
+    re-export (e.g. boost::endian::big_uint16_t) — so they pass unconditionally."""
     try:
+        k = str(cursor.kind).replace("CursorKind.", "")
+        if k in ("TYPEDEF_DECL", "TYPE_ALIAS_DECL"):
+            return True
         return cursor.linkage == get_ci().LinkageKind.EXTERNAL
     except Exception:
         return False

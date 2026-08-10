@@ -1,0 +1,56 @@
+# Boost 1.91.0 vendored + C++23 module layer — single repo (modeled after opencv-m).
+#
+#   deps/boost/              vendored Boost 1.91.0 (boost/ 汇总 include 根, scripts/import_boost.py)
+#   src/*.cppm               module interfaces (GMF include → export module → export using)
+#   src/gen_exports/*.inc    generated export using lists (committed, scripts/gen_exports.py)
+#   include/boost-module/    bypass headers (macros.hpp — macro spelling for preprocessor users)
+#   tests/**/*.cpp           per-library smoke tests (mcpp test)
+#
+# M3: 纯头库模块层 (19 库) — optional / variant / variant2 / any / core / container_hash /
+# mp11 / static_string / scope / scope_exit / type_traits / algorithm / iterator / range /
+# io / rational / endian / tuple / system. M4 将接入 8 个编译库 (filesystem/regex/thread/
+# chrono/program_options/stacktrace/json/url) 及 libs/*/src/*.cpp。
+
+[package]
+namespace   = "boost"
+name        = "boost"
+version     = "1.91.0"
+description = "Boost 1.91.0 vendored + C++23 module layer — import boost.optional; (API spelling unchanged, no headers)"
+license     = "BSL-1.0"
+repo        = "https://github.com/NaAlO2/boost-module"
+
+[build]
+# 模块接口 TU: GMF 内 include 上游头文件, purview 内 export using (src/gen_exports/*.inc)。
+sources = [
+    "src/algorithm.cppm",
+    "src/any.cppm",
+    "src/container_hash.cppm",
+    "src/core.cppm",
+    "src/endian.cppm",
+    "src/io.cppm",
+    "src/iterator.cppm",
+    "src/mp11.cppm",
+    "src/optional.cppm",
+    "src/range.cppm",
+    "src/rational.cppm",
+    "src/scope.cppm",
+    "src/scope_exit.cppm",
+    "src/static_string.cppm",
+    "src/system.cppm",
+    "src/tuple.cppm",
+    "src/type_traits.cppm",
+    "src/variant.cppm",
+    "src/variant2.cppm",
+]
+# include 根: include/ (本包旁路头) + deps/boost/ (vendored 汇总根, <boost/xxx.hpp> 落位)。
+# 传播给消费者 — 消费者 import 前可 include <boost-module/macros.hpp> 获取宏拼写。
+include_dirs = [
+    "include",
+    "deps/boost",
+]
+# 模块 TU 与库 TU 宏一致 (opencv BMI 基线教训, M4 扩展); -w 压 vendored 头告警噪音。
+defines  = ["BOOST_ALL_NO_LIB"]
+cxxflags = ["-w"]
+
+[targets.boost]
+kind = "lib"

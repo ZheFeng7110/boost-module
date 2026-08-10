@@ -1,0 +1,19 @@
+# curated/any.txt — generator blind-spot overrides for the boost.any module
+#
+# boost::any::type() returns const boost::typeindex::type_info&, and any_cast's
+# template body compares type_info against type_index (boost/any.hpp:300).
+# The closure walks declarations only (not bodies), and canonicalization
+# resolves boost::typeindex::type_info down to std::type_info — so none of the
+# typeindex surface is reachable from any's signatures. These names are
+# visible in the module GMF (any.hpp pulls type_index.hpp transitively), so
+# exporting them here is safe.
+#
+# NOTE: only the RTTI flavor (stl_*) is listed — ctti_* exists solely under
+# BOOST_NO_RTTI which the fixed build flavor (this snapshot) does not define.
+boost::typeindex::type_index
+boost::typeindex::type_info
+boost::typeindex::type_id
+boost::typeindex::type_id_with_cvr
+boost::typeindex::type_id_runtime
+boost::typeindex::stl_type_index
+boost::typeindex::type_index_facade

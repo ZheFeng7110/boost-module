@@ -82,11 +82,22 @@ gen_audit.py 输出需手工替代的 static-inline 清单。
 > - 冒烟: 27/27 模块 clang 预编译通过; optional/system/algorithm/json 消费者运行通过;
 >   gcc 模块构建通过 (消费者 std 表面按 M0 §2 用 import std; 路径)
 
-### M3 — 纯头库模块层 (19 库)
+### M3 — 纯头库模块层 (19 库) ✅ 已完成 (2026-08-10)
 optional / variant / variant2 / any / core / container_hash / mp11 / static_string / scope /
 scope_exit / type_traits / algorithm / iterator / range / io / rational / endian / tuple / system。
 对象宏 re-homing (BOOST_VERSION → boost:: constexpr 保持拼写); include/boost-module/macros.hpp 旁路头;
 每库 smoke 测试; 跑通 mcpp build/test。
+
+> 实现与差异详见 [2026-08-10-m3-header-only-modules.md](../docs/2026-08-10-m3-header-only-modules.md):
+> - 生成器第三轮修复: libclang 资源目录 (mp11 mp_at_c 修复, 239→457 实体)、using-injection/
+>   directive 收集 (range 224→337 等)、CLASS_TEMPLATE 收集 (optional 37→311)、typedef
+>   linkage 放宽 (endian 78→235)、curated 读取落地 (curated/any.txt typeindex 兜底)
+> - mcpp.toml: sources=19 .cppm, include_dirs=include+deps/boost, llvm/msvc 默认风味
+>   (生成快照 mingw 风味由 .inc 6 处 #if 守卫兼容)
+> - 对象宏 re-homing 于 boost.core; macros.hpp 旁路头; 两种拼写同 TU 互斥 (宏吞拼写)
+> - 手编偏离: scope.cppm 去 export import core (gcc ICE)、algorithm.cppm 去 string_regex
+>   (gcc abi-tag, 剪 *regex 实体)
+> - 验证: llvm/msvc 20/20 测试绿; gcc 构建绿 + 19/20 (variant 消费者 gcc ICE, 编译器 bug)
 
 ### M4 — 编译库接入 (8 库)
 filesystem / regex / thread / chrono / program_options / stacktrace / json / url。
