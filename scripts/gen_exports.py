@@ -134,7 +134,10 @@ def _index_key(cursor):
     if _kind_name(cursor) == "USING_DIRECTIVE":
         f = bc.cursor_file(cursor)
         if f is not None:
-            return "dir:{}:{}".format(f, cursor.location.line)
+            # line+column: two directives on the same source line must not
+            # share a key (first index entry wins and would swallow the rest).
+            return "dir:{}:{}:{}".format(f, cursor.location.line,
+                                         cursor.location.column)
     return None
 
 
@@ -284,6 +287,11 @@ def _using_target_name(cursor, tu):
     toks = [t.spelling for t in toks]
     if not toks or toks[0] != "using" or (len(toks) > 1 and toks[1] == "namespace"):
         return ""
+    # The token extent can include the terminating ';' and — on a
+    # multi-statement line — everything after it. Cut at the first ';' so
+    # trailing content cannot corrupt the reconstructed qualified name.
+    if ";" in toks:
+        toks = toks[:toks.index(";")]
     rel = "".join(toks[1:]).rstrip(";")
     if not rel or rel.startswith("::") or rel.startswith("std::"):
         return ""
@@ -754,7 +762,8 @@ def main() -> int:
             claimed.clear()
             claimed_inject.clear()
         exports, deps = emit_inc(lib, records, args.out, args.full_closure,
-                                 claimed, extra_deps=bc.dep_graph()[lib])
+                                 claimed, extra_deps=bc.dep_graph(
+                                     {lib: gfm_final})[lib])
         for rec in records.values():
             claimed.setdefault(rec["usr"], lib)
         summary[lib] = {"candidates": len(cands),

@@ -65,7 +65,15 @@ def _append_resource_dir():
     silently (see CLANG_ARGS note)."""
     try:
         import clang.cindex as ci
-        dll = Path(ci.Config.library_path) / "libclang.dll"
+        # Two loading modes: set_library_path(dir) leaves library_path set,
+        # set_library_file(dll) sets library_file with library_path None
+        # (clang-on-PATH fallback and LIBCLANG_PATH=<file> form).
+        if ci.Config.library_file:
+            dll = Path(ci.Config.library_file)
+        elif ci.Config.library_path:
+            dll = Path(ci.Config.library_path) / "libclang.dll"
+        else:
+            return
     except Exception:
         return
     if not dll.is_file():
@@ -348,11 +356,19 @@ def _lib_of_include(rel: str):
     return top if top in TARGET_LIBS else ""
 
 
-def dep_graph():
-    """{lib: set(lib)} — which target libs' headers a lib's own headers include."""
+def dep_graph(headers_by_lib=None):
+    """{lib: set(lib)} — which target libs' headers a lib's own headers include.
+
+    headers_by_lib overrides the header set per lib (defaults to libs.json /
+    heuristic). The generator passes the clang++-gate-pruned GFM set here so
+    deps reachable only through headers pruned from the module (e.g. the regex
+    family in algorithm, dropped for the gcc abi-tag workaround) do not leak
+    into <lib>.deps."""
     graph = {lib: set() for lib in TARGET_LIBS}
     for lib in TARGET_LIBS:
-        for h in headers_of(lib):
+        headers = (headers_by_lib.get(lib) if headers_by_lib else None) \
+            or headers_of(lib)
+        for h in headers:
             try:
                 text = h.read_text(encoding="utf-8", errors="ignore")
             except OSError:
