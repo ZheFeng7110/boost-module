@@ -10,6 +10,13 @@
 #
 # NOTE: only the RTTI flavor (stl_*) is listed — ctti_* exists solely under
 # BOOST_NO_RTTI which the fixed build flavor (this snapshot) does not define.
+#
+# M4: the operator set is ALSO a cross-module re-export override — the
+# 27-lib regeneration claims boost::typeindex::operator* for boost.variant
+# (first-wins), but any_cast's template body (instantiated in consumer TUs)
+# needs them reachable from boost.any's own interface, so they are force-
+# listed here regardless of the claim (legal duplicate re-export; M3 had the
+# same surface in both modules).
 boost::typeindex::type_index
 boost::typeindex::type_info
 boost::typeindex::type_id
@@ -17,3 +24,9 @@ boost::typeindex::type_id_with_cvr
 boost::typeindex::type_id_runtime
 boost::typeindex::stl_type_index
 boost::typeindex::type_index_facade
+boost::typeindex::operator==
+boost::typeindex::operator!=
+boost::typeindex::operator<
+boost::typeindex::operator>
+boost::typeindex::operator<=
+boost::typeindex::operator>=

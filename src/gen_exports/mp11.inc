@@ -438,10 +438,8 @@ export namespace boost { namespace mp11 { namespace detail {
   using boost::mp11::detail::mp_valid_impl;
   using boost::mp11::detail::mp_void_impl;
   using boost::mp11::detail::mp_with_index_impl_;
-#if !defined(__GNUC__) || defined(__clang__)
-  // M3 hand-guard: gcc >= 14 takes the mp_map_find_impl branch of
-  // mp11/detail/mp_map_find.hpp (gcc bug 120161 workaround) where mpmf_*
-  // do not exist; every other compiler (incl. clang) defines them.
+#if !defined(__GNUC__)
+  // M3 hand-guard: mp_map_find.hpp (gcc bug 120161 workaround) defines mpmf_* only outside gcc.
   using boost::mp11::detail::mpmf_unwrap;
   using boost::mp11::detail::mpmf_wrap;
 #endif

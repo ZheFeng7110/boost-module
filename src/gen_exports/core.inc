@@ -68,9 +68,7 @@ export namespace boost {
   using boost::identity;
   using boost::ignore_unused;
 #if defined(BOOST_HAS_INT128)
-  // M3 hand-guard: boost/config/detail/suffix.hpp defines int128_type /
-  // uint128_type only where BOOST_HAS_INT128 (absent under MSVC ABI — no
-  // __int128); the surrounding names stay unguarded.
+  // M3 hand-guard: suffix.hpp defines int128_type only where BOOST_HAS_INT128.
   using boost::int128_type;
 #endif
   using boost::is_reference_wrapper;
@@ -114,6 +112,7 @@ export namespace boost {
   using boost::throw_with_location;
   using boost::to_address;
 #if defined(BOOST_HAS_INT128)
+  // M3 hand-guard: suffix.hpp defines uint128_type only where BOOST_HAS_INT128.
   using boost::uint128_type;
 #endif
   using boost::ulong_long_type;
@@ -186,8 +185,7 @@ export namespace boost { namespace core { namespace detail {
   using boost::core::detail::byteswap_impl;
   using boost::core::detail::class_template_name;
 #if defined(__GNUC__)
-  // M3 hand-guard: upstream boost/core/cmath.hpp defines detail::copysign_impl
-  // only under __GNUC__ (mingw flavor); clang -fms-compatibility omits it.
+  // M3 hand-guard: boost/core/cmath.hpp defines copysign_impl only on gcc-like compilers.
   using boost::core::detail::copysign_impl;
 #endif
   using boost::core::detail::countl_impl;

@@ -18,7 +18,7 @@
 | M1 | 官方 tarball vendoring 重做 (`scripts/import_boost.py`) | ✅ |
 | M2 | 生成器 `scripts/gen_exports.py` + `scripts/gen_audit.py` | ✅ |
 | M3 | 纯头库模块层 (19 库) + 每库 smoke 测试 | ✅ |
-| M4 | 编译库接入 (8 库) | ⏳ |
+| M4 | 编译库接入 (8 库) + 双风味 28/28 测试 | ✅ |
 | M5 | 汇总模块 `import boost;` 与消费者验证 | ⏳ |
 | M6 | CI 与发布 | ⏳ |
 
@@ -38,6 +38,7 @@ pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libc
 uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs.json
 uv run scripts/gen_exports.py                        # 生成全部 27 库的导出列表
 uv run scripts/gen_exports.py --libs optional system --emit-cppm
+uv run scripts/reapply_hand_edits.py                 # 重生成后重放 M3/M4 手编 (.cppm 偏离 + .inc 平台守卫)
 uv run scripts/gen_audit.py                          # static-inline / 内部链接审计
 uv run scripts/import_boost.py                       # 重新导入官方 boost tarball
 ```
@@ -54,6 +55,8 @@ uv run scripts/import_boost.py                       # 重新导入官方 boost 
   `src/gen_exports/<lib>.inc`（`export namespace boost { using ...; }` 列表）、`*.deps`
   （`export import` 提示）、`src/<lib>.cppm` 草稿。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单。
+- `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
+  （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
 
 ## 分支与 Tag 命名
 

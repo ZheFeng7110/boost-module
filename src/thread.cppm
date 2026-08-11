@@ -46,6 +46,7 @@ export module boost.thread;
 export import boost.chrono;
 export import boost.core;
 export import boost.io;
+export import boost.optional;
 export import boost.system;
 export import boost.type_traits;
 

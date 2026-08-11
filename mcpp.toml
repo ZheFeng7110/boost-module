@@ -8,8 +8,11 @@
 #
 # M3: 纯头库模块层 (19 库) — optional / variant / variant2 / any / core / container_hash /
 # mp11 / static_string / scope / scope_exit / type_traits / algorithm / iterator / range /
-# io / rational / endian / tuple / system. M4 将接入 8 个编译库 (filesystem/regex/thread/
-# chrono/program_options/stacktrace/json/url) 及 libs/*/src/*.cpp。
+# io / rational / endian / tuple / system.
+# M4: 8 个编译库 (filesystem/regex/thread/chrono/program_options/stacktrace/json/url)
+# 接入 — libs/*/src/*.cpp 进 sources, 模块 TU (头文件声明) ↔ 库 TU (定义) 链接一致。
+# 设计详见 .agents/docs/2026-08-11-m4-compiled-libs.md;
+# 重生成 .inc 后必跑 scripts/reapply_hand_edits.py 重放手编。
 
 [package]
 namespace   = "boost"
@@ -24,23 +27,40 @@ repo        = "https://github.com/NaAlO2/boost-module"
 sources = [
     "src/algorithm.cppm",
     "src/any.cppm",
+    "src/chrono.cppm",
     "src/container_hash.cppm",
     "src/core.cppm",
     "src/endian.cppm",
+    "src/filesystem.cppm",
     "src/io.cppm",
     "src/iterator.cppm",
+    "src/json.cppm",
     "src/mp11.cppm",
     "src/optional.cppm",
+    "src/program_options.cppm",
     "src/range.cppm",
     "src/rational.cppm",
+    "src/regex.cppm",
     "src/scope.cppm",
     "src/scope_exit.cppm",
+    "src/stacktrace.cppm",
     "src/static_string.cppm",
     "src/system.cppm",
+    "src/thread.cppm",
     "src/tuple.cppm",
     "src/type_traits.cppm",
+    "src/url.cppm",
     "src/variant.cppm",
     "src/variant2.cppm",
+    # M4 编译库 — 通用集 (各 .cpp 内部平台自守卫, 见 2026-08-11-m4-compiled-libs.md §2)
+    "deps/boost/libs/filesystem/src/*.cpp",
+    "deps/boost/libs/regex/src/*.cpp",
+    "deps/boost/libs/chrono/src/*.cpp",
+    "deps/boost/libs/program_options/src/*.cpp",
+    "deps/boost/libs/stacktrace/src/basic.cpp",
+    "deps/boost/libs/json/src/*.cpp",
+    "deps/boost/libs/url/src/**/*.cpp",
+    "deps/boost/libs/thread/src/future.cpp",
 ]
 # include 根: include/ (本包旁路头) + deps/boost/ (vendored 汇总根, <boost/xxx.hpp> 落位)。
 # 传播给消费者 — 消费者 import 前可 include <boost-module/macros.hpp> 获取宏拼写。
@@ -48,9 +68,28 @@ include_dirs = [
     "include",
     "deps/boost",
 ]
-# 模块 TU 与库 TU 宏一致 (opencv BMI 基线教训, M4 扩展); -w 压 vendored 头告警噪音。
-defines  = ["BOOST_ALL_NO_LIB"]
+# 模块 TU 与库 TU 宏一致 (opencv BMI 基线教训); -w 压 vendored 头告警噪音。
+# filesystem 刻意不定义 BOOST_FILESYSTEM_SOURCE — 模块/库两侧保持 v3 API 一致 (M4 §5)。
+# _MT: MSVC 风味 clang++ driver 不定义线程标志, boost config 靠它判 BOOST_HAS_THREADS
+# (cl 模式本就有, 双端一致定义无害; 普通 msvc 链接时 _MT 对应多线程 CRT, mcpp 无 /MT 概念)。
+# _WIN32_WINNT=0x0A00: mingw 风味不默认定义, boost.winapi 的 WaitOnAddress/
+# WakeByAddress* 需 >= 0x0602 才声明 (thread_primitives.cpp 依赖); 生成器快照同值。
+defines  = ["BOOST_ALL_NO_LIB", "_MT", "_WIN32_WINNT=0x0A00"]
 cxxflags = ["-w"]
+# M4: boost.thread 库 TU 需要 BOOST_THREAD_BUILD_LIB (上游 b2/CMake 构建时定义,
+# tss_pe/tss_null 的 tss_cleanup_implemented 依赖它) — 只作用到 thread 库源码,
+# 不触及模块 TU (config.hpp 中该宏仅影响 autolink 分支, BOOST_ALL_NO_LIB 已短路)。
+flags = [
+    { glob = "deps/boost/libs/thread/src/**", defines = ["BOOST_THREAD_BUILD_LIB"] },
+]
+
+# M4: 线程实现按平台互斥 (win32/ 与 pthread/ 定义同名符号)。
+[target.windows.build]
+sources = ["deps/boost/libs/thread/src/win32/*.cpp"]
+
+[target.unix.build]
+sources = ["deps/boost/libs/thread/src/pthread/*.cpp"]
+ldflags = ["-pthread"]
 
 [targets.boost]
 kind = "lib"

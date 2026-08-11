@@ -6,7 +6,6 @@ module;
 
 export module boost.chrono;
 
-export import boost.core;
 export import boost.system;
 export import boost.type_traits;
 

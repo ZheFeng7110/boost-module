@@ -6,8 +6,6 @@ module;
 
 export module boost.filesystem;
 
-export import boost.io;
-export import boost.iterator;
 export import boost.system;
 
 #include "gen_exports/filesystem.inc"

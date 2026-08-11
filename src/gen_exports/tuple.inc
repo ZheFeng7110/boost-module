@@ -46,9 +46,8 @@ export namespace boost { namespace tuples { namespace detail {
   using boost::tuples::detail::gt;
   using boost::tuples::detail::gte;
   using boost::tuples::detail::handle_width;
-#if !defined(__GNUC__) || defined(__clang__)
-  // M3 hand-guard: ignore_t is a member-pointer typedef; gcc treats it as
-  // internal linkage and rejects exporting it (clang accepts).
+#if !defined(__GNUC__)
+  // M3 hand-guard: ignore_t is a member-pointer typedef; gcc treats it as internal linkage.
   using boost::tuples::detail::ignore_t;
 #endif
   using boost::tuples::detail::lt;

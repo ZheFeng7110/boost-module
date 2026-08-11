@@ -328,8 +328,7 @@ export namespace boost { namespace mpl { namespace aux {
   using boost::mpl::aux::advance_forward;
   using boost::mpl::aux::and_impl;
 #if defined(__GNUC__)
-  // M3 hand-guard: only the gcc-preprocessed mpl headers (BOOST_MPL_CFG_COMPILER_DIR=gcc,
-  // enabled via __GNUC__) define these; clang -fms-compatibility takes another dir.
+  // M3 hand-guard: gcc-preprocessed mpl headers only (BOOST_MPL_CFG_COMPILER_DIR=gcc).
   using boost::mpl::aux::arity_helper;
   using boost::mpl::aux::arity_tag;
 #endif
@@ -365,14 +364,16 @@ export namespace boost { namespace mpl { namespace aux {
   using boost::mpl::aux::le_result2;
   using boost::mpl::aux::le_result3;
   using boost::mpl::aux::le_result4;
+  using boost::mpl::aux::le_result5;
   using boost::mpl::aux::list_tag;
 #if defined(__GNUC__)
-  // M3 hand-guard: gcc-preprocessed mpl headers only (BOOST_MPL_CFG_COMPILER_DIR=gcc).
+  // M3 hand-guard: as above (max_arity).
   using boost::mpl::aux::max_arity;
 #endif
   using boost::mpl::aux::msvc_eti_base;
   using boost::mpl::aux::msvc_type;
 #if defined(__GNUC__)
+  // M3 hand-guard: as above (nested_type_wknd).
   using boost::mpl::aux::nested_type_wknd;
 #endif
   using boost::mpl::aux::no_tag;
@@ -389,6 +390,7 @@ export namespace boost { namespace mpl { namespace aux {
   using boost::mpl::aux::tag_impl;
   using boost::mpl::aux::template_arity;
 #if defined(__GNUC__)
+  // M3 hand-guard: as above (template_arity_impl).
   using boost::mpl::aux::template_arity_impl;
 #endif
   using boost::mpl::aux::transform1_impl;

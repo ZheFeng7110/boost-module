@@ -1,0 +1,22 @@
+# curated/filesystem.txt — generator blind-spot overrides for the boost.filesystem module
+#
+# directory_iterator / recursive_directory_iterator derive from
+# boost::iterators::iterator_facade, whose comparison operators are friend
+# function TEMPLATES declared inside boost::iterators::iterator_core_access
+# (boost/iterator/iterator_facade.hpp). They are not namespace-scope entities,
+# so the generator's collectors never see them; and because the declarations
+# live in the module's global module fragment (GMF include of
+# boost/filesystem/*.hpp), they are NOT visible to ADL from consumer TUs —
+# `it != end` fails to compile. Re-exporting the names from the module
+# interface makes them reachable. Only the single-pass operators are needed
+# (== and !=); the random-access set (<, >, <=, >=, +, -, ++) is included for
+# interoperability with other iterator_facade consumers.
+boost::iterators::operator==
+boost::iterators::operator!=
+boost::iterators::operator<
+boost::iterators::operator>
+boost::iterators::operator<=
+boost::iterators::operator>=
+boost::iterators::operator+
+boost::iterators::operator-
+boost::iterators::operator++

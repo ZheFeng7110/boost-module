@@ -41,6 +41,24 @@ ci = None
 # ---------------------------------------------------------------------------
 
 # Cursor kinds that can be exported as namespace-scope entities.
+# Per-library extra preprocessor defines applied to the bundle TU (libclang
+# parse AND the clang++ gate), so the .inc snapshot matches the module TU's
+# macro state — e.g. stacktrace.cppm GMF defines BOOST_STACKTRACE_LINK
+# (M4: link mode, impl in libs/stacktrace/src/basic.cpp), so the exported
+# surface must be generated under the same macro.
+EXTRA_DEFINES = {
+    "stacktrace": ["BOOST_STACKTRACE_LINK"],
+}
+
+# Per-library GMF override (exact include set, relative to deps/boost/): the
+# module TU's real GMF when it deliberately diverges from the libs.json root
+# set. json: M4 moves the compiled definitions into libs/json/src/src.cpp, so
+# the module GMF (and thus the .inc snapshot) must not include src.hpp (which
+# pulls the .ipp implementation declarations).
+GMF_OVERRIDE = {
+    "json": ["boost/json/debug_printers.hpp", "boost/json.hpp"],
+}
+
 EXPORT_KINDS = (
     "CLASS_DECL", "STRUCT_DECL", "UNION_DECL", "ENUM_DECL",
     "ENUM_CONSTANT_DECL",
@@ -420,7 +438,16 @@ def collect_curated(lib, claimed):
         declarations, not bodies — e.g. boost::typeindex::* behind
         any_cast's body in boost/any.hpp);
       - boost-namespace aliases of std entities that the canonicalization in
-        the closure resolves away (type_info → std::type_info)."""
+        the closure resolves away (type_info → std::type_info).
+      - cross-module re-export overrides: an entity already claimed by an
+        earlier-processed module (first-wins) can be force-listed here when
+        the module's exported template BODIES require it — e.g.
+        boost::any's any_cast body compares typeinfo, so the typeindex
+        operator set must be reachable from consumers importing only
+        boost.any even though the 27-lib run claims it for boost.variant.
+        Re-exporting the same entity from two modules is legal (they denote
+        the same declaration); M3 did exactly that before cross-module
+        dedup existed."""
     f = bc.CURATED_DIR / (lib + ".txt")
     if not f.exists():
         return {}
@@ -429,9 +456,9 @@ def collect_curated(lib, claimed):
         q = line.strip()
         if not q or q.startswith("#"):
             continue
-        if not q.startswith("boost::") or q in claimed:
+        if not q.startswith("boost::"):
             continue
-        claimed[q] = lib
+        claimed.setdefault(q, lib)
         out[q] = {
             "name": q.rsplit("::", 1)[-1],
             "qname": q,
@@ -804,6 +831,8 @@ def _parse_bundle(lib, headers):
                   (lib + ".cpp")).resolve()
     bundle.parent.mkdir(parents=True, exist_ok=True)
     gfm = list(headers)
+    if lib in GMF_OVERRIDE:
+        gfm = [bc.DEPS / h for h in GMF_OVERRIDE[lib]]
 
     def write_bundle():
         bundle.write_text(
@@ -811,10 +840,12 @@ def _parse_bundle(lib, headers):
                 h.relative_to(bc.DEPS).as_posix()) for h in gfm) + "\n",
             encoding="utf-8")
 
+    extra = ["-D" + d for d in EXTRA_DEFINES.get(lib, ())]
+
     def gate():
         r = subprocess.run(["clang++", "-std=c++23", "-fsyntax-only", "-w",
                             "--target=x86_64-w64-mingw32", "-DBOOST_ALL_NO_LIB",
-                            "-Ideps/boost", str(bundle)],
+                            "-Ideps/boost"] + extra + [str(bundle)],
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
 
@@ -846,7 +877,7 @@ def _parse_bundle(lib, headers):
             print("      {}".format(line.strip()))
         return None
 
-    tu = idx.parse(str(bundle), args=bc.CLANG_ARGS,
+    tu = idx.parse(str(bundle), args=bc.CLANG_ARGS + extra,
                    options=_ci.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
     errs = [d for d in tu.diagnostics if d.severity >= _ci.Diagnostic.Error]
     if errs:
