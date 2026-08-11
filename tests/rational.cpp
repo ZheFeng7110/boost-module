@@ -1,28 +1,29 @@
 // boost.rational smoke — arithmetic, comparisons, stream I/O
+#include "test_assert.hpp"
 import std;
 import boost.rational;
 
 int main() {
     boost::rational<int> a(1, 2);
     boost::rational<int> b(1, 3);
-    if (a.numerator() != 1 || a.denominator() != 2) return 1;
+    assert(a.numerator() == 1 && a.denominator() == 2);
     boost::rational<int> sum = a + b;
-    if (sum != boost::rational<int>(5, 6)) return 2;
+    assert(sum == boost::rational<int>(5, 6));
     boost::rational<int> prod = a * b;
-    if (prod != boost::rational<int>(1, 6)) return 3;
-    if (!(a > b) || !(b < a)) return 4;
+    assert(prod == boost::rational<int>(1, 6));
+    assert(a > b && b < a);
     boost::rational<int> c = a;
-    if (a != c) return 5;
-    if (a - b != boost::rational<int>(1, 6)) return 6;
+    assert(a == c);
+    assert(a - b == boost::rational<int>(1, 6));
     boost::rational<int> d = -a;
-    if (d + a != 0) return 7;
+    assert(d + a == 0);
     boost::rational<int> reduced(4, 8);
-    if (reduced.numerator() != 1 || reduced.denominator() != 2) return 8;
+    assert(reduced.numerator() == 1 && reduced.denominator() == 2);
     boost::rational<int> from_int(3);
-    if (from_int != 3) return 9;
+    assert(from_int == 3);
     std::ostringstream os;
     os << a;
-    if (os.str() != "1/2") return 10;
-    if (boost::rational<int>(0) != 0) return 11;
+    assert(os.str() == "1/2");
+    assert(boost::rational<int>(0) == 0);
     return 0;
 }

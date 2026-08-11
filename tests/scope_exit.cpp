@@ -3,6 +3,7 @@
 // hybrid mode: #include the macro header + import the module (M0 §5, M3 bypass
 // pattern — macros.hpp covers version macros; scope_exit's own macros are used
 // directly here as they are the library's public API).
+#include "test_assert.hpp"
 #include <boost/scope_exit.hpp>
 import boost.scope_exit;
 import boost.core;
@@ -15,13 +16,13 @@ int main() {
         } BOOST_SCOPE_EXIT_END
         ++x;
     }
-    if (x != 12) return 1;
+    assert(x == 12);
     {
         BOOST_SCOPE_EXIT(&x) {
             x += 100;
         } BOOST_SCOPE_EXIT_END
     }
-    if (x != 112) return 2;
+    assert(x == 112);
     boost::ignore_unused(boost::BOOST_VERSION);
     return 0;
 }

@@ -1,20 +1,21 @@
 // boost.optional smoke — class, make_optional, comparisons, swap, exception
+#include "test_assert.hpp"
 import std;
 import boost.optional;
 
 int main() {
     boost::optional<int> a(3);
     boost::optional<int> b = boost::make_optional(4);
-    if (!a || !b) return 1;
-    if (a == b || !(a < b)) return 2;
+    assert(a && b);
+    assert(a != b && a < b);
     boost::optional<int> c = a;
-    if (a != c) return 3;
+    assert(a == c);
     boost::swap(a, b);
-    if (*a != 4 || *b != 3) return 4;
-    if (boost::get_optional_value_or(c, 99) != 3) return 5;
-    if (boost::get_optional_value_or(a, 99) != 4) return 6;
+    assert(*a == 4 && *b == 3);
+    assert(boost::get_optional_value_or(c, 99) == 3);
+    assert(boost::get_optional_value_or(a, 99) == 4);
     boost::optional<std::string> s("hello");
-    if (!(s == std::string("hello"))) return 7;
+    assert(s == std::string("hello"));
     bool caught = false;
     try {
         boost::optional<int> empty = boost::none;
@@ -22,7 +23,7 @@ int main() {
     } catch (boost::bad_optional_access const&) {
         caught = true;
     }
-    if (!caught) return 8;
-    if (boost::none != boost::optional<int>{}) return 9;
+    assert(caught);
+    assert(boost::none == boost::optional<int>{});
     return 0;
 }

@@ -1,4 +1,5 @@
 // boost.type_traits smoke — trait correctness across the module boundary
+#include "test_assert.hpp"
 import std;
 import boost.type_traits;
 
@@ -18,6 +19,6 @@ int main() {
     static_assert(boost::is_class<std::string>::value);
     static_assert(boost::has_trivial_copy<int>::value);
     static_assert(boost::is_unsigned<unsigned long>::value);
-    if (!boost::is_integral<long>::value) return 1;
+    assert(boost::is_integral<long>::value);
     return 0;
 }

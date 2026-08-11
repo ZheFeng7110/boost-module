@@ -1,4 +1,5 @@
 // boost.variant smoke — recursive variant, get, visitor, comparison
+#include "test_assert.hpp"
 import std;
 import boost.variant;
 
@@ -9,20 +10,20 @@ struct visitor : boost::static_visitor<int> {
 
 int main() {
     boost::variant<int, std::string> v(42);
-    if (boost::get<int>(v) != 42) return 1;
+    assert(boost::get<int>(v) == 42);
     v = std::string("ab");
-    if (boost::get<std::string>(v) != "ab") return 2;
-    if (boost::apply_visitor(visitor(), v) != 2) return 3;
+    assert(boost::get<std::string>(v) == "ab");
+    assert(boost::apply_visitor(visitor(), v) == 2);
     boost::variant<int, std::string> w(7);
-    if (v == w || !(w < v)) return 4;
+    assert(v != w && w < v);
     boost::variant<int, std::string> x = v;
-    if (v != x) return 5;
+    assert(v == x);
     try {
         (void)boost::get<int>(v);
-        return 6;
+        assert(false);
     } catch (boost::bad_get const&) {
     }
     boost::variant<int> only(1);
-    if (boost::get<int>(only) != 1) return 7;
+    assert(boost::get<int>(only) == 1);
     return 0;
 }

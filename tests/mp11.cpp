@@ -1,4 +1,5 @@
 // boost.mp11 smoke — metaprogramming: list ops, aliases, maps, transforms
+#include "test_assert.hpp"
 import std;
 import boost.mp11;
 
@@ -28,6 +29,6 @@ int main() {
     static_assert(std::is_same_v<SR, mp_list<mp_int<1>, mp_int<2>, mp_int<3>>>);
     int sum = 0;
     mp_for_each<L>([&sum](auto const&) { ++sum; });
-    if (sum != 3) return 1;
+    assert(sum == 3);
     return 0;
 }

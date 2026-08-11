@@ -1,13 +1,14 @@
 // boost.filesystem smoke — compiled lib linkage (path/operations/directory)
+#include "test_assert.hpp"
 import std;
 import boost.filesystem;
 
 int main() {
     using namespace boost::filesystem;
     path p("a/b/c.txt");
-    if (p.parent_path().generic_string() != "a/b") return 1;
-    if (p.filename().string() != "c.txt") return 2;
-    if (p.extension().string() != ".txt") return 3;
+    assert(p.parent_path().generic_string() == "a/b");
+    assert(p.filename().string() == "c.txt");
+    assert(p.extension().string() == ".txt");
 
     path dir = temp_directory_path() / ("boost_m4_fs_" + std::to_string(std::clock()));
     path file = dir / "hello.txt";
@@ -16,22 +17,22 @@ int main() {
         boost::filesystem::ofstream out(file);
         out << "hello boost.filesystem";
         out.close();
-        if (!exists(file)) return 4;
-        if (file_size(file) != 21) return 5;
-        if (!is_regular_file(file)) return 6;
+        assert(exists(file));
+        assert(file_size(file) == 21);
+        assert(is_regular_file(file));
         boost::filesystem::ifstream in(file);
         std::string line;
         std::getline(in, line);
-        if (line != "hello boost.filesystem") return 7;
+        assert(line == "hello boost.filesystem");
         int n = 0;
         for (directory_iterator it(dir), end; it != end; ++it, ++n) {}
-        if (n != 1) return 8;
+        assert(n == 1);
         remove_all(dir, ec);
-        if (ec) return 9;
-        if (exists(dir)) return 10;
+        assert(!ec);
+        assert(!exists(dir));
     }
-    if (current_path().empty()) return 11;
-    if (temp_directory_path().empty()) return 12;
-    if (!exists("/")) return 13;
+    assert(!current_path().empty());
+    assert(!temp_directory_path().empty());
+    assert(exists("/"));
     return 0;
 }

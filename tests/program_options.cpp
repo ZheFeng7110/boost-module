@@ -1,4 +1,5 @@
 // boost.program_options smoke — compiled lib linkage (parse/variables_map)
+#include "test_assert.hpp"
 import std;
 import boost.program_options;
 
@@ -21,15 +22,15 @@ int main() {
                   .run(), vm);
     po::notify(vm);
 
-    if (vm["port"].as<int>() != 9000) return 1;
-    if (vm["name"].as<std::string>() != "boost") return 2;
-    if (!vm["verbose"].as<bool>()) return 3;
-    if (vm.count("help")) return 4;
+    assert(vm["port"].as<int>() == 9000);
+    assert(vm["name"].as<std::string>() == "boost");
+    assert(vm["verbose"].as<bool>());
+    assert(!vm.count("help"));
 
     po::variables_map vm2;
     po::store(po::command_line_parser({"--port", "1234"}).options(desc).run(), vm2);
     po::notify(vm2);
-    if (vm2["port"].as<int>() != 1234) return 5;
+    assert(vm2["port"].as<int>() == 1234);
 
     po::options_description e("error");
     e.add_options()("port", po::value<int>());
@@ -41,14 +42,14 @@ int main() {
     } catch (po::invalid_option_value const&) {
         caught = true;
     }
-    if (!caught) return 6;
+    assert(caught);
 
     po::positional_options_description pos;
     pos.add("name", 1);
-    if (pos.max_total_count() != 1) return 7;
+    assert(pos.max_total_count() == 1);
 
     std::vector<std::string> toks = po::split_unix("one \"two three\" four");
-    if (toks.size() != 3) return 8;
-    if (toks[1] != "two three") return 9;
+    assert(toks.size() == 3);
+    assert(toks[1] == "two three");
     return 0;
 }

@@ -1,24 +1,25 @@
 // boost.static_string smoke — fixed-capacity string
+#include "test_assert.hpp"
 import std;
 import boost.static_string;
 
 int main() {
     boost::static_string<16> s("hello");
     s += " world";
-    if (s.size() != 11 || s.capacity() != 16) return 1;
-    if (s != "hello world") return 2;
-    if (s.compare("hello world") != 0) return 3;
-    if (!(s < "zebra")) return 4;
+    assert(s.size() == 11 && s.capacity() == 16);
+    assert(s == "hello world");
+    assert(s.compare("hello world") == 0);
+    assert(s < "zebra");
     boost::static_string<16> t = s;
-    if (t != s) return 5;
+    assert(t == s);
     t.append("!");
-    if (t.front() != 'h' || t.back() != '!') return 6;
+    assert(t.front() == 'h' && t.back() == '!');
     boost::static_string<8> u;
     u = "abcd";
-    if (u.size() != 4) return 7;
+    assert(u.size() == 4);
     boost::static_string<16> v(s, 0, 5);
-    if (v != "hello") return 8;
+    assert(v == "hello");
     std::string st = s.c_str();
-    if (st != "hello world") return 9;
+    assert(st == "hello world");
     return 0;
 }
