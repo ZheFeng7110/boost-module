@@ -99,10 +99,20 @@ scope_exit / type_traits / algorithm / iterator / range / io / rational / endian
 >   (gcc abi-tag, 剪 *regex 实体)
 > - 验证: llvm/msvc 20/20 测试绿; gcc 构建绿 + 19/20 (variant 消费者 gcc ICE, 编译器 bug)
 
-### M4 — 编译库接入 (8 库)
+### M4 — 编译库接入 (8 库) ✅ 已完成 (2026-08-11)
 filesystem / regex / thread / chrono / program_options / stacktrace / json / url。
 libs/*/src/*.cpp 进 sources, 统一 -DBOOST_ALL_NO_LIB (关 MSVC autolink), -w 压告警;
 模块 TU 与库 TU 宏一致 (opencv BMI 基线标志教训); json/url 编译策略按库实际定。
+
+> 实现与差异详见 [2026-08-11-m4-compiled-libs.md](../docs/2026-08-11-m4-compiled-libs.md):
+> - 8 库 .inc 为 M2-era 快照 (缺 M3 生成器修复) → 27 库全量重生成, 实体归属随 first-wins 变动
+> - 生成器增强: EXTRA_DEFINES (stacktrace LINK 面)、GMF_OVERRIDE (json 去 src.hpp 后快照同构)、
+>   curated 升级为跨模块覆盖 (any_cast 模板体需 typeindex 运算符, 被 first-wins 判给 variant)
+> - curated/filesystem.txt: iterator_facade 类内 friend 运算符模板对消费者 ADL 不可见 → 模块面再导出
+> - scripts/reapply_hand_edits.py: 重生成后一键重放全部 M3/M4 手编 (幂等)
+> - mcpp.toml: 27 .cppm + 52 库 TU; defines 补 _MT / _WIN32_WINNT=0x0A00; per-glob
+>   BOOST_THREAD_BUILD_LIB (tss_cleanup_implemented); 线程源码按平台互斥
+> - 验证: llvm/msvc + gcc/mingw 双风味 28/28 测试全绿 (M3 遗留 variant gcc ICE 不再触发)
 
 ### M5 — 汇总模块与消费者验证
 src/boost.cppm 汇总; mcpp new 示例项目依赖本包, import boost; 跑 filesystem 读写 + json 序列化 + regex 匹配。
