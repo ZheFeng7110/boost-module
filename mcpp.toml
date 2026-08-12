@@ -25,6 +25,8 @@ repo        = "https://github.com/NaAlO2/boost-module"
 [build]
 # 模块接口 TU: GMF 内 include 上游头文件, purview 内 export using (src/gen_exports/*.inc)。
 sources = [
+    "src/boost.cppm",
+    "src/boost_system_extras.cpp",
     "src/algorithm.cppm",
     "src/any.cppm",
     "src/chrono.cppm",

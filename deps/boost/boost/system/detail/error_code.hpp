@@ -54,6 +54,11 @@ namespace system
 bool operator==( const error_code & code, const error_condition & condition ) noexcept;
 std::size_t hash_value( error_code const & ec );
 
+// boost-module (M5 B'): 原为 error_code::location() 函数内 static — gcc 模块管线在消费者
+// TU 以强符号发射函数内 static (非 COMDAT), 与库 TU 多重定义; 改命名空间作用域内部链接
+// constexpr (空 source_location, 每 TU 独立持有, 语义等价)。
+static constexpr source_location default_location = source_location();
+
 class error_code
 {
 private:
@@ -314,8 +319,7 @@ public:
 
     source_location const & location() const noexcept
     {
-        BOOST_STATIC_CONSTEXPR source_location loc;
-        return lc_flags_ >= 4? *reinterpret_cast<source_location const*>( lc_flags_ &~ static_cast<boost::uintptr_t>( 1 ) ): loc;
+        return lc_flags_ >= 4? *reinterpret_cast<source_location const*>( lc_flags_ &~ static_cast<boost::uintptr_t>( 1 ) ): default_location;
     }
 
     // relationals:

@@ -118,37 +118,40 @@ inline const char*  get_default_syntax(regex_constants::syntax_type n)
    return ((n >= (sizeof(messages) / sizeof(messages[1]))) ? "" : messages[n]);
 }
 
+// boost-module (M5 B'): 原为 get_default_error_string 函数内 static — gcc 模块管线在
+// 消费者 TU 以强符号发射函数内 static (非 COMDAT), 与 regex 库 TU 定义多重定义;
+// 改命名空间作用域内部链接数组, 每 TU 独立持有 (const 表, 语义等价)。
+static const char* const s_default_error_messages[] = {
+   "Success",                                                            /* REG_NOERROR 0 error_ok */
+   "No match",                                                           /* REG_NOMATCH 1 error_no_match */
+   "Invalid regular expression.",                                        /* REG_BADPAT 2 error_bad_pattern */
+   "Invalid collation character.",                                       /* REG_ECOLLATE 3 error_collate */
+   "Invalid character class name, collating name, or character range.",  /* REG_ECTYPE 4 error_ctype */
+   "Invalid or unterminated escape sequence.",                           /* REG_EESCAPE 5 error_escape */
+   "Invalid back reference: specified capturing group does not exist.",  /* REG_ESUBREG 6 error_backref */
+   "Unmatched [ or [^ in character class declaration.",                  /* REG_EBRACK 7 error_brack */
+   "Unmatched marking parenthesis ( or \\(.",                            /* REG_EPAREN 8 error_paren */
+   "Unmatched quantified repeat operator { or \\{.",                     /* REG_EBRACE 9 error_brace */
+   "Invalid content of repeat range.",                                   /* REG_BADBR 10 error_badbrace */
+   "Invalid range end in character class",                               /* REG_ERANGE 11 error_range */
+   "Out of memory.",                                                     /* REG_ESPACE 12 error_space NOT USED */
+   "Invalid preceding regular expression prior to repetition operator.", /* REG_BADRPT 13 error_badrepeat */
+   "Premature end of regular expression",                                /* REG_EEND 14 error_end NOT USED */
+   "Regular expression is too large.",                                   /* REG_ESIZE 15 error_size NOT USED */
+   "Unmatched ) or \\)",                                                 /* REG_ERPAREN 16 error_right_paren NOT USED */
+   "Empty regular expression.",                                          /* REG_EMPTY 17 error_empty */
+   "The complexity of matching the regular expression exceeded predefined bounds.  "
+   "Try refactoring the regular expression to make each choice made by the state machine unambiguous.  "
+   "This exception is thrown to prevent \"eternal\" matches that take an "
+   "indefinite period time to locate.",                                  /* REG_ECOMPLEXITY 18 error_complexity */
+   "Ran out of stack space trying to match the regular expression.",     /* REG_ESTACK 19 error_stack */
+   "Invalid or unterminated Perl (?...) sequence.",                      /* REG_E_PERL 20 error_perl */
+   "Unknown error.",                                                     /* REG_E_UNKNOWN 21 error_unknown */
+};
+
 inline const char*  get_default_error_string(regex_constants::error_type n)
 {
-   static const char* const s_default_error_messages[] = {
-      "Success",                                                            /* REG_NOERROR 0 error_ok */
-      "No match",                                                           /* REG_NOMATCH 1 error_no_match */
-      "Invalid regular expression.",                                        /* REG_BADPAT 2 error_bad_pattern */
-      "Invalid collation character.",                                       /* REG_ECOLLATE 3 error_collate */
-      "Invalid character class name, collating name, or character range.",  /* REG_ECTYPE 4 error_ctype */
-      "Invalid or unterminated escape sequence.",                           /* REG_EESCAPE 5 error_escape */
-      "Invalid back reference: specified capturing group does not exist.",  /* REG_ESUBREG 6 error_backref */
-      "Unmatched [ or [^ in character class declaration.",                  /* REG_EBRACK 7 error_brack */
-      "Unmatched marking parenthesis ( or \\(.",                            /* REG_EPAREN 8 error_paren */
-      "Unmatched quantified repeat operator { or \\{.",                     /* REG_EBRACE 9 error_brace */
-      "Invalid content of repeat range.",                                   /* REG_BADBR 10 error_badbrace */
-      "Invalid range end in character class",                               /* REG_ERANGE 11 error_range */
-      "Out of memory.",                                                     /* REG_ESPACE 12 error_space NOT USED */
-      "Invalid preceding regular expression prior to repetition operator.", /* REG_BADRPT 13 error_badrepeat */
-      "Premature end of regular expression",                                /* REG_EEND 14 error_end NOT USED */
-      "Regular expression is too large.",                                   /* REG_ESIZE 15 error_size NOT USED */
-      "Unmatched ) or \\)",                                                 /* REG_ERPAREN 16 error_right_paren NOT USED */
-      "Empty regular expression.",                                          /* REG_EMPTY 17 error_empty */
-      "The complexity of matching the regular expression exceeded predefined bounds.  "
-      "Try refactoring the regular expression to make each choice made by the state machine unambiguous.  "
-      "This exception is thrown to prevent \"eternal\" matches that take an "
-      "indefinite period time to locate.",                                  /* REG_ECOMPLEXITY 18 error_complexity */
-      "Ran out of stack space trying to match the regular expression.",     /* REG_ESTACK 19 error_stack */
-      "Invalid or unterminated Perl (?...) sequence.",                      /* REG_E_PERL 20 error_perl */
-      "Unknown error.",                                                     /* REG_E_UNKNOWN 21 error_unknown */
-   };
-
-   return (n > ::boost::regex_constants::error_unknown) ? s_default_error_messages[::boost::regex_constants::error_unknown] : s_default_error_messages[n];
+   return ((n >= (sizeof(s_default_error_messages) / sizeof(s_default_error_messages[1]))) ? "" : s_default_error_messages[n]);
 }
 
 inline regex_constants::syntax_type  get_default_syntax_type(char c)
@@ -656,57 +659,56 @@ inline bool is_separator<char>(char c)
 //
 // get a default collating element:
 //
+// boost-module (M5 B'): 原为 lookup_default_collate_name 函数内 static — 与
+// get_default_error_string 同因 (见上), 改命名空间作用域内部链接, 每 TU 独立持有。
+static const char* def_coll_names[] = {
+"NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "alert", "backspace", "tab", "newline",
+"vertical-tab", "form-feed", "carriage-return", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK",
+"SYN", "ETB", "CAN", "EM", "SUB", "ESC", "IS4", "IS3", "IS2", "IS1", "space", "exclamation-mark",
+"quotation-mark", "number-sign", "dollar-sign", "percent-sign", "ampersand", "apostrophe",
+"left-parenthesis", "right-parenthesis", "asterisk", "plus-sign", "comma", "hyphen",
+"period", "slash", "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+"colon", "semicolon", "less-than-sign", "equals-sign", "greater-than-sign",
+"question-mark", "commercial-at", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
+"Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "left-square-bracket", "backslash",
+"right-square-bracket", "circumflex", "underscore", "grave-accent", "a", "b", "c", "d", "e", "f",
+"g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "left-curly-bracket",
+"vertical-line", "right-curly-bracket", "tilde", "DEL", "",
+};
+
+// these multi-character collating elements
+// should keep most Western-European locales
+// happy - we should really localise these a
+// little more - but this will have to do for
+// now:
+
+static const char* def_multi_coll[] = {
+   "ae",
+   "Ae",
+   "AE",
+   "ch",
+   "Ch",
+   "CH",
+   "ll",
+   "Ll",
+   "LL",
+   "ss",
+   "Ss",
+   "SS",
+   "nj",
+   "Nj",
+   "NJ",
+   "dz",
+   "Dz",
+   "DZ",
+   "lj",
+   "Lj",
+   "LJ",
+   "",
+};
+
 inline std::string  lookup_default_collate_name(const std::string& name)
 {
-   //
-   // these are the POSIX collating names:
-   //
-   static const char* def_coll_names[] = {
-   "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "alert", "backspace", "tab", "newline",
-   "vertical-tab", "form-feed", "carriage-return", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK",
-   "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "IS4", "IS3", "IS2", "IS1", "space", "exclamation-mark",
-   "quotation-mark", "number-sign", "dollar-sign", "percent-sign", "ampersand", "apostrophe",
-   "left-parenthesis", "right-parenthesis", "asterisk", "plus-sign", "comma", "hyphen",
-   "period", "slash", "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-   "colon", "semicolon", "less-than-sign", "equals-sign", "greater-than-sign",
-   "question-mark", "commercial-at", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
-   "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "left-square-bracket", "backslash",
-   "right-square-bracket", "circumflex", "underscore", "grave-accent", "a", "b", "c", "d", "e", "f",
-   "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "left-curly-bracket",
-   "vertical-line", "right-curly-bracket", "tilde", "DEL", "",
-   };
-
-   // these multi-character collating elements
-   // should keep most Western-European locales
-   // happy - we should really localise these a
-   // little more - but this will have to do for
-   // now:
-
-   static const char* def_multi_coll[] = {
-      "ae",
-      "Ae",
-      "AE",
-      "ch",
-      "Ch",
-      "CH",
-      "ll",
-      "Ll",
-      "LL",
-      "ss",
-      "Ss",
-      "SS",
-      "nj",
-      "Nj",
-      "NJ",
-      "dz",
-      "Dz",
-      "DZ",
-      "lj",
-      "Lj",
-      "LJ",
-      "",
-   };
-
    unsigned int i = 0;
    while (*def_coll_names[i])
    {
@@ -764,58 +766,69 @@ struct character_pointer_range
 #endif
    }
 };
+// boost-module (M5 B'): 原为 get_default_class_id 函数内 static — 与 get_default_error_string
+// 同因 (gcc 模块管线在消费者 TU 强符号发射函数内 static); 数据改到类模板静态成员。
+template <class charT>
+struct default_class_id_data
+{
+   static const charT data[73];
+   static const character_pointer_range<charT> ranges[21];
+};
+template <class charT>
+const charT default_class_id_data<charT>::data[73] = {
+   'a', 'l', 'n', 'u', 'm',
+   'a', 'l', 'p', 'h', 'a',
+   'b', 'l', 'a', 'n', 'k',
+   'c', 'n', 't', 'r', 'l',
+   'd', 'i', 'g', 'i', 't',
+   'g', 'r', 'a', 'p', 'h',
+   'l', 'o', 'w', 'e', 'r',
+   'p', 'r', 'i', 'n', 't',
+   'p', 'u', 'n', 'c', 't',
+   's', 'p', 'a', 'c', 'e',
+   'u', 'n', 'i', 'c', 'o', 'd', 'e',
+   'u', 'p', 'p', 'e', 'r',
+   'v',
+   'w', 'o', 'r', 'd',
+   'x', 'd', 'i', 'g', 'i', 't',
+};
+
+template <class charT>
+const character_pointer_range<charT> default_class_id_data<charT>::ranges[21] =
+{
+   {default_class_id_data<charT>::data+0, default_class_id_data<charT>::data+5,}, // alnum
+   {default_class_id_data<charT>::data+5, default_class_id_data<charT>::data+10,}, // alpha
+   {default_class_id_data<charT>::data+10, default_class_id_data<charT>::data+15,}, // blank
+   {default_class_id_data<charT>::data+15, default_class_id_data<charT>::data+20,}, // cntrl
+   {default_class_id_data<charT>::data+20, default_class_id_data<charT>::data+21,}, // d
+   {default_class_id_data<charT>::data+20, default_class_id_data<charT>::data+25,}, // digit
+   {default_class_id_data<charT>::data+25, default_class_id_data<charT>::data+30,}, // graph
+   {default_class_id_data<charT>::data+29, default_class_id_data<charT>::data+30,}, // h
+   {default_class_id_data<charT>::data+30, default_class_id_data<charT>::data+31,}, // l
+   {default_class_id_data<charT>::data+30, default_class_id_data<charT>::data+35,}, // lower
+   {default_class_id_data<charT>::data+35, default_class_id_data<charT>::data+40,}, // print
+   {default_class_id_data<charT>::data+40, default_class_id_data<charT>::data+45,}, // punct
+   {default_class_id_data<charT>::data+45, default_class_id_data<charT>::data+46,}, // s
+   {default_class_id_data<charT>::data+45, default_class_id_data<charT>::data+50,}, // space
+   {default_class_id_data<charT>::data+57, default_class_id_data<charT>::data+58,}, // u
+   {default_class_id_data<charT>::data+50, default_class_id_data<charT>::data+57,}, // unicode
+   {default_class_id_data<charT>::data+57, default_class_id_data<charT>::data+62,}, // upper
+   {default_class_id_data<charT>::data+62, default_class_id_data<charT>::data+63,}, // v
+   {default_class_id_data<charT>::data+63, default_class_id_data<charT>::data+64,}, // w
+   {default_class_id_data<charT>::data+63, default_class_id_data<charT>::data+67,}, // word
+   {default_class_id_data<charT>::data+67, default_class_id_data<charT>::data+73,}, // xdigit
+};
+
 template <class charT>
 int get_default_class_id(const charT* p1, const charT* p2)
 {
-   static const charT data[73] = {
-      'a', 'l', 'n', 'u', 'm',
-      'a', 'l', 'p', 'h', 'a',
-      'b', 'l', 'a', 'n', 'k',
-      'c', 'n', 't', 'r', 'l',
-      'd', 'i', 'g', 'i', 't',
-      'g', 'r', 'a', 'p', 'h',
-      'l', 'o', 'w', 'e', 'r',
-      'p', 'r', 'i', 'n', 't',
-      'p', 'u', 'n', 'c', 't',
-      's', 'p', 'a', 'c', 'e',
-      'u', 'n', 'i', 'c', 'o', 'd', 'e',
-      'u', 'p', 'p', 'e', 'r',
-      'v',
-      'w', 'o', 'r', 'd',
-      'x', 'd', 'i', 'g', 'i', 't',
-   };
-
-   static const character_pointer_range<charT> ranges[21] =
-   {
-      {data+0, data+5,}, // alnum
-      {data+5, data+10,}, // alpha
-      {data+10, data+15,}, // blank
-      {data+15, data+20,}, // cntrl
-      {data+20, data+21,}, // d
-      {data+20, data+25,}, // digit
-      {data+25, data+30,}, // graph
-      {data+29, data+30,}, // h
-      {data+30, data+31,}, // l
-      {data+30, data+35,}, // lower
-      {data+35, data+40,}, // print
-      {data+40, data+45,}, // punct
-      {data+45, data+46,}, // s
-      {data+45, data+50,}, // space
-      {data+57, data+58,}, // u
-      {data+50, data+57,}, // unicode
-      {data+57, data+62,}, // upper
-      {data+62, data+63,}, // v
-      {data+63, data+64,}, // w
-      {data+63, data+67,}, // word
-      {data+67, data+73,}, // xdigit
-   };
-   const character_pointer_range<charT>* ranges_begin = ranges;
-   const character_pointer_range<charT>* ranges_end = ranges + (sizeof(ranges)/sizeof(ranges[0]));
+   const character_pointer_range<charT>* ranges_begin = default_class_id_data<charT>::ranges;
+   const character_pointer_range<charT>* ranges_end = ranges_begin + (sizeof(default_class_id_data<charT>::ranges)/sizeof(default_class_id_data<charT>::ranges[0]));
 
    character_pointer_range<charT> t = { p1, p2, };
    const character_pointer_range<charT>* p = std::lower_bound(ranges_begin, ranges_end, t);
    if((p != ranges_end) && (t == *p))
-      return static_cast<int>(p - ranges);
+      return static_cast<int>(p - default_class_id_data<charT>::ranges);
    return -1;
 }
 

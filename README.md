@@ -8,7 +8,7 @@
 
 - 目标上游: **Boost 1.91.0** (`BOOST_VERSION 109100`)
 - 编译器: clang 22 / gcc 16 (MinGW-w64), 与 opencv-m 一致的双编译器 CI 路线
-- 仓库结构: `deps/boost/` (vendored 源码) + `src/*.cppm` + `src/gen_exports/*.inc` (生成器产物) + `scripts/` (辅助脚本) + `tests/`、`examples/` (计划中)
+- 仓库结构: `deps/boost/` (vendored 源码) + `src/*.cppm` + `src/gen_exports/*.inc` (生成器产物) + `scripts/` (辅助脚本) + `tests/`、`examples/`
 
 ## 进度
 
@@ -18,9 +18,13 @@
 | M1 | 官方 tarball vendoring 重做 (`scripts/import_boost.py`) | ✅ |
 | M2 | 生成器 `scripts/gen_exports.py` + `scripts/gen_audit.py` | ✅ |
 | M3 | 纯头库模块层 (19 库) + 每库 smoke 测试 | ✅ |
-| M4 | 编译库接入 (8 库) + 双风味 28/28 测试 | ✅ |
-| M5 | 汇总模块 `import boost;` 与消费者验证 | ⏳ |
-| M6 | CI 与发布 | ⏳ |
+| M4 | 编译库接入 (8 库) + 28/28 测试 | ✅ |
+| M5 | 汇总模块 `import boost;` 与消费者验证 (含 gcc/mingw 多重定义 B' 修复) | ✅ |
+| M6 | CI 与发布 (含 gcc/mingw 适配: url/thread/variant 修复与全量回归) | ⏳ |
+
+> 风味状态: llvm/msvc 28/28 绿; gcc/mingw 25/28 — M5 已解 regex/system/filesystem 的
+> 模块链接多重定义 (gcc 16.1.0 模块管线对 inline 函数内 static 的发射缺陷), 剩余
+> url/thread/variant 为基线既有失败 (gcc 模块管线另一缺陷与编译器 ICE), 移交 M6 CI 适配。
 
 ## 辅助脚本
 

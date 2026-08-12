@@ -113,12 +113,31 @@ libs/*/src/*.cpp 进 sources, 统一 -DBOOST_ALL_NO_LIB (关 MSVC autolink), -w 
 > - mcpp.toml: 27 .cppm + 52 库 TU; defines 补 _MT / _WIN32_WINNT=0x0A00; per-glob
 >   BOOST_THREAD_BUILD_LIB (tss_cleanup_implemented); 线程源码按平台互斥
 > - 验证: llvm/msvc + gcc/mingw 双风味 28/28 测试全绿 (M3 遗留 variant gcc ICE 不再触发)
+>   **修订 (M5)**: "gcc/mingw 28/28 全绿" 记录不实 — M5 full suite 实为 5 项失败
+>   (system/filesystem/url/thread/variant), 疑当时未真正跑 gcc 全量; 前二者同 static 模式
+>   已由 M5 B' 修复, 后三者移交 M6 CI (见 M5 设计文档 §5)
 
-### M5 — 汇总模块与消费者验证
-src/boost.cppm 汇总; mcpp new 示例项目依赖本包, import boost; 跑 filesystem 读写 + json 序列化 + regex 匹配。
+### M5 — 汇总模块与消费者验证 ✅ 已完成 (2026-08-12)
+src/boost.cppm 汇总 (`export import` 27 子模块); examples/ 示例项目 — 按用户指定不用
+`mcpp new`, 直接建 `mcpp.toml` + 源文件, `[dependencies] boost.boost = { path = ".." }`;
+`import boost;` 跑 filesystem 读写 + json 序列化 + regex 匹配。
+另实施 **B' 方案**修复 gcc/mingw 模块链接多重定义 (regex/system/filesystem)。
+
+> 实现与差异详见 [2026-08-12-m5-aggregate-consumer.md](../docs/2026-08-12-m5-aggregate-consumer.md):
+> - 根因: gcc 16.1.0 模块管线在消费者 TU 把 inline 函数内 static 以强符号落普通段
+>   (函数本体 COMDAT 可合并), 与库 TU 的 COMDAT 副本多重定义; 发射由模板可达性驱动,
+>   不受 export using 列表控制 (方案 B 裁剪无效)
+> - B' 两手段: 内部链接化 (命名空间级 static / 类模板静态成员) + 外移定义
+>   (boost.system 两成员函数 → 新库 TU src/boost_system_extras.cpp)
+> - 验证: llvm/msvc 28/28 绿 + 示例全过; gcc/mingw 25/28 — regex/system/filesystem 已解,
+>   url/thread/variant 为基线既有失败 (另一类 GCC 模块 bug 与编译器 ICE), **移交 M6 CI 适配**
+> - 修订: M4 记录 "gcc/mingw 双风味 28/28 全绿" 不实 — 本轮 full suite 实为 5 项失败
 
 ### M6 — CI 与发布
-三平台 Actions 矩阵; mcpp-index 薄层 boost.lua 指向 release; docs/architecture.md。
+三平台 Actions 矩阵; **gcc/mingw 纳入 CI 门禁并完成适配** — M5 移交的三项基线失败
+(url: BOOST_URL_RETURN_EC 宏静态冲突 / thread: clone_impl 虚拟 thunk 缺失 / variant: gcc ICE)
+在此修复并全量回归 (含 M5 B' 改动回归验证); mcpp-index 薄层 boost.lua 指向 release;
+docs/architecture.md。
 
 ## 边界与已知限制
 

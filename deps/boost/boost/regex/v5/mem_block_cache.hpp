@@ -71,12 +71,18 @@ struct mem_block_cache
      ::operator delete(ptr);
    }
 
-   static mem_block_cache& instance()
-   {
-      static mem_block_cache block_cache = { { {nullptr} } };
-      return block_cache;
-   }
+   static mem_block_cache& instance();
 };
+
+// boost-module (M5 B'): 原为 instance() 函数内 static — gcc 模块管线在消费者 TU 以强符号
+// 发射函数内 static (非 COMDAT), 与 regex 库 TU 定义多重定义; 改命名空间作用域内部链接
+// 对象, 每 TU 独立持有 (纯缓存, 语义等价)。instance() 定义移出类 (类内体看不到其后声明)。
+static mem_block_cache block_cache = { { {nullptr} } };
+
+inline mem_block_cache& mem_block_cache::instance()
+{
+   return block_cache;
+}
 
 
 #else /* lock-based implementation */
@@ -136,12 +142,16 @@ struct mem_block_cache
          ++cached_blocks;
       }
    }
-   static mem_block_cache& instance()
-   {
-      static mem_block_cache block_cache;
-      return block_cache;
-   }
+   static mem_block_cache& instance();
 };
+
+// boost-module (M5 B'): 同 lock-free 版本注释 (见上), 每 TU 独立持有。
+static mem_block_cache block_cache;
+
+inline mem_block_cache& mem_block_cache::instance()
+{
+   return block_cache;
+}
 #endif
 #endif
 

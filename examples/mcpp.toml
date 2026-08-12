@@ -1,0 +1,15 @@
+# Example consumer of the boost module package.
+#
+#   mcpp run          build + run against the vendored boost modules in ..
+#   mcpp build        just build
+#
+# The dependency is a local path dep: examples/ is not a workspace member, it
+# consumes the repo root package `boost.boost` exactly like an external project.
+[package]
+name        = "boost-example"
+version     = "0.1.0"
+description = "Example consumer: import boost; (filesystem + json + regex)"
+license     = "BSL-1.0"
+
+[dependencies]
+boost.boost = { path = ".." }

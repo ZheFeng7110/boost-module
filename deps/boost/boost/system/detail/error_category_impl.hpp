@@ -84,81 +84,10 @@ namespace boost
 namespace system
 {
 
-inline void error_category::init_stdcat() const
-{
-    static_assert( sizeof( stdcat_ ) >= sizeof( boost::system::detail::std_category ), "sizeof(stdcat_) is not enough for std_category" );
-
-#if defined(BOOST_MSVC) && BOOST_MSVC < 1900
-    // no alignof
-#else
-
-    static_assert( alignof( decltype(stdcat_align_) ) >= alignof( boost::system::detail::std_category ), "alignof(stdcat_) is not enough for std_category" );
-
-#endif
-
-    // detail::mutex has a constexpr default constructor,
-    // and therefore guarantees static initialization, on
-    // everything except VS 2013 (msvc-12.0)
-
-    static system::detail::mutex mx_;
-
-    system::detail::lock_guard<system::detail::mutex> lk( mx_ );
-
-    if( sc_init_.load( std::memory_order_acquire ) == 0 )
-    {
-        ::new( static_cast<void*>( stdcat_ ) ) boost::system::detail::std_category( this, system::detail::id_wrapper<0>() );
-        sc_init_.store( 1, std::memory_order_release );
-    }
-}
-
-#if defined( BOOST_GCC ) && BOOST_GCC >= 40800 && BOOST_GCC < 70000
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
-#endif
-
-inline BOOST_NOINLINE error_category::operator std::error_category const& () const
-{
-    if( id_ == detail::generic_category_id )
-    {
-// This condition must be the same as the one in error_condition.hpp
-#if defined(BOOST_SYSTEM_AVOID_STD_GENERIC_CATEGORY)
-
-        static const boost::system::detail::std_category generic_instance( this, system::detail::id_wrapper<0x1F4D3>() );
-        return generic_instance;
-
-#else
-
-        return std::generic_category();
-
-#endif
-    }
-
-    if( id_ == detail::system_category_id )
-    {
-// This condition must be the same as the one in error_code.hpp
-#if defined(BOOST_SYSTEM_AVOID_STD_SYSTEM_CATEGORY)
-
-        static const boost::system::detail::std_category system_instance( this, system::detail::id_wrapper<0x1F4D7>() );
-        return system_instance;
-
-#else
-
-        return std::system_category();
-
-#endif
-    }
-
-    if( sc_init_.load( std::memory_order_acquire ) == 0 )
-    {
-        init_stdcat();
-    }
-
-    return *static_cast<boost::system::detail::std_category const*>( static_cast<void const*>( stdcat_ ) );
-}
-
-#if defined( BOOST_GCC ) && BOOST_GCC >= 40800 && BOOST_GCC < 70000
-#pragma GCC diagnostic pop
-#endif
+// boost-module (M5 B'): init_stdcat() 与 operator std::error_category const& () const
+// 的定义移入 src/boost_system_extras.cpp — 函数内 static (mutex / std_category 实例) 在
+// gcc 模块管线消费者 TU 以强符号发射 → 多重定义; 移出头部后消费者只调用外部定义,
+// 函数内 static 只在库 TU 单份存在 (语义不变)。
 
 } // namespace system
 } // namespace boost
