@@ -94,18 +94,28 @@ export namespace boost { namespace system { namespace detail {
   using boost::system::detail::is_errc_t;
   using boost::system::detail::is_result;
   using boost::system::detail::is_value_convertible_to;
+#if defined(BOOST_WINDOWS_API)
+  // M6 platform guard: snapshot = mingw flavor; these boost/system/detail entities
+  // exist only under BOOST_WINDOWS_API (system_category_message_win32.hpp / condition).
   using boost::system::detail::local_free;
-  using boost::system::detail::lock_guard;
   using boost::system::detail::message_cp_win32;
+#endif
+  using boost::system::detail::lock_guard;
   using boost::system::detail::reference_to_temporary;
   using boost::system::detail::remove_cvref;
   using boost::system::detail::std_category;
   using boost::system::detail::system_cat_holder;
+#if defined(BOOST_WINDOWS_API)
+  // M6 platform guard: as above.
   using boost::system::detail::system_category_condition_win32;
   using boost::system::detail::system_category_message_win32;
+#endif
   using boost::system::detail::system_error_category;
   using boost::system::detail::system_error_category_message;
+#if defined(BOOST_WINDOWS_API)
+  // M6 platform guard: as above.
   using boost::system::detail::unknown_message_win32;
+#endif
 }}}
 
 export namespace boost { namespace system { namespace errc {
@@ -193,6 +203,7 @@ export namespace boost { namespace system { namespace errc {
   using boost::system::errc::make_error_condition;
 }}}
 
+#if defined(BOOST_WINDOWS_API)
 export namespace boost { namespace system { namespace windows_error {
   using boost::system::windows_error::make_error_code;
   using boost::system::windows_error::windows_error_code;
@@ -249,11 +260,13 @@ export namespace boost { namespace system { namespace windows_error {
   using boost::system::windows_error::windows_error_code::write_protect;
   using boost::system::windows_error::windows_error_code::wrong_disk;
 }}}
+#endif
 
 export namespace boost { namespace variant2 {
   using boost::variant2::in_place_index_t;
 }}
 
+#if defined(_WIN32)
 export namespace boost { namespace winapi {
   using boost::winapi::BOOLEAN_;
   using boost::winapi::BOOL_;
@@ -327,3 +340,4 @@ export namespace boost { namespace winapi {
   using boost::winapi::_SECURITY_ATTRIBUTES;
   using boost::winapi::format_message;
 }}
+#endif

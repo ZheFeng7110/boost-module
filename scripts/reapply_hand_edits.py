@@ -21,15 +21,15 @@ ROOT = Path(__file__).resolve().parent.parent
 def patch(rel, old, new, *, required=True):
     p = ROOT / rel
     s = p.read_text(encoding="utf-8")
+    if new in s:
+        print(f"  skip   {rel} (already applied)")
+        return False
     n = s.count(old)
     if n == 1:
         p.write_text(s.replace(old, new), encoding="utf-8", newline="\n")
         print(f"  patched {rel}")
         return True
     if n == 0:
-        if new in s:
-            print(f"  skip   {rel} (already applied)")
-            return False
         if not required:
             print(f"  skip   {rel} (anchor not present, not required)")
             return False
@@ -44,6 +44,45 @@ def restore_from_git(rel):
         print(f"  restored {rel} (from git, M3 final form)")
     else:
         print(f"  git checkout failed for {rel}: {r.stderr[:200]}", file=sys.stderr)
+
+
+def guard_entity_lines(rel, cond, names):
+    """Wrap each `  using boost::...;` line whose entity appears in `names`
+    (as a ::-delimited segment) in `#if cond` / `#endif`. Idempotent — a line
+    already sitting between a #if/#endif pair is left alone.
+
+    M6: the committed .inc files are a mingw-flavor snapshot, so Windows-only
+    entities (guarded by #if defined(_WIN32) in the upstream headers) must not
+    be exported on POSIX. This mirrors the upstream header condition in the
+    module surface instead of hard-coding per-platform .inc files.
+    """
+    import re
+    p = ROOT / rel
+    lines = p.read_text(encoding="utf-8").splitlines(keepends=True)
+    out = []
+    changed = 0
+    for i, line in enumerate(lines):
+        prev_is_if = bool(out) and out[-1].lstrip().startswith("#if ")
+        next_is_endif = (i + 1 < len(lines)) and lines[i + 1].lstrip().startswith("#endif")
+        if prev_is_if or next_is_endif:
+            out.append(line)
+            continue
+        stripped = line.strip()
+        m = re.fullmatch(r"using boost::([A-Za-z0-9_:]+);", stripped)
+        if m is None:
+            out.append(line)
+            continue
+        segments = m.group(1).split("::")
+        if any(seg in names for seg in segments):
+            out.append(f"#if {cond}\n")
+            out.append(line)
+            out.append("#endif\n")
+            changed += 1
+        else:
+            out.append(line)
+    if changed:
+        p.write_text("".join(out), encoding="utf-8", newline="\n")
+        print(f"  guarded {changed} entity line(s) in {rel}")
 
 
 def main():
@@ -96,6 +135,142 @@ def main():
     patch("src/gen_exports/core.inc",
           "  using boost::core::detail::copysign_impl;",
           "#if defined(__GNUC__)\n  // M3 hand-guard: boost/core/cmath.hpp defines copysign_impl only on gcc-like compilers.\n  using boost::core::detail::copysign_impl;\n#endif")
+    # M6 platform guards: snapshot = mingw flavor; Windows-only entities are absent
+    # on POSIX (or live in a different namespace), so the module TU must not export
+    # them there. Guards mirror the upstream header conditions.
+    patch("src/gen_exports/core.inc",
+          "  using boost::core::detail::sp_thread_sleep;\n  using boost::core::detail::sp_thread_yield;",
+          "#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)\n"
+          "  // M6 platform guard: sp_thread_sleep/yield live in boost::core::detail only on Windows;\n"
+          "  // on POSIX (nanosleep/sched_yield branch of the header) they are declared in boost::core.\n"
+          "  using boost::core::detail::sp_thread_sleep;\n"
+          "  using boost::core::detail::sp_thread_yield;\n"
+          "#else\n"
+          "  using boost::core::sp_thread_sleep;\n"
+          "  using boost::core::sp_thread_yield;\n"
+          "#endif")
+    patch("src/gen_exports/system.inc",
+          "  using boost::system::detail::is_value_convertible_to;\n"
+          "  using boost::system::detail::local_free;\n"
+          "  using boost::system::detail::lock_guard;\n"
+          "  using boost::system::detail::message_cp_win32;\n"
+          "  using boost::system::detail::reference_to_temporary;",
+          "  using boost::system::detail::is_value_convertible_to;\n"
+          "#if defined(BOOST_WINDOWS_API)\n"
+          "  // M6 platform guard: snapshot = mingw flavor; these boost/system/detail entities\n"
+          "  // exist only under BOOST_WINDOWS_API (system_category_message_win32.hpp / condition).\n"
+          "  using boost::system::detail::local_free;\n"
+          "  using boost::system::detail::message_cp_win32;\n"
+          "#endif\n"
+          "  using boost::system::detail::lock_guard;\n"
+          "  using boost::system::detail::reference_to_temporary;")
+    patch("src/gen_exports/system.inc",
+          "  using boost::system::detail::system_cat_holder;\n"
+          "  using boost::system::detail::system_category_condition_win32;\n"
+          "  using boost::system::detail::system_category_message_win32;\n"
+          "  using boost::system::detail::system_error_category;\n"
+          "  using boost::system::detail::system_error_category_message;\n"
+          "  using boost::system::detail::unknown_message_win32;",
+          "  using boost::system::detail::system_cat_holder;\n"
+          "#if defined(BOOST_WINDOWS_API)\n"
+          "  // M6 platform guard: as above.\n"
+          "  using boost::system::detail::system_category_condition_win32;\n"
+          "  using boost::system::detail::system_category_message_win32;\n"
+          "#endif\n"
+          "  using boost::system::detail::system_error_category;\n"
+          "  using boost::system::detail::system_error_category_message;\n"
+          "#if defined(BOOST_WINDOWS_API)\n"
+          "  // M6 platform guard: as above.\n"
+          "  using boost::system::detail::unknown_message_win32;\n"
+          "#endif")
+    patch("src/gen_exports/system.inc",
+          "export namespace boost { namespace system { namespace windows_error {\n"
+          "  using boost::system::windows_error::make_error_code;",
+          "#if defined(BOOST_WINDOWS_API)\n"
+          "export namespace boost { namespace system { namespace windows_error {\n"
+          "  using boost::system::windows_error::make_error_code;")
+    patch("src/gen_exports/system.inc",
+          "  using boost::system::windows_error::windows_error_code::wrong_disk;\n}}}\n\nexport namespace boost { namespace variant2 {",
+          "  using boost::system::windows_error::windows_error_code::wrong_disk;\n}}}\n#endif\n\nexport namespace boost { namespace variant2 {")
+    patch("src/gen_exports/system.inc",
+          "export namespace boost { namespace winapi {\n  using boost::winapi::BOOLEAN_;",
+          "#if defined(_WIN32)\nexport namespace boost { namespace winapi {\n  using boost::winapi::BOOLEAN_;")
+    patch("src/gen_exports/system.inc",
+          "  using boost::winapi::_LARGE_INTEGER;\n  using boost::winapi::_SECURITY_ATTRIBUTES;\n  using boost::winapi::format_message;\n}}",
+          "  using boost::winapi::_LARGE_INTEGER;\n  using boost::winapi::_SECURITY_ATTRIBUTES;\n  using boost::winapi::format_message;\n}}\n#endif")
+
+    # M6: program_options winmain splitter — <boost/program_options/winmain.hpp>
+    # is pulled into the GMF only on Windows.
+    patch("src/gen_exports/program_options.inc",
+          "  using boost::program_options::split_winmain;",
+          "#if defined(_WIN32)\n  // M6 platform guard: winmain.hpp (split_winmain) is Windows-only.\n  using boost::program_options::split_winmain;\n#endif")
+
+    # M6: thread module — mingw snapshot exports Windows-only entities (win32
+    # thread primitives + boost.winapi) that the POSIX GMF include set never
+    # declares. Guard the entirely-windows namespace blocks wholesale, and the
+    # scattered Windows-only entities via guard_entity_lines.
+    patch("src/gen_exports/thread.inc",
+          "export namespace boost { namespace detail { namespace win32 {\n"
+          "  using boost::detail::win32::create_anonymous_event;",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace detail { namespace win32 {\n"
+          "  using boost::detail::win32::create_anonymous_event;")
+    patch("src/gen_exports/thread.inc",
+          "  using boost::detail::win32::system_info;\n"
+          "  using boost::detail::win32::ticks_type;\n"
+          "}}}\n\nexport namespace boost { namespace detail { namespace win32 { namespace detail {",
+          "  using boost::detail::win32::system_info;\n"
+          "  using boost::detail::win32::ticks_type;\n"
+          "}}}\n#endif\n\nexport namespace boost { namespace detail { namespace win32 { namespace detail {")
+    patch("src/gen_exports/thread.inc",
+          "  using boost::detail::win32::detail::gettickcount64_t;\n"
+          "}}}}\n\nexport namespace boost { namespace exception_detail {",
+          "#if defined(_WIN32)\n"
+          "  using boost::detail::win32::detail::gettickcount64_t;\n"
+          "#endif\n"
+          "}}}}\n\nexport namespace boost { namespace exception_detail {")
+    patch("src/gen_exports/thread.inc",
+          "export namespace boost { namespace winapi {\n  using boost::winapi::ACCESS_MASK_;",
+          "#if defined(_WIN32)\nexport namespace boost { namespace winapi {\n  using boost::winapi::ACCESS_MASK_;")
+    patch("src/gen_exports/thread.inc",
+          "  using boost::winapi::open_event;\n  using boost::winapi::open_semaphore;\n}}",
+          "  using boost::winapi::open_event;\n  using boost::winapi::open_semaphore;\n}}\n#endif")
+    guard_entity_lines("src/gen_exports/thread.inc", "defined(_WIN32)", [
+        # boost block — intrusive_ptr is pulled in only via win32 thread headers
+        "intrusive_ptr",
+        # atomics::detail — wait_operations_windows (win32 branch of boost/atomic)
+        "wait_operations_windows",
+        # date_time / posix_time — FILETIME helpers (win32 only)
+        "time_from_ftime",
+        "from_ftime",
+        # this_thread — interruptible_wait / non_interruptible_wait (win32 API wait)
+        "interruptible_wait",
+        "non_interruptible_wait",
+        # boost::detail — win32 thread primitives (once / mutex / interlocked / tss)
+        "allocate_raw_heap_memory",
+        "free_raw_heap_memory",
+        "basic_condition_variable",
+        "basic_cv_list_entry",
+        "basic_recursive_mutex",
+        "basic_recursive_mutex_impl",
+        "basic_recursive_timed_mutex",
+        "basic_timed_mutex",
+        "commit_once_region",
+        "create_once_event",
+        "enter_once_region",
+        "rollback_once_region",
+        "int_to_string",
+        "interlocked_read_acquire",
+        "interlocked_write_release",
+        "intrusive_ptr_add_ref",
+        "intrusive_ptr_release",
+        "name_once_mutex",
+        "once_action",
+        "once_char_type",
+        "once_context",
+        "open_once_event",
+        "underlying_mutex",
+    ])
     patch("src/gen_exports/mp11.inc",
           "  using boost::mp11::detail::mpmf_unwrap;\n  using boost::mp11::detail::mpmf_wrap;",
           "#if !defined(__GNUC__)\n  // M3 hand-guard: mp_map_find.hpp (gcc bug 120161 workaround) defines mpmf_* only outside gcc.\n"

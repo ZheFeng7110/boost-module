@@ -201,8 +201,15 @@ export namespace boost { namespace core { namespace detail {
   using boost::core::detail::popcount_impl;
   using boost::core::detail::sequence_template_name;
   using boost::core::detail::set_template_name;
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+  // M6 platform guard: sp_thread_sleep/yield live in boost::core::detail only on Windows;
+  // on POSIX (nanosleep/sched_yield branch of the header) they are declared in boost::core.
   using boost::core::detail::sp_thread_sleep;
   using boost::core::detail::sp_thread_yield;
+#else
+  using boost::core::sp_thread_sleep;
+  using boost::core::sp_thread_yield;
+#endif
   using boost::core::detail::tn_add_each;
   using boost::core::detail::tn_add_each_impl;
   using boost::core::detail::tn_holder;

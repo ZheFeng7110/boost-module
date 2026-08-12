@@ -175,7 +175,10 @@ export namespace boost { namespace program_options {
   using boost::program_options::reading_file;
   using boost::program_options::required_option;
   using boost::program_options::split_unix;
+#if defined(_WIN32)
+  // M6 platform guard: winmain.hpp (split_winmain) is Windows-only.
   using boost::program_options::split_winmain;
+#endif
   using boost::program_options::store;
   using boost::program_options::strip_prefixes;
   using boost::program_options::to_internal;

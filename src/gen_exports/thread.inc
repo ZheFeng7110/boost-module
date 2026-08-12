@@ -126,7 +126,9 @@ export namespace boost {
   using boost::hash_value;
   using boost::integral_constant;
   using boost::interrupt_and_join_if_joinable;
+#if defined(_WIN32)
   using boost::intrusive_ptr;
+#endif
   using boost::invalid_thread_argument;
   using boost::ipc_atomic;
   using boost::ipc_atomic_flag;
@@ -429,7 +431,9 @@ export namespace boost { namespace atomics { namespace detail {
   using boost::atomics::detail::wait_operations;
   using boost::atomics::detail::wait_operations_emulated;
   using boost::atomics::detail::wait_operations_generic;
+#if defined(_WIN32)
   using boost::atomics::detail::wait_operations_windows;
+#endif
   using boost::atomics::detail::wait_some;
   using boost::atomics::detail::zero_extend;
   using boost::atomics::detail::zero_extend_impl;
@@ -581,7 +585,9 @@ export namespace boost { namespace date_time {
   using boost::date_time::split_timedate_system;
   using boost::date_time::subsecond_duration;
   using boost::date_time::time_duration;
+#if defined(_WIN32)
   using boost::date_time::time_from_ftime;
+#endif
   using boost::date_time::time_is_dst_result;
   using boost::date_time::time_is_dst_result::ambiguous;
   using boost::date_time::time_is_dst_result::invalid_time_label;
@@ -624,26 +630,48 @@ export namespace boost { namespace date_time {
 
 export namespace boost { namespace detail {
   using boost::detail::add_thread_exit_function;
+#if defined(_WIN32)
   using boost::detail::allocate_raw_heap_memory;
+#endif
   using boost::detail::base_future;
+#if defined(_WIN32)
   using boost::detail::basic_condition_variable;
+#endif
+#if defined(_WIN32)
   using boost::detail::basic_cv_list_entry;
+#endif
   using boost::detail::basic_future;
+#if defined(_WIN32)
   using boost::detail::basic_recursive_mutex;
+#endif
+#if defined(_WIN32)
   using boost::detail::basic_recursive_mutex_impl;
+#endif
+#if defined(_WIN32)
   using boost::detail::basic_recursive_timed_mutex;
+#endif
+#if defined(_WIN32)
   using boost::detail::basic_timed_mutex;
+#endif
+#if defined(_WIN32)
   using boost::detail::commit_once_region;
+#endif
   using boost::detail::counter;
   using boost::detail::counter_is_not_zero;
   using boost::detail::counter_is_zero;
+#if defined(_WIN32)
   using boost::detail::create_once_event;
+#endif
   using boost::detail::deduced_type;
   using boost::detail::deduced_type_impl;
   using boost::detail::do_heap_delete;
   using boost::detail::enable_move_utility_emulation_dummy_specialization;
+#if defined(_WIN32)
   using boost::detail::enter_once_region;
+#endif
+#if defined(_WIN32)
   using boost::detail::free_raw_heap_memory;
+#endif
   using boost::detail::future_async_shared_state;
   using boost::detail::future_async_shared_state_base;
   using boost::detail::future_deferred_shared_state;
@@ -654,14 +682,24 @@ export namespace boost { namespace detail {
   using boost::detail::get_tss_data;
   using boost::detail::heap_delete;
   using boost::detail::heap_new;
+#if defined(_WIN32)
   using boost::detail::int_to_string;
+#endif
+#if defined(_WIN32)
   using boost::detail::interlocked_read_acquire;
+#endif
+#if defined(_WIN32)
   using boost::detail::interlocked_write_release;
+#endif
   using boost::detail::internal_chrono_clock;
   using boost::detail::internal_platform_clock;
   using boost::detail::internal_platform_timepoint;
+#if defined(_WIN32)
   using boost::detail::intrusive_ptr_add_ref;
+#endif
+#if defined(_WIN32)
   using boost::detail::intrusive_ptr_release;
+#endif
   using boost::detail::invoke;
   using boost::detail::invoker;
   using boost::detail::invoker_ret;
@@ -676,16 +714,32 @@ export namespace boost { namespace detail {
   using boost::detail::make_tuple_indices;
   using boost::detail::mono_platform_clock;
   using boost::detail::mono_platform_timepoint;
+#if defined(_WIN32)
   using boost::detail::name_once_mutex;
+#endif
   using boost::detail::not_equal;
   using boost::detail::nullary_function;
+#if defined(_WIN32)
   using boost::detail::once_action;
+#endif
+#if defined(_WIN32)
   using boost::detail::once_action::break_;
+#endif
+#if defined(_WIN32)
   using boost::detail::once_action::continue_;
+#endif
+#if defined(_WIN32)
   using boost::detail::once_action::try_;
+#endif
+#if defined(_WIN32)
   using boost::detail::once_char_type;
+#endif
+#if defined(_WIN32)
   using boost::detail::once_context;
+#endif
+#if defined(_WIN32)
   using boost::detail::open_once_event;
+#endif
   using boost::detail::operator!=;
   using boost::detail::operator+;
   using boost::detail::operator-;
@@ -700,7 +754,9 @@ export namespace boost { namespace detail {
   using boost::detail::real_platform_clock;
   using boost::detail::real_platform_timepoint;
   using boost::detail::relocker;
+#if defined(_WIN32)
   using boost::detail::rollback_once_region;
+#endif
   using boost::detail::set_tss_data;
   using boost::detail::shared_state;
   using boost::detail::shared_state_base;
@@ -742,7 +798,9 @@ export namespace boost { namespace detail {
   using boost::detail::tss_cleanup_function;
   using boost::detail::tss_data_node;
   using boost::detail::tuple_indices;
+#if defined(_WIN32)
   using boost::detail::underlying_mutex;
+#endif
   using boost::detail::waiter_for_any_in_seq;
 }}
 
@@ -751,6 +809,7 @@ export namespace boost { namespace detail { namespace thread {
   using boost::detail::thread::cleanup_func_t;
 }}}
 
+#if defined(_WIN32)
 export namespace boost { namespace detail { namespace win32 {
   using boost::detail::win32::create_anonymous_event;
   using boost::detail::win32::create_anonymous_semaphore;
@@ -774,9 +833,12 @@ export namespace boost { namespace detail { namespace win32 {
   using boost::detail::win32::system_info;
   using boost::detail::win32::ticks_type;
 }}}
+#endif
 
 export namespace boost { namespace detail { namespace win32 { namespace detail {
+#if defined(_WIN32)
   using boost::detail::win32::detail::gettickcount64_t;
+#endif
 }}}}
 
 export namespace boost { namespace exception_detail {
@@ -1128,7 +1190,9 @@ export namespace boost { namespace numeric { namespace convdetail {
 }}}
 
 export namespace boost { namespace posix_time {
+#if defined(_WIN32)
   using boost::posix_time::from_ftime;
+#endif
   using boost::posix_time::from_time_t;
   using boost::posix_time::hours;
   using boost::posix_time::int64_time_rep;
@@ -1190,7 +1254,9 @@ export namespace boost { namespace this_thread {
   using boost::this_thread::at_thread_exit;
   using boost::this_thread::disable_interruption;
   using boost::this_thread::get_id;
+#if defined(_WIN32)
   using boost::this_thread::interruptible_wait;
+#endif
   using boost::this_thread::interruption_enabled;
   using boost::this_thread::interruption_point;
   using boost::this_thread::interruption_requested;
@@ -1202,7 +1268,9 @@ export namespace boost { namespace this_thread {
 }}
 
 export namespace boost { namespace this_thread { namespace no_interruption_point {
+#if defined(_WIN32)
   using boost::this_thread::no_interruption_point::non_interruptible_wait;
+#endif
   using boost::this_thread::no_interruption_point::sleep;
   using boost::this_thread::no_interruption_point::sleep_for;
   using boost::this_thread::no_interruption_point::sleep_until;
@@ -1225,6 +1293,7 @@ export namespace boost { namespace thread_detail {
   using boost::thread_detail::void_functor_barrier_reseter;
 }}
 
+#if defined(_WIN32)
 export namespace boost { namespace winapi {
   using boost::winapi::ACCESS_MASK_;
   using boost::winapi::CreateEventA;
@@ -1264,3 +1333,4 @@ export namespace boost { namespace winapi {
   using boost::winapi::open_event;
   using boost::winapi::open_semaphore;
 }}
+#endif
