@@ -1,0 +1,125 @@
+# Boost 1.91.0 C++23 module layer — CI matrix (M6).
+#
+# 编译/测试矩阵 (对应 .agents/plan/boost-mcpp-module-plan.md M6):
+#   windows-llvm-msvc   windows-latest  llvm@22.1.8 → x86_64-windows-msvc   (用 runner 自带 MSVC)
+#   linux-gcc           ubuntu-24.04    gcc@16.1.0  → x86_64-linux-gnu
+#   linux-llvm          ubuntu-24.04    llvm@22.1.8 → x86_64-linux-gnu
+#   macos-llvm          macos-14        llvm@22.1.8 → aarch64-macos
+# (windows gcc/mingw 先不做 — 移交后续里程碑)
+#
+# mcpp 安装: 直接下载 pinned release tarball/zip (GitHub Releases), sha256 校验,
+# 解压到 ~/.mcpp (mcpp 从二进制位置解析 MCPP_HOME), 加 ~/.mcpp/bin 进 PATH。
+# 工具链经 mcpp 自带 xlings 沙箱安装 (~/.mcpp/registry), 由 actions/cache 按 job 缓存。
+
+name: Tests
+
+on:
+  push:
+    branches: [ b1.91.0wdev ]
+  pull_request:
+    branches: [ b1.91.0wdev ]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 与本地开发环境一致 (mcpp 2026.8.11.3) — 发布二进制, 不用编译 mcpp 自身。
+  MCPP_VERSION: "2026.8.11.3"
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-llvm-msvc
+            os: windows-latest
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+          - name: linux-gcc
+            os: ubuntu-24.04
+            toolchain: gcc@16.1.0
+            install: "gcc 16.1.0"
+          - name: linux-llvm
+            os: ubuntu-24.04
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+          - name: macos-llvm
+            os: macos-14
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+    steps:
+      - uses: actions/checkout@v4
+
+      # 缓存 mcpp 沙箱 (xlings + 工具链 payload + 全局 BMI 缓存) — 按 job 分开 key,
+      # 避免 linux-gcc / linux-llvm 之间的 toolchain default (config.toml) 相互污染。
+      - name: Cache mcpp sandbox
+        uses: actions/cache@v4
+        with:
+          path: ~/.mcpp
+          key: mcpp-${{ matrix.os }}-${{ matrix.name }}-v${{ env.MCPP_VERSION }}
+          restore-keys: |
+            mcpp-${{ matrix.os }}-${{ matrix.name }}-
+
+      - name: Install mcpp
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER="$MCPP_VERSION"
+          BASE="https://github.com/mcpp-community/mcpp/releases/download/v${VER}"
+          case "$RUNNER_OS" in
+            Linux)   PLAT="linux-x86_64";   EXT="tar.gz" ;;
+            macOS)   PLAT="macosx-arm64";   EXT="tar.gz" ;;
+            Windows) PLAT="windows-x86_64"; EXT="zip"    ;;
+            *) echo "unsupported runner os: $RUNNER_OS"; exit 1 ;;
+          esac
+          WORK=$(mktemp -d)
+          curl -fsSL -o "$WORK/mcpp.$EXT"        "$BASE/mcpp-${VER}-${PLAT}.${EXT}"
+          curl -fsSL -o "$WORK/mcpp.$EXT.sha256" "$BASE/mcpp-${VER}-${PLAT}.${EXT}.sha256"
+          if command -v sha256sum >/dev/null 2>&1; then
+            actual=$(sha256sum "$WORK/mcpp.$EXT" | awk '{print $1}')
+          else
+            actual=$(shasum -a 256 "$WORK/mcpp.$EXT" | awk '{print $1}')
+          fi
+          expected=$(awk '{print $1}' "$WORK/mcpp.$EXT.sha256")
+          test "$actual" = "$expected" || { echo "sha256 mismatch"; exit 1; }
+          echo "mcpp ${VER} ${PLAT} sha256 verified"
+
+          mkdir -p "$HOME/.mcpp"
+          case "$EXT" in
+            tar.gz) tar -xzf "$WORK/mcpp.$EXT" -C "$HOME/.mcpp" --strip-components=1 ;;
+            zip)
+              unzip -q "$WORK/mcpp.$EXT" -d "$WORK/zip"
+              # zip 内有一层 wrapper 目录 (mcpp-<ver>-<plat>/...), 取其内容
+              cp -R "$WORK/zip"/*/* "$HOME/.mcpp/"
+              ;;
+          esac
+          rm -rf "$WORK"
+          echo "$HOME/.mcpp/bin" >> "$GITHUB_PATH"
+          "$HOME/.mcpp/bin/mcpp" --version
+
+      - name: Install toolchain (${{ matrix.toolchain }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          mcpp toolchain install ${{ matrix.install }}
+          mcpp toolchain default ${{ matrix.toolchain }}
+          mcpp toolchain list
+
+      - name: Build
+        shell: bash
+        run: mcpp build
+
+      - name: Test
+        shell: bash
+        run: mcpp test
+
+      - name: Build & run example (import boost;)
+        shell: bash
+        run: |
+          cd examples
+          mcpp run
