@@ -17,10 +17,10 @@
 [package]
 namespace   = "boost"
 name        = "boost"
-version     = "1.91.0"
+version     = "b1.91.0w0.0.0"
 description = "Boost 1.91.0 vendored + C++23 module layer — import boost.optional; (API spelling unchanged, no headers)"
 license     = "BSL-1.0"
-repo        = "https://github.com/NaAlO2/boost-module"
+repo        = "https://github.com/ZheFeng7110/boost-module"
 
 [build]
 # 模块接口 TU: GMF 内 include 上游头文件, purview 内 export using (src/gen_exports/*.inc)。

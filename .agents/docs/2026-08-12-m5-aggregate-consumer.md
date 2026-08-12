@@ -182,11 +182,6 @@ consumer.cpp + libside.cpp, `export using` 同本仓库方案), 逐项验证:
 
 ## 6. 环境复原
 
-- 全局 `mcpp` 默认 toolchain 恢复为 `llvm@22.1.8` → `x86_64-windows-msvc`。
-- 注意: 调查期间 `config.toml` 的 default 多次**自动跳回 llvm** (mcpp 自身行为);
-  每次 gcc 验证需先 `mcpp toolchain default gcc --target x86_64-windows-gnu`,
-  并核对输出首行 `Resolved gcc@16.1.0 → x86_64-windows-gnu`。
-- gcc 16.1.0 payload 保持原 xim winlibs (ucrt) 版未动; 临时复现工程已清理。
 - vendored 头改动可回退: 重跑 `uv run scripts/import_boost.py` 即还原上游原貌
   (新文件 `src/boost_system_extras.cpp` 需手动删除)。
 
