@@ -15,13 +15,13 @@ static int failures = 0;
 #define CHECK(cond)                                                             \
     do {                                                                        \
         if (!(cond)) {                                                          \
-            std::println("FAIL {}:{}  {}", __FILE__, __LINE__, #cond);          \
+            std::printf("FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond);          \
             ++failures;                                                         \
         }                                                                       \
     } while (0)
 
 static void demo_filesystem() {
-    std::println("== filesystem ==");
+    std::printf("== filesystem ==\n");
     fs::path dir = fs::temp_directory_path() / ("boost_example_" + std::to_string(std::clock()));
     fs::path file = dir / "note.txt";
     boost::system::error_code ec;
@@ -51,11 +51,11 @@ static void demo_filesystem() {
     fs::remove_all(dir, ec);
     CHECK(!ec);
     CHECK(!fs::exists(dir));
-    std::println("  file read/write + directory walk ok");
+    std::printf("  file read/write + directory walk ok\n");
 }
 
 static void demo_json() {
-    std::println("== json ==");
+    std::printf("== json ==\n");
     boost::json::value v = boost::json::parse(R"({"name":"boost","libs":["filesystem","json","regex"],"stars":42})");
     CHECK(v.is_object());
     boost::json::object& o = v.as_object();
@@ -67,11 +67,11 @@ static void demo_json() {
     std::string ser = boost::json::serialize(v);
     CHECK(ser.find("\"stars\":43") != std::string::npos);
     CHECK(boost::json::parse(ser).as_object()["libs"].as_array()[1].as_string() == "json");
-    std::println("  serialize/parse round-trip ok: {}", ser);
+    std::printf("  serialize/parse round-trip ok: %s\n", ser.c_str());
 }
 
 static void demo_regex() {
-    std::println("== regex ==");
+    std::printf("== regex ==\n");
     std::string text("contact user@example.com or admin@boost.org");
     boost::regex re(R"((\w+)@(\w+)\.(\w+))");
     boost::smatch m;
@@ -88,18 +88,18 @@ static void demo_regex() {
     for (boost::sregex_iterator it(text.begin(), text.end(), re), end; it != end; ++it)
         ++count;
     CHECK(count == 2);
-    std::println("  match/replace/iterator ok: {}", out);
+    std::printf("  match/replace/iterator ok: %s\n", out.c_str());
 }
 
 int main() {
-    std::println("import boost; example — build {}", boost::BOOST_VERSION);
+    std::printf("import boost; example - build %d\n", boost::BOOST_VERSION);
     demo_filesystem();
     demo_json();
     demo_regex();
     if (failures == 0) {
-        std::println("all examples passed");
+        std::printf("all examples passed\n");
         return 0;
     }
-    std::println("{} failure(s)", failures);
+    std::printf("%d failure(s)\n", failures);
     return 1;
 }

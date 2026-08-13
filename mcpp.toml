@@ -27,6 +27,7 @@ repo        = "https://github.com/ZheFeng7110/boost-module"
 sources = [
     "src/boost.cppm",
     "src/boost_system_extras.cpp",
+    "src/boost_thread_extras.cpp",
     "src/algorithm.cppm",
     "src/any.cppm",
     "src/chrono.cppm",
