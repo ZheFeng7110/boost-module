@@ -20,11 +20,20 @@
 | M3 | 纯头库模块层 (19 库) + 每库 smoke 测试 | ✅ |
 | M4 | 编译库接入 (8 库) + 28/28 测试 | ✅ |
 | M5 | 汇总模块 `import boost;` 与消费者验证 (含 gcc/mingw 多重定义 B' 修复) | ✅ |
-| M6 | CI 与发布 (含 gcc/mingw 适配: url/thread/variant 修复与全量回归) | ⏳ |
+| M6 | CI 矩阵与三平台适配 (win/linux/mac) 全绿 | ✅ |
+| M7 | 剩余库接入与发布 (被 M8–M14 计划拆分) | ⏳ |
+| M8 | mcpp features 基建 (build.mcpp 动态汇总 + 生成器全库化) | ⏳ |
+| M9 | 纯头库批量接入 (T1a, ~63 库) | ⏳ |
+| M10 | 宏驱动库边界确认 (include-only) | ⏳ |
+| M11 | 编译库批量接入 (T2, 19 库) | ⏳ |
+| M12 | 重型模板库接入 (T1b, ~15 库 opt-in) | ⏳ |
+| M13 | 外部依赖/asm 库 (T4: context/fiber/coroutine/locale 等) | ⏳ |
+| M14 | 发布 (mcpp-index 薄层 + 架构文档 + 发布流程) | ⏳ |
 
-> 风味状态: llvm/msvc 28/28 绿; gcc/mingw 25/28 — M5 已解 regex/system/filesystem 的
-> 模块链接多重定义 (gcc 16.1.0 模块管线对 inline 函数内 static 的发射缺陷), 剩余
-> url/thread/variant 为基线既有失败 (gcc 模块管线另一缺陷与编译器 ICE), 移交 M6 CI 适配。
+> 里程碑 M7 之后见 [`boost-mcpp-all-libs-features-plan.md`](.agents/plan/boost-mcpp-all-libs-features-plan.md):
+> 全库 (155 库) 接入 + mcpp `[features]` 按库选择性构建 (`default-features = false` 自选,
+> `features = ["all"]` 全量); 汇总模块 `import boost;` 由 build.mcpp 动态生成, 恰好
+> re-export 激活的库。
 
 ## 辅助脚本
 
@@ -87,4 +96,5 @@ Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`�
 ## 相关文档
 
 - 计划与里程碑: [`.agents/plan/boost-mcpp-module-plan.md`](.agents/plan/boost-mcpp-module-plan.md)
+- 全库导入 + mcpp features 计划: [`.agents/plan/boost-mcpp-all-libs-features-plan.md`](.agents/plan/boost-mcpp-all-libs-features-plan.md)
 - 设计文档: [`.agents/docs/`](.agents/docs/)
