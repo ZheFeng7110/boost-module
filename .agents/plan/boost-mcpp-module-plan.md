@@ -133,11 +133,29 @@ src/boost.cppm 汇总 (`export import` 27 子模块); examples/ 示例项目 —
 >   url/thread/variant 为基线既有失败 (另一类 GCC 模块 bug 与编译器 ICE), **移交 M6 CI 适配**
 > - 修订: M4 记录 "gcc/mingw 双风味 28/28 全绿" 不实 — 本轮 full suite 实为 5 项失败
 
-### M6 — CI 与发布
-三平台 Actions 矩阵; **gcc/mingw 纳入 CI 门禁并完成适配** — M5 移交的三项基线失败
-(url: BOOST_URL_RETURN_EC 宏静态冲突 / thread: clone_impl 虚拟 thunk 缺失 / variant: gcc ICE)
-在此修复并全量回归 (含 M5 B' 改动回归验证); mcpp-index 薄层 boost.lua 指向 release;
-docs/architecture.md。
+### M6 — CI 矩阵与三平台适配 ✅ 已完成 (2026-08-13)
+GitHub Actions 三平台矩阵 (windows-llvm-msvc / linux-gcc / linux-llvm / macos-llvm) 建立并
+全绿; M5 移交的三项 gcc/mingw 基线失败 (url/thread/variant) 与 CI 暴露的平台问题全部修复。
+
+> 实现与差异详见 [2026-08-13-m6-ci-matrix-and-platform-fixes.md](../docs/2026-08-13-m6-ci-matrix-and-platform-fixes.md):
+> - 修复轮次 5 提交: M6 (POSIX .inc 平台守卫 + filesystem 测试) → M7 (pthread once 伞文件 +
+>   arm64/x86 守卫) → M7b (clone_impl 显式实例化 / variant ICE / mac 异常 catch / libc++ println)
+>   → M7c (extern template 抑制 gcc 消费者 clone_impl 实例化)
+> - 根因分类: mingw 风味快照×POSIX (sp_thread_sleep/system detail/split_winmain/win32 块);
+>   pthread once.cpp 伞文件 (duplicate symbol); macOS arm64 的 gcc_x86 atomic 类 (__GNUC__
+>   clang 兼容陷阱) 与 SSE2 实体; gcc 模块消费者 thunk 缺失 (ELF COMDAT group 冲突);
+>   gcc variant ICE (has_result_type); macOS Mach-O typeinfo 跨边界分裂; libc++ 22.1.8 println
+> - 机制: 该工具链组合不发 GNU depfile — 改 .inc 后必须 `mcpp clean --bmi-cache`
+> - 验证: 四腿 CI 全绿; 本地 llvm/msvc 28/28 + examples 全过; mingw 26/28 (thread 运行
+>   挂起/url 为本地 win32 特有, CI 无 mingw 腿); musl 交叉构建绿 + nm 符号级验证
+> - 遗留: gcc 消费者自定义异常 clone_impl 残余面; macOS 精确异常 catch 以 std::exception
+>   兜底; **release 相关项 (mcpp-index 薄层 / docs/architecture.md) 按用户指定移入 M7**
+
+### M7 — 剩余库接入与发布 (pending)
+将边界外的库全量接入模块层 (当前 27 库; 宏驱动库 preprocessor/mpl/fusion/proto/spirit/
+xpressive/lambda/bind/typeof 等接入策略评估; asio/locale/log/context 等特性宏库的
+feature 里程碑设计)。**release 用户指定等此里程碑完成后再做**: mcpp-index 薄层
+boost.lua 指向 release + docs/architecture.md + 发布流程。
 
 ## 边界与已知限制
 
