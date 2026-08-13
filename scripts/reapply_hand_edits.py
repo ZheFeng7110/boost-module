@@ -205,6 +205,19 @@ def main():
           "  using boost::program_options::split_winmain;",
           "#if defined(_WIN32)\n  // M6 platform guard: winmain.hpp (split_winmain) is Windows-only.\n  using boost::program_options::split_winmain;\n#endif")
 
+    # M7: url module — grammar/detail/charset.hpp defines find_if_pred /
+    # find_if_not_pred only under BOOST_URL_USE_SSE2 (x86 + SSE2); the mingw
+    # x86_64 snapshot carried them, but macOS arm64 (no __SSE2__) fails.
+    patch("src/gen_exports/url.inc",
+          "  using boost::urls::grammar::detail::find_if_not_pred;\n"
+          "  using boost::urls::grammar::detail::find_if_pred;",
+          "#if defined(BOOST_URL_USE_SSE2)\n"
+          "  // M7 platform guard: charset.hpp defines the *_pred SSE2 helpers only under\n"
+          "  // BOOST_URL_USE_SSE2 (x86 with SSE2); absent on arm64 (e.g. macOS).\n"
+          "  using boost::urls::grammar::detail::find_if_not_pred;\n"
+          "  using boost::urls::grammar::detail::find_if_pred;\n"
+          "#endif")
+
     # M6: thread module — mingw snapshot exports Windows-only entities (win32
     # thread primitives + boost.winapi) that the POSIX GMF include set never
     # declares. Guard the entirely-windows namespace blocks wholesale, and the
@@ -283,14 +296,22 @@ def main():
     # core_operations_gcc_atomic, fence_arch_operations_gcc_x86,
     # fence_operations_gcc_atomic); absent under the MSVC ABI.
     for name in ["convert_memory_order_to_gcc",
-                 "core_arch_operations_gcc_x86",
-                 "core_arch_operations_gcc_x86_base",
                  "core_operations_gcc_atomic",
-                 "fence_arch_operations_gcc_x86",
                  "fence_operations_gcc_atomic"]:
         patch("src/gen_exports/thread.inc",
               f"  using boost::atomics::detail::{name};",
               f"#if defined(__GNUC__)\n  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).\n  using boost::atomics::detail::{name};\n#endif")
+    # M7: the *_gcc_x86 backend classes need the same condition as the
+    # boost/atomic gcc_x86 backend (platform.hpp: __GNUC__ && x86 arch). Plain
+    # __GNUC__ broke macOS arm64 (clang defines __GNUC__, but the gcc_aarch64
+    # backend applies); bare __i386__/__x86_64__ would wrongly export them
+    # under the MSVC ABI (clang-cl defines no __GNUC__).
+    for name in ["core_arch_operations_gcc_x86",
+                 "core_arch_operations_gcc_x86_base",
+                 "fence_arch_operations_gcc_x86"]:
+        patch("src/gen_exports/thread.inc",
+              f"  using boost::atomics::detail::{name};",
+              f"#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))\n  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).\n  using boost::atomics::detail::{name};\n#endif")
     patch("src/gen_exports/variant.inc",
           "  using boost::mpl::aux::arity_helper;\n  using boost::mpl::aux::arity_tag;",
           "#if defined(__GNUC__)\n  // M3 hand-guard: gcc-preprocessed mpl headers only (BOOST_MPL_CFG_COMPILER_DIR=gcc).\n"

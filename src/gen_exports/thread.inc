@@ -382,12 +382,12 @@ export namespace boost { namespace atomics { namespace detail {
   using boost::atomics::detail::convert_memory_order_to_gcc;
 #endif
   using boost::atomics::detail::core_arch_operations;
-#if defined(__GNUC__)
-  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).
+#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).
   using boost::atomics::detail::core_arch_operations_gcc_x86;
 #endif
-#if defined(__GNUC__)
-  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).
+#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).
   using boost::atomics::detail::core_arch_operations_gcc_x86_base;
 #endif
   using boost::atomics::detail::core_operations;
@@ -406,8 +406,8 @@ export namespace boost { namespace atomics { namespace detail {
   using boost::atomics::detail::extra_operations_emulated;
   using boost::atomics::detail::extra_operations_generic;
   using boost::atomics::detail::fence_arch_operations;
-#if defined(__GNUC__)
-  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).
+#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).
   using boost::atomics::detail::fence_arch_operations_gcc_x86;
 #endif
   using boost::atomics::detail::fence_operations;

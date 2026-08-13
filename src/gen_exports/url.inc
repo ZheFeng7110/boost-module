@@ -275,8 +275,12 @@ export namespace boost { namespace urls { namespace grammar { namespace detail {
   using boost::urls::grammar::detail::error_cat_type;
   using boost::urls::grammar::detail::find_if;
   using boost::urls::grammar::detail::find_if_not;
+#if defined(BOOST_URL_USE_SSE2)
+  // M7 platform guard: charset.hpp defines the *_pred SSE2 helpers only under
+  // BOOST_URL_USE_SSE2 (x86 with SSE2); absent on arm64 (e.g. macOS).
   using boost::urls::grammar::detail::find_if_not_pred;
   using boost::urls::grammar::detail::find_if_pred;
+#endif
   using boost::urls::grammar::detail::get;
   using boost::urls::grammar::detail::has_find_if;
   using boost::urls::grammar::detail::has_find_if_not;

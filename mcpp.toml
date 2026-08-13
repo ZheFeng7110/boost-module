@@ -86,11 +86,16 @@ flags = [
 ]
 
 # M4: 线程实现按平台互斥 (win32/ 与 pthread/ 定义同名符号)。
+# M7: pthread 侧不能 glob — once.cpp 是伞文件 (内部 #include "./once_atomic.cpp"),
+# 独立编译 once_atomic.cpp 会与 once.cpp 双重定义 (ld: multiple definition)。
 [target.windows.build]
 sources = ["deps/boost/libs/thread/src/win32/*.cpp"]
 
 [target.unix.build]
-sources = ["deps/boost/libs/thread/src/pthread/*.cpp"]
+sources = [
+    "deps/boost/libs/thread/src/pthread/once.cpp",
+    "deps/boost/libs/thread/src/pthread/thread.cpp",
+]
 ldflags = ["-pthread"]
 
 [targets.boost]
