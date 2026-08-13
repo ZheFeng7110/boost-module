@@ -80,6 +80,15 @@ export namespace boost {
   using boost::basic_lockable_adapter;
   using boost::basic_poly_lockable;
   using boost::broken_promise;
+  // M7c: gcc 16.1.0 module consumers emit a partial vtable for clone_impl<T>
+  // (virtual base clone_base) whose thunk slots stay undefined — gcc never
+  // emits the thunks in a module consumer TU. These extern-template
+  // declarations suppress the consumer's implicit instantiation; the complete
+  // vtable + thunks come from the explicit instantiation in
+  // src/boost_thread_extras.cpp (same pattern as boost_system_extras.cpp).
+  extern template class boost::exception_detail::clone_impl<boost::broken_promise>;
+  extern template class boost::exception_detail::clone_impl<boost::unknown_exception>;
+  extern template class boost::exception_detail::clone_impl<boost::exception_detail::std_exception_ptr_wrapper>;
   using boost::call_once;
   using boost::caller_context_t;
   using boost::completion_latch;

@@ -205,6 +205,28 @@ def main():
           "  using boost::program_options::split_winmain;",
           "#if defined(_WIN32)\n  // M6 platform guard: winmain.hpp (split_winmain) is Windows-only.\n  using boost::program_options::split_winmain;\n#endif")
 
+    # M7c: gcc 16.1.0 module consumers emit a partial vtable for clone_impl<T>
+    # (virtual base clone_base) whose thunk slots stay undefined — gcc never
+    # emits the thunks in a module consumer TU (ELF link: undefined reference
+    # to the virtual/non-virtual thunks, cf. linux-gcc CI). extern-template
+    # declarations visible through the module interface suppress the consumer's
+    # implicit instantiation; the complete vtable + thunks come from the
+    # explicit instantiation in src/boost_thread_extras.cpp.
+    patch("src/gen_exports/thread.inc",
+          "  using boost::broken_promise;\n"
+          "  using boost::call_once;",
+          "  using boost::broken_promise;\n"
+          "  // M7c: gcc 16.1.0 module consumers emit a partial vtable for clone_impl<T>\n"
+          "  // (virtual base clone_base) whose thunk slots stay undefined — gcc never\n"
+          "  // emits the thunks in a module consumer TU. These extern-template\n"
+          "  // declarations suppress the consumer's implicit instantiation; the complete\n"
+          "  // vtable + thunks come from the explicit instantiation in\n"
+          "  // src/boost_thread_extras.cpp (same pattern as boost_system_extras.cpp).\n"
+          "  extern template class boost::exception_detail::clone_impl<boost::broken_promise>;\n"
+          "  extern template class boost::exception_detail::clone_impl<boost::unknown_exception>;\n"
+          "  extern template class boost::exception_detail::clone_impl<boost::exception_detail::std_exception_ptr_wrapper>;\n"
+          "  using boost::call_once;")
+
     # M7: url module — grammar/detail/charset.hpp defines find_if_pred /
     # find_if_not_pred only under BOOST_URL_USE_SSE2 (x86 + SSE2); the mingw
     # x86_64 snapshot carried them, but macOS arm64 (no __SSE2__) fails.
