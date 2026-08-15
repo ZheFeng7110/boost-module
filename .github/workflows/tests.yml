@@ -24,8 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # 与本地开发环境一致 (mcpp 2026.8.11.3) — 发布二进制, 不用编译 mcpp 自身。
-  MCPP_VERSION: "2026.8.11.3"
+  # 与本地开发环境一致 (mcpp 2026.8.15.2) — 发布二进制, 不用编译 mcpp 自身。
+  MCPP_VERSION: "2026.8.15.2"
 
 jobs:
   test:
@@ -124,6 +124,10 @@ jobs:
       - name: Build all libraries (--features all)
         shell: bash
         run: mcpp build --features all
+
+      - name: Test all libraries (--features all)
+        shell: bash
+        run: mcpp test --features all
 
       - name: Build & run example (import boost;)
         shell: bash
