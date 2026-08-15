@@ -114,9 +114,16 @@ jobs:
         shell: bash
         run: mcpp build
 
+      # M8: 默认集 = 18 库闭包 (mcpp.toml [features].default)。`mcpp build` 只编译
+      # 激活库; test 模式 DROP 跳过 (设计文档 2026-08-15 §1.1), 故默认 `mcpp test`
+      # 编译全量 src/ 表面 — 27 库全部覆盖。--features all 单独验证全库编译路径。
       - name: Test
         shell: bash
         run: mcpp test
+
+      - name: Build all libraries (--features all)
+        shell: bash
+        run: mcpp build --features all
 
       - name: Build & run example (import boost;)
         shell: bash

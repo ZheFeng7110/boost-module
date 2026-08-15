@@ -3,6 +3,7 @@
 > 日期: 2026-08-13 · 状态: 草稿 · 上游: Boost 1.91.0 (BOOST_VERSION 109100)
 > 前置: [boost-mcpp-module-plan.md](boost-mcpp-module-plan.md) (M0–M6 已完成, 27 库接入, CI 四腿全绿)
 > 本次范围: 全部 155 个库的接入方案 + mcpp features 选择性构建; 用户决策记录于 §5
+> 进度: **M8 done (2026-08-15)** — features 基建落地, 27 库全部迁入 feature, build.mcpp 动态汇总
 
 ## 0. 目标
 
@@ -138,11 +139,13 @@ boost.boost = { path = "..", features = ["all"] }
 
 ## 4. 里程碑
 
-### M8 — Features 基建 + 生成器全库化 (pending)
-- build.mcpp 生成汇总模块 spike (扫描/打包/消费者 import 三连验证) — 最高风险项, 首日做
-- gen_features.py + mcpp.toml 重构 (27 库全部迁入 feature, 结构如上)
-- 默认集改为 18 库闭包; 原 9 库测试移入 `--features` 组
-- 验证: 默认 `mcpp build/test` + examples 全绿; `--features all` 27 库全绿; 消费者 `default-features=false` probe 绿
+### M8 — Features 基建 + 生成器全库化 (done)
+- ✅ build.mcpp 生成汇总模块 spike (扫描/打包/消费者 import 三连验证) — 见设计文档 2026-08-15 §1
+- ✅ gen_features.py + mcpp.toml 重构 (27 库全部迁入 feature) — 每库 feature = sources (`.cppm` + 编译 TU globs) + implies (模块 import 边); base `[build].sources` 保留全部 per-lib glob (实测 `sources=[]` 触发 src/** 推断会破坏 test 模式分组, 见设计文档 §1.1)
+- ✅ 默认集改为 18 库闭包 (any/algorithm/chrono/core/filesystem/io/iterator/json/mp11/optional/range/regex/system/thread/tuple/type_traits/variant/variant2); 其余 9 库 opt-in (container_hash/endian/rational/scope/scope_exit/stacktrace/static_string/program_options/url)
+- ✅ 静态 src/boost.cppm 删除, 由 build.mcpp 按激活 feature 动态生成 (import boost; 恰好 re-export 激活库)
+- ✅ 验证: 默认 `mcpp build/test` + examples 全绿 (thread/url 为 M6 §5 已知 mingw 本地问题, 与改造前基线一致); `--features all` 27 库全绿; 消费者 `default-features=false` probe 绿 (仅 optional/json + implies 编译)
+- 设计文档: `.agents/docs/2026-08-15-m8-mcpp-features-infra.md`
 
 ### M9 — 纯头库批量接入 (T1a, ~63 库)
 - 每库: 生成 `.cppm/.inc/.deps` → clang++ gate → 裁剪/curated → 审计手编 → smoke 测试 (每库 1 文件, import + 2~3 代表性实体)

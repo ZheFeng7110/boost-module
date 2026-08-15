@@ -22,7 +22,7 @@
 | M5 | 汇总模块 `import boost;` 与消费者验证 (含 gcc/mingw 多重定义 B' 修复) | ✅ |
 | M6 | CI 矩阵与三平台适配 (win/linux/mac) 全绿 | ✅ |
 | M7 | 剩余库接入与发布 (被 M8–M14 计划拆分) | ⏳ |
-| M8 | mcpp features 基建 (build.mcpp 动态汇总 + 生成器全库化) | ⏳ |
+| M8 | mcpp features 基建 (build.mcpp 动态汇总 + 生成器全库化) | ✅ |
 | M9 | 纯头库批量接入 (T1a, ~63 库) | ⏳ |
 | M10 | 宏驱动库边界确认 (include-only) | ⏳ |
 | M11 | 编译库批量接入 (T2, 19 库) | ⏳ |
@@ -34,6 +34,35 @@
 > 全库 (155 库) 接入 + mcpp `[features]` 按库选择性构建 (`default-features = false` 自选,
 > `features = ["all"]` 全量); 汇总模块 `import boost;` 由 build.mcpp 动态生成, 恰好
 > re-export 激活的库。
+
+## 按库选择性构建 (M8 mcpp features)
+
+每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
+
+- **默认集** = 18 库闭包（`[features].default`）：`mcpp build` / `mcpp test` 覆盖
+  any/algorithm/chrono/core/filesystem/io/iterator/json/mp11/optional/range/regex/system/
+  thread/tuple/type_traits/variant/variant2。
+- **opt-in 库**：container_hash/endian/rational/scope/scope_exit/stacktrace/static_string/
+  program_options/url 需显式激活：`mcpp build --features container_hash,...`。
+- **全量**：`mcpp build --features all`（27 库全部编译）。
+
+消费者侧（path dep 用法）：
+
+```toml
+# 默认: 核心 18 库
+[dependencies]
+boost.boost = { path = ".." }
+
+# 只选若干库 (default-features = false 关闭默认集)
+boost.boost = { path = "..", default-features = false, features = ["optional", "json"] }
+
+# 全量
+boost.boost = { path = "..", features = ["all"] }
+```
+
+`import boost;`（build.mcpp 动态生成的汇总模块）恰好 re-export 当前激活的库；
+零激活时是合法空壳。详见
+[`.agents/docs/2026-08-15-m8-mcpp-features-infra.md`](.agents/docs/2026-08-15-m8-mcpp-features-infra.md)。
 
 ## 辅助脚本
 
@@ -52,6 +81,7 @@ uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs
 uv run scripts/gen_exports.py                        # 生成全部 27 库的导出列表
 uv run scripts/gen_exports.py --libs optional system --emit-cppm
 uv run scripts/reapply_hand_edits.py                 # 重生成后重放 M3/M4 手编 (.cppm 偏离 + .inc 平台守卫)
+uv run scripts/gen_features.py                       # 重新生成 mcpp.toml 的 [features] 块 + scripts/features.lst
 uv run scripts/gen_audit.py                          # static-inline / 内部链接审计
 uv run scripts/import_boost.py                       # 重新导入官方 boost tarball
 ```
@@ -67,6 +97,10 @@ uv run scripts/import_boost.py                       # 重新导入官方 boost 
   依赖闭包（如 filesystem 连带 system::error_code）→ 跨模块去重（first wins）→ 产出
   `src/gen_exports/<lib>.inc`（`export namespace boost { using ...; }` 列表）、`*.deps`
   （`export import` 提示）、`src/<lib>.cppm` 草稿。
+- `scripts/gen_features.py` — 由 `libs.json` + `src/gen_exports/*.deps` 生成
+  `mcpp.toml` 的 `[features]` 块（每库一个 feature，`sources` = 该库 `.cppm` + 编译库
+  TU globs，`implies` = 模块 import 边）与 `scripts/features.lst`（build.mcpp 消费）。
+  默认集 = 18 库闭包，其余 9 库 opt-in（`--features <库>` 显式激活）。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
   （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
