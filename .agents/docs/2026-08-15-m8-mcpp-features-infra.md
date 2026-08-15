@@ -119,12 +119,18 @@ int main() {
     std::string body = "export module boost;\n";
     for (lib : features.lst)
         if (mcpp::has_feature(lib)) body += "export import boost." + lib + ";\n";
-    auto out = fs::path(mcpp::out_dir()) / "boost.cppm";
+    auto out = fs::path(mcpp::manifest_dir()) / "generated" / "boost.cppm";
     mtime 稳定写 (内容不变不 touch);
     mcpp::source(out.string());          // 绝对路径
     mcpp::rerun_if_changed("scripts/features.lst");
 }
 ```
+
+> 生成位置为项目根 `generated/boost.cppm` (gitignore) 而非 `MCPP_OUT_DIR`:
+> `[lib].path = "generated/boost.cppm"` 显式声明 lib root, 消除 validate.cppm
+> 的 "without conventional lib root 'src/boost.cppm'" warning (src/boost.cppm
+> 已删, 默认约定失效)。`source=` 不按 dep/root 重写路径, 故用 MCPP_MANIFEST_DIR
+> 绝对路径, 两种身份 (root CI / path dep) 都解析到同一项目根。
 
 语义: `import boost;` 恰好 re-export 激活库。零激活生成空壳。删除静态
 `src/boost.cppm`。

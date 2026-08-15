@@ -179,5 +179,12 @@ sources = ["!deps/boost/libs/thread/src/pthread/**"]
 sources = ["!deps/boost/libs/thread/src/win32/**"]
 ldflags = ["-pthread"]
 
+# M8: src/boost.cppm 已删 (汇总模块由 build.mcpp 生成到 generated/boost.cppm)。
+# 显式声明 lib root — validate.cppm 的 "without conventional lib root" warning
+# 检查默认约定 src/<package-tail>.cppm (= src/boost.cppm, 已不存在), 这里指向
+# build.mcpp 在扫描前生成的固定文件, 消除 warning。generated/ 已 gitignore。
+[lib]
+path = "generated/boost.cppm"
+
 [targets.boost]
 kind = "lib"

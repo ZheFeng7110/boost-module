@@ -11,9 +11,13 @@
 // it emits `export import boost.<lib>;`. Zero active libs → a valid empty shell
 // (`export module boost;` with no imports).
 //
-// The file is written into MCPP_OUT_DIR and selected with mcpp::source() using
-// the ABSOLUTE path — correct in both roles (root package CI and path
-// dependency), per docs/07-build-mcpp.md "emit an absolute path".
+// The file is written into <project-root>/generated/boost.cppm (a fixed,
+// gitignored location) and selected with mcpp::source() using the ABSOLUTE
+// path (MCPP_MANIFEST_DIR is the project root in both roles — root package CI
+// and path dependency). Writing a fixed location rather than MCPP_OUT_DIR lets
+// mcpp.toml declare `[lib].path = "generated/boost.cppm"`, which satisfies the
+// "lib target without conventional lib root" check (validate.cppm) that would
+// otherwise warn because src/boost.cppm was deleted.
 
 #include <cstdio>
 #include <fstream>
@@ -29,9 +33,9 @@ int main()
 {
     namespace fs = std::filesystem;
 
-    const std::string outDir = mcpp::out_dir();
-    if (outDir.empty()) {
-        std::fputs("build.mcpp: MCPP_OUT_DIR not set\n", stderr);
+    const std::string manifestDir = mcpp::manifest_dir();
+    if (manifestDir.empty()) {
+        std::fputs("build.mcpp: MCPP_MANIFEST_DIR not set\n", stderr);
         return 1;
     }
 
@@ -52,7 +56,9 @@ int main()
             body += "export import boost." + lib + ";\n";
     }
 
-    const fs::path out = fs::path(outDir) / "boost.cppm";
+    const fs::path out = fs::path(manifestDir) / "generated" / "boost.cppm";
+    std::error_code ec;
+    fs::create_directories(out.parent_path(), ec);
     std::string existing;
     {
         std::ifstream in(out);
