@@ -24,8 +24,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # 与本地开发环境一致 (mcpp 2026.8.15.2) — 发布二进制, 不用编译 mcpp 自身。
-  MCPP_VERSION: "2026.8.15.2"
+  # 与本地开发环境一致 (mcpp 2026.8.17.1) — 发布二进制, 不用编译 mcpp 自身。
+  MCPP_VERSION: "2026.8.17.1"
 
 jobs:
   test:
