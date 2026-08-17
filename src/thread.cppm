@@ -43,12 +43,18 @@ module;
 
 export module boost.thread;
 
+export import boost.assert;
 export import boost.chrono;
+export import boost.config;
 export import boost.core;
 export import boost.io;
 export import boost.optional;
+export import boost.smart_ptr;
 export import boost.system;
+export import boost.throw_exception;
 export import boost.type_traits;
+export import boost.utility;
+export import boost.winapi;
 
 #include "gen_exports/thread.inc"
 

@@ -147,10 +147,20 @@ boost.boost = { path = "..", features = ["all"] }
 - ✅ 验证: 默认 `mcpp build/test` + examples 全绿 (thread/url 为 M6 §5 已知 mingw 本地问题, 与改造前基线一致); `--features all` 27 库全绿; 消费者 `default-features=false` probe 绿 (仅 optional/json + implies 编译)
 - 设计文档: `.agents/docs/2026-08-15-m8-mcpp-features-infra.md`
 
-### M9 — 纯头库批量接入 (T1a, ~63 库)
-- 每库: 生成 `.cppm/.inc/.deps` → clang++ gate → 裁剪/curated → 审计手编 → smoke 测试 (每库 1 文件, import + 2~3 代表性实体)
-- 平台守卫实体按 M6 模式进 `.inc` #if 守卫; 跨库 first-wins 归属变动 → 全量重生成 + 门禁 + reapply 重放
-- 验证: 分组 `mcpp test --features <批>` 全绿 + `--features all` 冒烟
+### M9 — 纯头库批量接入 (T1a, ~63 库) ✅ 已完成 (2026-08-17)
+- 58 库接入 (计划 "~63" 以生成器结果收敛): align/array/assert/assign/bimap/
+  bloom/callable_traits/circular_buffer/compat/concept_check/config/convert/
+  crc/decimal/describe/dll/dynamic_bitset/flyweight/format/function/functional/
+  hash2/heap/histogram/icl/integer/intrusive/leaf/lexical_cast/lockfree/logic/
+  move/multi_array/multi_index/openmethod/outcome/parser/pfr/poly_collection/
+  pool/property_map/property_tree/ptr_container/ratio/safe_numerics/signals2/
+  smart_ptr/sort/statechart/stl_interfaces/throw_exception/tokenizer/type_index/
+  unordered/utility/uuid/winapi/yap
+- 排除与降级: conversion (无头 stub) / static_assert (纯宏 + 模块名含关键字
+  非法) / hof + units (公共 API 为 internal-linkage constexpr, 不可导出) →
+  include-only; 每库平台守卫进 .inc; 全量重生成 + 门禁 + reapply 重放
+- 验证: 88/88 测试全绿 (llvm/msvc), 默认集/全量 build + examples 全过
+- 设计文档: `.agents/docs/2026-08-17-m9-t1a-header-only-libs.md`
 
 ### M10 — 宏驱动库边界确认 (T3, ~19 库)
 - gen_audit 宏面统计核对名单; 文档记录 include-only 用法 (macros.hpp 旁路头不扩展)

@@ -4,6 +4,7 @@ module;
 
 export module boost.url;
 
+export import boost.assert;
 export import boost.core;
 export import boost.optional;
 export import boost.system;

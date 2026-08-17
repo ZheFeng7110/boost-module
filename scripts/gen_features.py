@@ -33,15 +33,22 @@ LIBS_JSON = ROOT / "scripts" / "libs.json"
 DEPS_DIR = ROOT / "src" / "gen_exports"
 FEATURES_LST = ROOT / "scripts" / "features.lst"
 
-# M3 header-only libs, then M4 compiled libs (same order as boost_common.py).
-LIBS = [
-    "optional", "variant", "variant2", "any", "core", "container_hash",
-    "mp11", "static_string", "scope", "scope_exit", "type_traits",
-    "algorithm", "iterator", "range", "io", "rational", "endian",
-    "tuple", "system",
-    "filesystem", "regex", "thread", "chrono", "program_options",
-    "stacktrace", "json", "url",
-]
+# The full module-library list — derived from boost_common.TARGET_LIBS (which
+# knows the tier tables). boost_common has no hard dependency on libclang at
+# import time, so plain `uv run python scripts/gen_features.py` works.
+sys.path.insert(0, str(ROOT / "scripts"))
+try:
+    import boost_common as bc
+    LIBS = list(bc.TARGET_LIBS)
+except Exception:
+    LIBS = [
+        "optional", "variant", "variant2", "any", "core", "container_hash",
+        "mp11", "static_string", "scope", "scope_exit", "type_traits",
+        "algorithm", "iterator", "range", "io", "rational", "endian",
+        "tuple", "system",
+        "filesystem", "regex", "thread", "chrono", "program_options",
+        "stacktrace", "json", "url",
+    ]
 
 # Default feature set = 18-lib closure (plan §3.2). The closure is computed from
 # .deps below and asserted to be closed before writing; this is the candidate list.

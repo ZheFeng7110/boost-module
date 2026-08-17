@@ -8,7 +8,9 @@ module;
 
 export module boost.system;
 
+export import boost.assert;
 export import boost.variant2;
+export import boost.winapi;
 
 #include "gen_exports/system.inc"
 

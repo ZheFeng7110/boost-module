@@ -1,6 +1,12 @@
+boost.assert
 boost.chrono
+boost.config
 boost.core
 boost.io
 boost.optional
+boost.smart_ptr
 boost.system
+boost.throw_exception
 boost.type_traits
+boost.utility
+boost.winapi

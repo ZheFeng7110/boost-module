@@ -6,5 +6,7 @@ module;
 
 export module boost.stacktrace;
 
+export import boost.config;
+
 #include "gen_exports/stacktrace.inc"
 

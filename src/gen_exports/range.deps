@@ -1,5 +1,12 @@
+boost.array
+boost.assert
+boost.concept_check
+boost.config
 boost.core
+boost.functional
 boost.iterator
 boost.optional
+boost.regex
 boost.tuple
 boost.type_traits
+boost.utility

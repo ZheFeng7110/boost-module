@@ -1,1 +1,4 @@
+boost.assert
+boost.concept_check
+boost.config
 boost.type_traits

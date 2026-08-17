@@ -126,12 +126,14 @@ def main():
           "// own. (Clang has no such issue; tracked as a gcc bug for M6 CI.)\n")
 
     # ---- .inc platform guards (M3 §5) ----
-    patch("src/gen_exports/core.inc",
+    # M9: int128_type/uint128_type are declared in boost/config/suffix.hpp, so
+    # with boost.config as a module they moved from core.inc to config.inc.
+    patch("src/gen_exports/config.inc",
           "  using boost::int128_type;",
-          "#if defined(BOOST_HAS_INT128)\n  // M3 hand-guard: suffix.hpp defines int128_type only where BOOST_HAS_INT128.\n  using boost::int128_type;\n#endif")
-    patch("src/gen_exports/core.inc",
+          "#if defined(BOOST_HAS_INT128)\n  // M3 hand-guard (M9: moved to config.inc): suffix.hpp defines int128_type only where BOOST_HAS_INT128.\n  using boost::int128_type;\n#endif")
+    patch("src/gen_exports/config.inc",
           "  using boost::uint128_type;",
-          "#if defined(BOOST_HAS_INT128)\n  // M3 hand-guard: suffix.hpp defines uint128_type only where BOOST_HAS_INT128.\n  using boost::uint128_type;\n#endif")
+          "#if defined(BOOST_HAS_INT128)\n  // M3 hand-guard (M9: moved to config.inc): suffix.hpp defines uint128_type only where BOOST_HAS_INT128.\n  using boost::uint128_type;\n#endif")
     patch("src/gen_exports/core.inc",
           "  using boost::core::detail::copysign_impl;",
           "#if defined(__GNUC__)\n  // M3 hand-guard: boost/core/cmath.hpp defines copysign_impl only on gcc-like compilers.\n  using boost::core::detail::copysign_impl;\n#endif")
@@ -192,12 +194,6 @@ def main():
     patch("src/gen_exports/system.inc",
           "  using boost::system::windows_error::windows_error_code::wrong_disk;\n}}}\n\nexport namespace boost { namespace variant2 {",
           "  using boost::system::windows_error::windows_error_code::wrong_disk;\n}}}\n#endif\n\nexport namespace boost { namespace variant2 {")
-    patch("src/gen_exports/system.inc",
-          "export namespace boost { namespace winapi {\n  using boost::winapi::BOOLEAN_;",
-          "#if defined(_WIN32)\nexport namespace boost { namespace winapi {\n  using boost::winapi::BOOLEAN_;")
-    patch("src/gen_exports/system.inc",
-          "  using boost::winapi::_LARGE_INTEGER;\n  using boost::winapi::_SECURITY_ATTRIBUTES;\n  using boost::winapi::format_message;\n}}",
-          "  using boost::winapi::_LARGE_INTEGER;\n  using boost::winapi::_SECURITY_ATTRIBUTES;\n  using boost::winapi::format_message;\n}}\n#endif")
 
     # M6: program_options winmain splitter — <boost/program_options/winmain.hpp>
     # is pulled into the GMF only on Windows.
@@ -240,6 +236,141 @@ def main():
           "  using boost::urls::grammar::detail::find_if_pred;\n"
           "#endif")
 
+    # M9: decimal — the mingw snapshot carries 128-bit / 80-bit-long-double
+    # entities that the MSVC ABI never declares (BOOST_DECIMAL_HAS_INT128 is
+    # off under _MSC_VER, and MSVC long double is 53-bit so the
+    # LDBL_MANT_DIG==64 branch is absent). Guards mirror the upstream header
+    # conditions in decimal/detail/config.hpp / bit_layouts.hpp.
+    patch("src/gen_exports/decimal.inc",
+          "  using boost::decimal::detail::builtin_int128_t;\n"
+          "  using boost::decimal::detail::builtin_uint128_t;",
+          "#if defined(BOOST_DECIMAL_HAS_INT128)\n"
+          "  // M9 platform guard: config.hpp defines the __int128 typedefs only where\n"
+          "  // BOOST_DECIMAL_HAS_INT128 (off under the MSVC ABI).\n"
+          "  using boost::decimal::detail::builtin_int128_t;\n"
+          "  using boost::decimal::detail::builtin_uint128_t;\n"
+          "#endif")
+    patch("src/gen_exports/decimal.inc",
+          "  using boost::decimal::detail::ieee754_binary80;",
+          "#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384\n"
+          "  // M9 platform guard: bit_layouts.hpp defines ieee754_binary80 only for 80-bit\n"
+          "  // long double (x86-64 gcc/mingw); MSVC long double is 53-bit.\n"
+          "  using boost::decimal::detail::ieee754_binary80;\n"
+          "#endif")
+    patch("src/gen_exports/decimal.inc",
+          "  using boost::decimal::detail::impl::builtin_128_pow10;",
+          "#if defined(BOOST_DECIMAL_HAS_INT128)\n"
+          "  // M9 platform guard: power_tables.hpp defines builtin_128_pow10 only under\n"
+          "  // BOOST_DECIMAL_HAS_INT128.\n"
+          "  using boost::decimal::detail::impl::builtin_128_pow10;\n"
+          "#endif")
+
+    # M9: per-lib MSVC-flavor guards — the mingw snapshot carries entities
+    # that the MSVC ABI never declares (compiler-specific branches). Guards
+    # mirror the upstream header conditions.
+    # dll: the itanium demangling parser (dll/detail/demangling/itanium.hpp)
+    # is selected only outside _MSC_VER (ctor_dtor.hpp).
+    patch("src/gen_exports/dll.inc",
+          "  using boost::dll::detail::parser::arg_list;\n"
+          "  using boost::dll::detail::parser::const_rule;\n"
+          "  using boost::dll::detail::parser::const_rule_impl;\n"
+          "  using boost::dll::detail::parser::dummy;\n"
+          "  using boost::dll::detail::parser::parse_type;\n"
+          "  using boost::dll::detail::parser::parse_type_helper;\n"
+          "  using boost::dll::detail::parser::pure_type;\n"
+          "  using boost::dll::detail::parser::reference_rule;\n"
+          "  using boost::dll::detail::parser::reference_rule_impl;\n"
+          "  using boost::dll::detail::parser::type_name;\n"
+          "  using boost::dll::detail::parser::volatile_rule;\n"
+          "  using boost::dll::detail::parser::volatile_rule_impl;",
+          "#if !defined(_MSC_VER)\n"
+          "  // M9 platform guard: the itanium demangling parser (demangling/itanium.hpp)\n"
+          "  // is selected only outside _MSC_VER (dll/detail/ctor_dtor.hpp).\n"
+          "  using boost::dll::detail::parser::arg_list;\n"
+          "  using boost::dll::detail::parser::const_rule;\n"
+          "  using boost::dll::detail::parser::const_rule_impl;\n"
+          "  using boost::dll::detail::parser::dummy;\n"
+          "  using boost::dll::detail::parser::parse_type;\n"
+          "  using boost::dll::detail::parser::parse_type_helper;\n"
+          "  using boost::dll::detail::parser::pure_type;\n"
+          "  using boost::dll::detail::parser::reference_rule;\n"
+          "  using boost::dll::detail::parser::reference_rule_impl;\n"
+          "  using boost::dll::detail::parser::type_name;\n"
+          "  using boost::dll::detail::parser::volatile_rule;\n"
+          "  using boost::dll::detail::parser::volatile_rule_impl;\n"
+          "#endif")
+    # functional / poly_collection: gcc-preprocessed mpl vector/map aux headers
+    # (BOOST_MPL_CFG_COMPILER_DIR=gcc, set under __GNUC__ — same pattern as the
+    # M3 variant.inc guards).
+    patch("src/gen_exports/functional.inc",
+          "  using boost::mpl::v_at_impl;\n"
+          "  using boost::mpl::v_item;\n"
+          "  using boost::mpl::v_iter;\n"
+          "  using boost::mpl::v_mask;",
+          "#if defined(__GNUC__)\n"
+          "  // M9 platform guard: gcc-preprocessed mpl vector headers only.\n"
+          "  using boost::mpl::v_at_impl;\n"
+          "  using boost::mpl::v_item;\n"
+          "#endif\n"
+          "  using boost::mpl::v_iter;\n"
+          "#if defined(__GNUC__)\n"
+          "  using boost::mpl::v_mask;\n"
+          "#endif")
+    patch("src/gen_exports/poly_collection.inc",
+          "  using boost::mpl::item_by_order_impl;",
+          "#if defined(__GNUC__)\n"
+          "  // M9 platform guard: gcc-preprocessed mpl map headers only.\n"
+          "  using boost::mpl::item_by_order_impl;\n"
+          "#endif")
+    # intrusive: builtin_clz_dispatch — the __GNUC__ branch of the BSR
+    # intrinsic chain (intrusive/detail/math.hpp).
+    patch("src/gen_exports/intrusive.inc",
+          "  using boost::intrusive::detail::builtin_clz_dispatch;",
+          "#if defined(__GNUC__)\n"
+          "  // M9 platform guard: math.hpp defines builtin_clz_dispatch only in the\n"
+          "  // __GNUC__ branch of the BSR intrinsic chain.\n"
+          "  using boost::intrusive::detail::builtin_clz_dispatch;\n"
+          "#endif")
+    # dll: demangle_symbol is part of the itanium demangling surface (only
+    # outside _MSC_VER).
+    patch("src/gen_exports/dll.inc",
+          "  using boost::dll::experimental::demangle_symbol;",
+          "#if !defined(_MSC_VER)\n"
+          "  // M9 platform guard: demangle_symbol comes from demangling/itanium.hpp.\n"
+          "  using boost::dll::experimental::demangle_symbol;\n"
+          "#endif")
+    # range: `using std::random_shuffle;` — std::random_shuffle was removed in
+    # C++17; only libstdc++ still ships it (mingw gate passes), MSVC STL and
+    # libc++ do not.
+    patch("src/gen_exports/range.inc",
+          "  using std::random_shuffle;",
+          "#if defined(__GLIBCXX__)\n"
+          "  // M9 platform guard: std::random_shuffle was removed in C++17; only\n"
+          "  // libstdc++ (mingw/linux-gcc) still provides it.\n"
+          "  using std::random_shuffle;\n"
+          "#endif")
+    # thread: boost::make_signed/make_unsigned reach the thread GMF only via
+    # atomic/detail/type_traits/make_signed.hpp, which pulls
+    # boost/type_traits/make_signed.hpp only under BOOST_HAS_INT128 (under the
+    # MSVC ABI it uses std::make_signed instead).
+    patch("src/gen_exports/thread.inc",
+          "  using boost::make_signed;\n"
+          "  using boost::make_strict_lock;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M9 platform guard: boost::make_signed is declared only where\n"
+          "  // BOOST_HAS_INT128 (atomic/detail/type_traits/make_signed.hpp); under the\n"
+          "  // MSVC ABI the atomic headers use std::make_signed instead.\n"
+          "  using boost::make_signed;\n"
+          "#endif\n"
+          "  using boost::make_strict_lock;")
+    patch("src/gen_exports/thread.inc",
+          "  using boost::make_unsigned;\n"
+          "  using boost::memory_order;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  using boost::make_unsigned;\n"
+          "#endif\n"
+          "  using boost::memory_order;")
+
     # M6: thread module — mingw snapshot exports Windows-only entities (win32
     # thread primitives + boost.winapi) that the POSIX GMF include set never
     # declares. Guard the entirely-windows namespace blocks wholesale, and the
@@ -264,12 +395,6 @@ def main():
           "  using boost::detail::win32::detail::gettickcount64_t;\n"
           "#endif\n"
           "}}}}\n\nexport namespace boost { namespace exception_detail {")
-    patch("src/gen_exports/thread.inc",
-          "export namespace boost { namespace winapi {\n  using boost::winapi::ACCESS_MASK_;",
-          "#if defined(_WIN32)\nexport namespace boost { namespace winapi {\n  using boost::winapi::ACCESS_MASK_;")
-    patch("src/gen_exports/thread.inc",
-          "  using boost::winapi::open_event;\n  using boost::winapi::open_semaphore;\n}}",
-          "  using boost::winapi::open_event;\n  using boost::winapi::open_semaphore;\n}}\n#endif")
     guard_entity_lines("src/gen_exports/thread.inc", "defined(_WIN32)", [
         # boost block — intrusive_ptr is pulled in only via win32 thread headers
         "intrusive_ptr",

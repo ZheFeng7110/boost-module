@@ -1,4 +1,9 @@
+boost.assert
+boost.concept_check
+boost.config
 boost.core
 boost.mp11
 boost.optional
+boost.tuple
 boost.type_traits
+boost.utility

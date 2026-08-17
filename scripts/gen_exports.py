@@ -57,6 +57,19 @@ EXTRA_DEFINES = {
 # pulls the .ipp implementation declarations).
 GMF_OVERRIDE = {
     "json": ["boost/json/debug_printers.hpp", "boost/json.hpp"],
+    # outcome: the experimental/status-code subtree (system_code2 etc., marked
+    # EXPERIMENTAL upstream) redeclares Win32 APIs (FormatMessageW, ...) in
+    # extern "C" and conflicts with the mingw SDK once the whole outcome header
+    # set lands in one TU. Keep the module GMF to the supported (non-
+    # experimental) surface; the experimental headers remain include-only.
+    "outcome": ["boost/outcome.hpp"] + [
+        "boost/outcome/{}.hpp".format(h) for h in (
+            "bad_access", "basic_outcome", "basic_result", "boost_outcome",
+            "boost_result", "config", "convert", "coroutine_support",
+            "iostream_support", "iostream_support_result", "outcome",
+            "result", "std_outcome", "std_result", "success_failure",
+            "trait", "try", "utils")
+    ],
 }
 
 EXPORT_KINDS = (
@@ -211,6 +224,21 @@ def collect_candidates(lib, tu, file_to_lib, usr_index):
         f = bc.cursor_file(cursor)
         if f is None:
             return
+        # Ownership follows the DEFINITION, not the first declaration: a
+        # forward declaration in another lib's header (e.g. class rational
+        # forward-declared in boost/integer/common_factor_rt.hpp) must not let
+        # that lib claim the entity's USR (M9: integer claimed boost::rational
+        # this way and rational lost it). Resolve to the definition when one
+        # exists elsewhere.
+        try:
+            if not cursor.is_definition():
+                d = cursor.get_definition()
+                if d is not None and d != cursor:
+                    df = bc.cursor_file(d)
+                    if df is not None:
+                        f = df
+        except Exception:
+            pass
         home = bc.home_lib_of_file(f, file_to_lib)
         if home not in (lib, "shared"):
             return
@@ -297,29 +325,59 @@ def _using_target_name(cursor, tu):
     'using' and often omits the trailing ';' — so the tokens are joined and
     the missing prefix is reconstructed from the lexical parent chain.
 
-    Returns the injected qualified name ('' when the shape is not usable)."""
+    Returns (injected_qname, target_qname) — the name re-exported into the
+    enclosing scope, and the qualified name the using refers to ('' each when
+    the shape is not usable). For the fully-qualified shape the two coincide
+    (the name is re-exported at its own qualified location); for the relative
+    shape the injected name is the last segment prefixed with the enclosing
+    namespace chain (e.g. boost::count for `using range::count;` inside
+    namespace boost) while the target keeps the intermediate namespaces
+    (boost::range::count)."""
     try:
         toks = bc.tokens_of(tu, cursor)
     except Exception:
-        return ""
+        return "", ""
     toks = [t.spelling for t in toks]
     if not toks or toks[0] != "using" or (len(toks) > 1 and toks[1] == "namespace"):
-        return ""
+        return "", ""
     # The token extent can include the terminating ';' and — on a
     # multi-statement line — everything after it. Cut at the first ';' so
     # trailing content cannot corrupt the reconstructed qualified name.
     if ";" in toks:
         toks = toks[:toks.index(";")]
     rel = "".join(toks[1:]).rstrip(";")
-    if not rel or rel.startswith("::") or rel.startswith("std::"):
-        return ""
+    # `using ::boost::bimaps::bimap;` / `using ::GetCurrentProcessId;` —
+    # global-scope qualification: the using injects only the LAST segment into
+    # the enclosing namespace (boost::bimap / boost::winapi::GetCurrentProcessId)
+    # while the target keeps the intermediate namespaces (or is global — M9).
+    if rel.startswith("::"):
+        rel = rel[2:]
+        parts = _enclosing_ns(cursor)
+        if not parts or parts[0] != "boost":
+            return "", ""
+        prefix = "::".join(parts)
+        return prefix + "::" + rel.rsplit("::", 1)[-1], rel
+    if not rel:
+        return "", ""
+    if rel.startswith("std::"):
+        # boost-namespace alias of a std entity (`using std::ratio;` inside
+        # namespace boost — Boost.Ratio 1.91 is a std::ratio facade). The
+        # injected name is boost::<last>; the module must re-export the
+        # std:: target itself (`using std::ratio;`), because a using-decl of a
+        # using-decl is not exportable (M9).
+        parts = _enclosing_ns(cursor)
+        if not parts or parts[0] != "boost":
+            return "", ""
+        prefix = "::".join(parts)
+        return prefix + "::" + rel.rsplit("::", 1)[-1], rel
     if rel.startswith("boost::"):
-        return rel
+        return rel, rel
     # Relative: prefix with the enclosing namespace chain.
     parts = _enclosing_ns(cursor)
     if not parts or parts[0] != "boost":
-        return ""
-    return "::".join(parts) + "::" + rel.split("::")[-1]
+        return "", ""
+    prefix = "::".join(parts)
+    return prefix + "::" + rel.split("::")[-1], prefix + "::" + rel
 
 
 def _using_namespace_target(cursor, tu):
@@ -361,10 +419,24 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
     are reachable exactly when their file is in the GFM include-DAG, so a
     record produced here always compiles.
 
+    M9: injected names must denote an EXTERNAL-linkage entity — a using-
+    declaration of an internal-linkage name (e.g. boost::hof's placeholder
+    objects, `static constexpr auto& _1 = ...`) cannot be exported. The
+    injection's target is resolved through the qname→cursors map and the
+    entity's linkage checked (all cursors of the qname must be external; a
+    single internal overload poisons the using-declaration).
+
     claimed: {public_qname: lib} — cross-module dedup for injected names
     (first wins, like USR claiming). Returns {qname: record}."""
     out = {}
     directives = []          # (target_chain, inject_prefix) pairs
+    qname_cursors = {}
+    for usr, cursor in usr_index.items():
+        if not is_export_kind(cursor):
+            continue
+        qn = bc.qualified_name(cursor)
+        if qn:
+            qname_cursors.setdefault(qn, []).append(cursor)
     for usr, cursor in usr_index.items():
         kind = _kind_name(cursor)
         if kind not in ("USING_DECLARATION", "USING_DIRECTIVE"):
@@ -377,15 +449,39 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
         if bc.home_lib_of_file(f, file_to_lib) not in (lib, "shared"):
             continue
         if kind == "USING_DECLARATION":
-            q = _using_target_name(cursor, tu)
+            q, target = _using_target_name(cursor, tu)
             if not q:
                 continue
             if q in claimed:
                 continue
+            # M9: the injected name must denote an EXTERNAL-linkage entity —
+            # resolve the using's target declaration (the relative shape
+            # re-exports the last segment but the entity lives in the full
+            # target namespace) and require external linkage; an
+            # internal-linkage target (e.g. boost::hof's placeholder objects,
+            # `static constexpr auto& _1 = ...`) cannot be exported.
+            # std:: targets (boost-namespace aliases of std entities, e.g.
+            # boost::ratio = std::ratio) and global targets (e.g.
+            # `using ::GetCurrentProcessId;` inside boost::winapi — the
+            # declaration lives at global scope, never in the boost qname map)
+            # skip the check — both always have external linkage.
+            if target.startswith("std::") or not target.startswith("boost::"):
+                # `using std::ratio;` / `using ::AreFileApisANSI;` — global
+                # targets must stay qualified in the emitted line (an
+                # unqualified `using X;` would look inside the enclosing
+                # namespace block).
+                emit_q = target if target.startswith("std::") else "::" + target
+            else:
+                emit_q = q
+                cur_list = qname_cursors.get(target) or qname_cursors.get(q)
+                if not cur_list:
+                    continue        # not declared in this TU: nothing to inject
+                if any(not bc.linkage_ok(c) for c in cur_list):
+                    continue        # internal linkage: not exportable (M9)
             claimed[q] = lib
             out[q] = {
-                "name": q.rsplit("::", 1)[-1],
-                "qname": q,
+                "name": emit_q.rsplit("::", 1)[-1],
+                "qname": emit_q,
                 "usr": "inject:" + q,      # not a real USR — excluded from closure
                 "ns": q.split("::")[:-1],
                 "file": str(f),
@@ -410,6 +506,8 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
                 continue
             if chain != tgt_chain:
                 continue
+            if not bc.linkage_ok(cursor):
+                continue            # internal linkage: not exportable (M9)
             q = prefix + "::" + cursor.spelling
             if not q.startswith("boost::") or q in claimed:
                 continue
@@ -426,12 +524,16 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
     return out
 
 
-def collect_curated(lib, claimed):
+def collect_curated(lib, claimed, usr_index=None):
     """scripts/curated/<lib>.txt — hand-written blind-spot overrides (M2 §2.3,
     read-out implemented in M3). One qualified name per line; lines starting
     with '#' are comments. Records are emitted exactly like using-injections
     (`export using boost::xxx;`), so every listed name must be visible in the
     module's GMF (it is, when the header chain that declares it is included).
+
+    M9: like injections, curated names must denote external-linkage entities
+    in the TU; when usr_index is given, names that resolve to no declaration
+    or to an internal-linkage declaration are dropped with a warning.
 
     Use cases:
       - entities reachable only through template bodies (closure walks
@@ -458,6 +560,13 @@ def collect_curated(lib, claimed):
             continue
         if not q.startswith("boost::"):
             continue
+        if usr_index is not None:
+            found = any(
+                is_export_kind(c) and bc.qualified_name(c) == q
+                for usr, c in usr_index.items())
+            if not found:
+                print("    curated skip (not in TU): {}".format(q))
+                continue
         claimed.setdefault(q, lib)
         out[q] = {
             "name": q.rsplit("::", 1)[-1],
@@ -783,7 +892,7 @@ def main() -> int:
         cands = collect_candidates(lib, tu, _FILE_TO_LIB, usr_index)
         injects = collect_injections(tu, lib, _FILE_TO_LIB, claimed_inject,
                                      usr_index)
-        curated = collect_curated(lib, claimed_inject)
+        curated = collect_curated(lib, claimed_inject, usr_index)
         records = closure_from(dict(cands, **injects, **curated), tu, usr_index)
         if args.full_closure:
             claimed.clear()

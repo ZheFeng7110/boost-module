@@ -1,1 +1,3 @@
+boost.assert
 boost.variant2
+boost.winapi

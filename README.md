@@ -23,7 +23,7 @@
 | M6 | CI 矩阵与三平台适配 (win/linux/mac) 全绿 | ✅ |
 | M7 | 剩余库接入与发布 (被 M8–M14 计划拆分) | ⏳ |
 | M8 | mcpp features 基建 (build.mcpp 动态汇总 + 生成器全库化) | ✅ |
-| M9 | 纯头库批量接入 (T1a, ~63 库) | ⏳ |
+| M9 | 纯头库批量接入 (T1a, 58 库) + 88/88 测试 | ✅ |
 | M10 | 宏驱动库边界确认 (include-only) | ⏳ |
 | M11 | 编译库批量接入 (T2, 19 库) | ⏳ |
 | M12 | 重型模板库接入 (T1b, ~15 库 opt-in) | ⏳ |
@@ -35,16 +35,17 @@
 > `features = ["all"]` 全量); 汇总模块 `import boost;` 由 build.mcpp 动态生成, 恰好
 > re-export 激活的库。
 
-## 按库选择性构建 (M8 mcpp features)
+## 按库选择性构建 (M8 mcpp features + M9 全量接入)
 
 每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
+当前共 **85 个模块**（T0 27 + M9 T1a 58），hof/units/static_assert/predef 等
+宏/constexpr-对象 API 库保持 include-only（详见 M9 设计文档）。
 
-- **默认集** = 18 库闭包（`[features].default`）：`mcpp build` / `mcpp test` 覆盖
-  any/algorithm/chrono/core/filesystem/io/iterator/json/mp11/optional/range/regex/system/
-  thread/tuple/type_traits/variant/variant2。
-- **opt-in 库**：container_hash/endian/rational/scope/scope_exit/stacktrace/static_string/
-  program_options/url 需显式激活：`mcpp build --features container_hash,...`。
-- **全量**：`mcpp build --features all`（27 库全部编译）。
+- **默认集** = 31 库闭包（`[features].default`，随模块 import 边自动增长）：
+  `mcpp build` / `mcpp test` 覆盖核心面（18 个原核心库 + config/assert/
+  utility/move 等基建库）。
+- **opt-in 库**：其余 54 库需显式激活：`mcpp build --features <库,...>`。
+- **全量**：`mcpp build --features all`（85 模块全部编译）。
 
 消费者侧（path dep 用法）：
 
@@ -78,9 +79,9 @@ pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libc
 
 ```bash
 uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs.json
-uv run scripts/gen_exports.py                        # 生成全部 27 库的导出列表
+uv run scripts/gen_exports.py                        # 生成全部 85 库的导出列表
 uv run scripts/gen_exports.py --libs optional system --emit-cppm
-uv run scripts/reapply_hand_edits.py                 # 重生成后重放 M3/M4 手编 (.cppm 偏离 + .inc 平台守卫)
+uv run scripts/reapply_hand_edits.py                 # 重生成后重放 M3/M4/M9 手编 (.cppm 偏离 + .inc 平台守卫)
 uv run scripts/gen_features.py                       # 重新生成 mcpp.toml 的 [features] 块 + scripts/features.lst
 uv run scripts/gen_audit.py                          # static-inline / 内部链接审计
 uv run scripts/import_boost.py                       # 重新导入官方 boost tarball

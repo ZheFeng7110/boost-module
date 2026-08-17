@@ -6,6 +6,9 @@ module;
 
 export module boost.chrono;
 
+export import boost.assert;
+export import boost.config;
+export import boost.ratio;
 export import boost.system;
 export import boost.type_traits;
 

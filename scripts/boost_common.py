@@ -28,7 +28,8 @@ CURATED_DIR = SCRIPTS / "curated"
 GEN_DIR = ROOT / "src" / "gen_exports"
 AUDIT_DIR = ROOT / "target" / "gen" / "audit"
 
-# M3 header-only libraries, then M4 compiled libraries (plan order).
+# M3 header-only libraries, then M4 compiled libraries (plan order), then the
+# M9 T1a batch (regular header-only libs, no src/ TU, no public macro surface).
 LIBS_M3 = [
     "optional", "variant", "variant2", "any", "core", "container_hash",
     "mp11", "static_string", "scope", "scope_exit", "type_traits",
@@ -39,7 +40,33 @@ LIBS_M4 = [
     "filesystem", "regex", "thread", "chrono", "program_options",
     "stacktrace", "json", "url",
 ]
-TARGET_LIBS = LIBS_M3 + LIBS_M4
+# M9 T1a (boost-mcpp-all-libs-features-plan.md §2): 58 regular header-only
+# libraries. Excluded: predef (pure .h macro lib → T3 include-only), coroutine2
+# (depends on boost/context → T4), property_map_parallel (no headers in the
+# aggregated boost/ include root), static_assert (pure macro lib with 0
+# exported entities; its module name is ALSO invalid C++ — `static_assert` is a
+# keyword, clang rejects `export module boost.static_assert;` — so it stays
+# include-only like the T3 macro libs), hof + units (their public API is
+# internal-linkage `static constexpr` objects — boost::hof::compose/_1 and
+# boost::units::si::meter etc. — which a module cannot export via using-
+# declarations; include-only, recorded in the M9 doc), plus the T1b
+# heavy-template opt-in batch (M12) and the T2 compiled batch (M11).
+LIBS_T1A = [
+    "align", "array", "assert", "assign", "bimap", "bloom",
+    "callable_traits", "circular_buffer", "compat", "concept_check",
+    "config", "convert", "crc", "decimal", "describe",
+    "dll", "dynamic_bitset", "flyweight", "format", "function",
+    "functional", "hash2", "heap", "histogram", "icl",
+    "integer", "intrusive", "leaf", "lexical_cast", "lockfree",
+    "logic", "move", "multi_array", "multi_index", "openmethod",
+    "outcome", "parser", "pfr", "poly_collection", "pool",
+    "property_map", "property_tree", "ptr_container", "ratio",
+    "safe_numerics", "signals2", "smart_ptr", "sort", "statechart",
+    "stl_interfaces", "throw_exception", "tokenizer",
+    "type_index", "unordered", "utility", "uuid", "winapi",
+    "yap",
+]
+TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A
 
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
@@ -349,34 +376,73 @@ _INC_RE = re.compile(r'^\s*#\s*include\s*[<"](boost/[A-Za-z0-9_./]+)', re.MULTIL
 
 
 def _lib_of_include(rel: str):
-    """boost/<x>... -> target lib x ('' when not a target lib root)."""
+    """boost/<x>... -> target lib x ('' when not a target lib root).
+
+    Handles both directory roots (boost/<lib>/...) and single-header
+    aggregates (boost/<lib>.hpp, e.g. boost/tokenizer.hpp / boost/crc.hpp)."""
     top = rel[len("boost/"):].split("/")[0]
-    if "." in top or top == "detail":
+    if "." in top:
+        # single-header aggregate include (boost/<lib>.hpp)
+        stem = top.rsplit(".", 1)[0]
+        return stem if stem in TARGET_LIBS else ""
+    if top == "detail":
         return ""
     return top if top in TARGET_LIBS else ""
 
 
 def dep_graph(headers_by_lib=None):
-    """{lib: set(lib)} — which target libs' headers a lib's own headers include.
+    """{lib: set(lib)} — which target libs' headers a lib's headers include.
 
     headers_by_lib overrides the header set per lib (defaults to libs.json /
     heuristic). The generator passes the clang++-gate-pruned GFM set here so
     deps reachable only through headers pruned from the module (e.g. the regex
     family in algorithm, dropped for the gcc abi-tag workaround) do not leak
-    into <lib>.deps."""
+    into <lib>.deps.
+
+    The walk is transitive through headers NOT owned by any target library
+    (e.g. icl/gregorian.hpp -> boost/date_time/... -> boost/tokenizer.hpp —
+    date_time is a T2 lib not yet a target, and single-header aggregates were
+    invisible to the direct-include mapping): every non-target boost header
+    reached from a lib's header set is scanned for further includes, and the
+    walk stops at target-owned roots and system/std headers. This keeps the
+    topological order (and first-wins claiming) consistent with what the
+    module GMF actually compiles."""
+    file_to_lib = build_file_to_lib()
     graph = {lib: set() for lib in TARGET_LIBS}
     for lib in TARGET_LIBS:
         headers = (headers_by_lib.get(lib) if headers_by_lib else None) \
             or headers_of(lib)
-        for h in headers:
+        visited = set()
+        queue = list(headers)
+        while queue:
+            h = queue.pop()
+            try:
+                key = str(h.resolve()).lower()
+            except OSError:
+                continue
+            if key in visited:
+                continue
+            visited.add(key)
             try:
                 text = h.read_text(encoding="utf-8", errors="ignore")
             except OSError:
                 continue
             for m in _INC_RE.finditer(text):
-                dep = _lib_of_include(m.group(1))
-                if dep and dep != lib:
-                    graph[lib].add(dep)
+                rel = m.group(1)
+                dep = _lib_of_include(rel)
+                if dep:
+                    if dep != lib:
+                        graph[lib].add(dep)
+                    continue            # target-owned root: don't recurse
+                # non-target include: recurse through vendored boost headers
+                # (e.g. boost/date_time/..., boost/mpl/..., boost/version.hpp)
+                # when the file exists under the include root.
+                p = BOOST_ROOT.parent / rel
+                if p.suffix != ".hpp" or not p.is_file():
+                    continue
+                if str(p.resolve()).lower() in visited:
+                    continue
+                queue.append(p)
     return graph
 
 

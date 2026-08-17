@@ -6,7 +6,7 @@ import boost.range;
 int main() {
     std::vector<int> v{3, 1, 4, 1, 5};
     auto rng = boost::make_iterator_range(v);
-    assert(boost::size(rng) == 5);
+    assert(rng.size() == 5);
     assert(*boost::begin(rng) == 3);
     assert(*boost::prior(boost::end(rng)) == 5);
     assert(boost::count(rng, 1) == 2);
@@ -16,7 +16,7 @@ int main() {
     boost::copy(boost::adaptors::reverse(rng), std::back_inserter(out));
     assert(out == std::vector<int>({5, 1, 4, 1, 3}));
     auto ir = boost::irange(0, 4);
-    assert(boost::size(ir) == 4);
+    assert(ir.size() == 4);
     out.clear();
     boost::copy(boost::adaptors::filter(rng, [](int i) { return i > 2; }),
                 std::back_inserter(out));

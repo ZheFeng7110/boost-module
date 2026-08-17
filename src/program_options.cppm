@@ -7,7 +7,8 @@ module;
 export module boost.program_options;
 
 export import boost.any;
-export import boost.core;
+export import boost.assert;
+export import boost.function;
 export import boost.iterator;
 
 #include "gen_exports/program_options.inc"

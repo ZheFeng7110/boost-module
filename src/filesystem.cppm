@@ -6,6 +6,7 @@ module;
 
 export module boost.filesystem;
 
+export import boost.smart_ptr;
 export import boost.system;
 
 #include "gen_exports/filesystem.inc"

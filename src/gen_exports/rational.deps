@@ -1,1 +1,6 @@
+boost.assert
+boost.config
+boost.integer
+boost.throw_exception
 boost.type_traits
+boost.utility

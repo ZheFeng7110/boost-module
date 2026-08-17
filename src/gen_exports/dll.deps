@@ -1,0 +1,4 @@
+boost.assert
+boost.core
+boost.filesystem
+boost.winapi
