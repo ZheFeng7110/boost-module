@@ -46,7 +46,11 @@ export namespace boost { namespace pfr { namespace detail {
   using boost::pfr::detail::binary_visit;
   using boost::pfr::detail::can_not_apply;
   using boost::pfr::detail::clang_workaround;
+#if defined(__clang__)
+  // M9 platform guard: clang_wrapper_t is the clang-only NTTP wrapper
+  // (core_name20_static.hpp #ifdef __clang__ branch).
   using boost::pfr::detail::clang_wrapper_t;
+#endif
   using boost::pfr::detail::comp_eq_detector;
   using boost::pfr::detail::comp_eq_detector_msvc_helper;
   using boost::pfr::detail::comp_ge_detector;
@@ -87,7 +91,11 @@ export namespace boost { namespace pfr { namespace detail {
   using boost::pfr::detail::fake_object;
   using boost::pfr::detail::fields_count;
   using boost::pfr::detail::fields_count_dispatch;
+#if BOOST_PFR_USE_CPP26_REFLECTION || BOOST_PFR_USE_CPP26
+  // M9 platform guard: fields_count_dispatch_impl exists only under the
+  // C++26 reflection / structured-bindings branches (fields_count.hpp).
   using boost::pfr::detail::fields_count_dispatch_impl;
+#endif
   using boost::pfr::detail::for_each_field;
   using boost::pfr::detail::for_each_field_dispatcher;
   using boost::pfr::detail::for_each_field_impl;

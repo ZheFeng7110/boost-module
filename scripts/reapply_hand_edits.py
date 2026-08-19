@@ -146,6 +146,18 @@ def main():
           '#include "gen_exports/winapi.inc"\n'
           '#endif\n')
 
+    # M9: safe_numerics.cppm — checked_result_operations.hpp calls std::terminate
+    # without including <exception>; on libstdc++/libc++ <cassert> does not
+    # transitively pull <exception> (it does on MSVC STL), so the GMF compile
+    # fails on POSIX. Add the missing include upfront.
+    patch("src/safe_numerics.cppm",
+          "module;\n#include <boost/safe_numerics/automatic.hpp>",
+          "module;\n"
+          "// M9: checked_result_operations.hpp uses std::terminate without <exception>;\n"
+          "// libstdc++/libc++ <cassert> doesn't transitively include it (MSVC STL does).\n"
+          "#include <exception>\n"
+          "#include <boost/safe_numerics/automatic.hpp>")
+
     # ---- .inc platform guards (M3 §5) ----
     # M9: int128_type/uint128_type are declared in boost/config/suffix.hpp, so
     # with boost.config as a module they moved from core.inc to config.inc.
@@ -391,6 +403,48 @@ def main():
           "  using boost::make_unsigned;\n"
           "#endif\n"
           "  using boost::memory_order;")
+
+    # M9: pfr — clang_wrapper_t is the clang-only NTTP wrapper
+    # (core_name20_static.hpp #ifdef __clang__ branch; gcc takes the #else
+    # make_clang_wrapper that returns arg directly). fields_count_dispatch_impl
+    # exists only under the C++26 reflection / structured-bindings branches
+    # (fields_count.hpp), which the C++23 CI compilers don't activate.
+    patch("src/gen_exports/pfr.inc",
+          "  using boost::pfr::detail::clang_wrapper_t;",
+          "#if defined(__clang__)\n"
+          "  // M9 platform guard: clang_wrapper_t is the clang-only NTTP wrapper\n"
+          "  // (core_name20_static.hpp #ifdef __clang__ branch).\n"
+          "  using boost::pfr::detail::clang_wrapper_t;\n"
+          "#endif")
+    patch("src/gen_exports/pfr.inc",
+          "  using boost::pfr::detail::fields_count_dispatch_impl;",
+          "#if BOOST_PFR_USE_CPP26_REFLECTION || BOOST_PFR_USE_CPP26\n"
+          "  // M9 platform guard: fields_count_dispatch_impl exists only under the\n"
+          "  // C++26 reflection / structured-bindings branches (fields_count.hpp).\n"
+          "  using boost::pfr::detail::fields_count_dispatch_impl;\n"
+          "#endif")
+
+    # M9: uuid — the SIMD/x86 from_chars/to_chars entities live in
+    # from_chars_x86.hpp / to_chars_x86.hpp / uuid_x86.ipp / simd_vector.hpp,
+    # all included under BOOST_UUID_USE_SSE2 (config.hpp: __GNUC__ && __SSE2__,
+    # or MSVC _M_X64). Absent on macOS arm64 (no __SSE2__).
+    guard_entity_lines("src/gen_exports/uuid.inc", "defined(BOOST_UUID_USE_SSE2)", [
+        "compare",
+        "countr_zero_nz",
+        "from_chars_simd",
+        "from_chars_simd_char_constants",
+        "from_chars_simd_constants",
+        "from_chars_simd_core",
+        "from_chars_simd_load_traits",
+        "simd_vector",
+        "simd_vector128",
+        "simd_vector256",
+        "simd_vector512",
+        "to_chars_simd",
+        "to_chars_simd_char_constants",
+        "to_chars_simd_constants",
+        "to_chars_simd_core",
+    ])
 
     # M6: thread module — mingw snapshot exports Windows-only entities (win32
     # thread primitives + boost.winapi) that the POSIX GMF include set never
