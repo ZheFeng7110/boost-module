@@ -455,19 +455,38 @@ def main():
         "rtl_critical_section",
     ])
 
-    # M9: safe_numerics — make_error_code references safe_numerics_error_category
-    # (a const anonymous-class variable, exception.hpp:84-118), which is TU-local.
-    # gcc 16 enforces [basic.link] TU-local exposure for module exports; clang and
-    # MSVC do not. The entity is still declared in the GMF and usable internally;
-    # only the export is suppressed on gcc.
-    patch("src/gen_exports/safe_numerics.inc",
-          "  using boost::safe_numerics::make_error_code;",
-          "#if !defined(__GNUC__) || defined(__clang__)\n"
-          "  // M9 platform guard: make_error_code references the TU-local\n"
-          "  // safe_numerics_error_category (anonymous class); gcc 16 rejects the\n"
-          "  // export under [basic.link] TU-local exposure rules.\n"
-          "  using boost::safe_numerics::make_error_code;\n"
+    # M9: safe_numerics — the TU-local anonymous-class error_category singleton
+    # (exception.hpp) is fixed at the vendored header (class named
+    # safe_numerics_error_category_t); make_error_code is exported on all
+    # platforms. No .inc guard needed.
+
+    # M9: dll — last_error_code lives in detail/windows/path_from_handle.hpp
+    # (no POSIX equivalent); the POSIX GMF never includes it.
+    patch("src/gen_exports/dll.inc",
+          "  using boost::dll::detail::last_error_code;",
+          "#if defined(_WIN32)\n"
+          "  // M9 platform guard: last_error_code is in detail/windows/\n"
+          "  // path_from_handle.hpp (no POSIX counterpart).\n"
+          "  using boost::dll::detail::last_error_code;\n"
           "#endif")
+
+    # M9: parser — parse_int/parse_real live in an `inline namespace
+    # BOOST_PARSER_NUMERIC_NS` (std_charconv | boost_charconv | spirit_parsers,
+    # selected by numeric.hpp at include time). The mingw snapshot used
+    # std_charconv, so the .inc qualified the entities as
+    # numeric::std_charconv::parse_int. On toolchains where a different branch
+    # is active (e.g. libc++ without __cpp_lib_to_chars), the std_charconv
+    # namespace doesn't exist. Use the inline-namespace-agnostic path
+    # (numeric::parse_int) which resolves on every branch.
+    patch("src/gen_exports/parser.inc",
+          "export namespace boost { namespace parser { namespace detail { namespace numeric { namespace std_charconv {\n"
+          "  using boost::parser::detail::numeric::std_charconv::parse_int;\n"
+          "  using boost::parser::detail::numeric::std_charconv::parse_real;\n"
+          "}}}}}",
+          "export namespace boost { namespace parser { namespace detail { namespace numeric {\n"
+          "  using boost::parser::detail::numeric::parse_int;\n"
+          "  using boost::parser::detail::numeric::parse_real;\n"
+          "}}}}")
 
     # M9: flyweight — the generator leaked the entire transitive surface of
     # boost.container / boost.interprocess(.winapi) / boost.intrusive /

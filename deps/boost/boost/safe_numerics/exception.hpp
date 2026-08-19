@@ -81,7 +81,11 @@ namespace std {
 namespace boost {
 namespace safe_numerics {
 
-const class : public std::error_category {
+// M9: named the class (was anonymous) — an anonymous class type is TU-local,
+// so safe_numerics_error_category and make_error_code were TU-local exposures,
+// which gcc 16 rejects in a module GMF ([basic.link]). Naming the type removes
+// TU-locality; behavior is unchanged. Re-apply if re-vendoring (import_boost.py).
+const class safe_numerics_error_category_t : public std::error_category {
 public:
     virtual const char* name() const noexcept{
         return "safe numerics error";

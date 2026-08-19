@@ -468,10 +468,10 @@ export namespace boost { namespace parser { namespace detail { namespace numeric
   using boost::parser::detail::numeric::unpacked_iter;
 }}}}
 
-export namespace boost { namespace parser { namespace detail { namespace numeric { namespace std_charconv {
-  using boost::parser::detail::numeric::std_charconv::parse_int;
-  using boost::parser::detail::numeric::std_charconv::parse_real;
-}}}}}
+export namespace boost { namespace parser { namespace detail { namespace numeric {
+  using boost::parser::detail::numeric::parse_int;
+  using boost::parser::detail::numeric::parse_real;
+}}}}
 
 export namespace boost { namespace parser { namespace detail { namespace stl_interfaces {
   using boost::parser::detail::stl_interfaces::access;

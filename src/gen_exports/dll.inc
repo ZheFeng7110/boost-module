@@ -55,7 +55,11 @@ export namespace boost { namespace dll { namespace detail {
   using boost::dll::detail::get_mem_fn_type;
   using boost::dll::detail::import_type;
   using boost::dll::detail::integer_t;
+#if defined(_WIN32)
+  // M9 platform guard: last_error_code is in detail/windows/
+  // path_from_handle.hpp (no POSIX counterpart).
   using boost::dll::detail::last_error_code;
+#endif
   using boost::dll::detail::library_function;
   using boost::dll::detail::load_command_;
   using boost::dll::detail::load_command_types;
