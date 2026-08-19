@@ -8,6 +8,9 @@
 import boost.openmethod;
 #endif
 #include <boost/openmethod.hpp>
+// gcc: the import is skipped above (include+import ODR conflict), and
+// initialize()/finalize() live in a separate header the module GMF includes.
+#include <boost/openmethod/initialize.hpp>
 
 struct A {
     virtual ~A() = default;

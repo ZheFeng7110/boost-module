@@ -97,6 +97,14 @@ export namespace boost { namespace leaf { namespace detail {
   using boost::leaf::detail::encoder_adaptor;
   using boost::leaf::detail::enforce_std_exception;
   using boost::leaf::detail::exception;
+  // M9: gcc 16.1.0 module consumers emit a partial vtable for
+  // exception<bad_result> (multi-base exception_base/error_id) whose
+  // non-virtual thunks stay undefined — gcc never emits them in a module
+  // consumer TU. This extern template suppresses the consumer's implicit
+  // instantiation; the complete vtable + thunks come from the explicit
+  // instantiation in src/boost_leaf_extras.cpp (same pattern as thread's
+  // clone_impl, cf. M7c).
+  extern template class boost::leaf::detail::exception<boost::leaf::bad_result>;
   using boost::leaf::detail::exception_base;
   using boost::leaf::detail::find_in_tuple;
   using boost::leaf::detail::fn_arg_type;

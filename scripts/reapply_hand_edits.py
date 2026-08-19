@@ -256,6 +256,24 @@ def main():
           "  extern template class boost::exception_detail::clone_impl<boost::exception_detail::std_exception_ptr_wrapper>;\n"
           "  using boost::call_once;")
 
+    # M9: leaf — same gcc 16.1.0 consumer-thunk bug as thread's clone_impl
+    # (M7c), for leaf::detail::exception<bad_result> (multi-base
+    # exception_base/error_id → non-virtual thunks). extern template in the
+    # module interface + explicit instantiation in src/boost_leaf_extras.cpp.
+    patch("src/gen_exports/leaf.inc",
+          "  using boost::leaf::detail::exception;\n"
+          "  using boost::leaf::detail::exception_base;",
+          "  using boost::leaf::detail::exception;\n"
+          "  // M9: gcc 16.1.0 module consumers emit a partial vtable for\n"
+          "  // exception<bad_result> (multi-base exception_base/error_id) whose\n"
+          "  // non-virtual thunks stay undefined — gcc never emits them in a module\n"
+          "  // consumer TU. This extern template suppresses the consumer's implicit\n"
+          "  // instantiation; the complete vtable + thunks come from the explicit\n"
+          "  // instantiation in src/boost_leaf_extras.cpp (same pattern as thread's\n"
+          "  // clone_impl, cf. M7c).\n"
+          "  extern template class boost::leaf::detail::exception<boost::leaf::bad_result>;\n"
+          "  using boost::leaf::detail::exception_base;")
+
     # M7: url module — grammar/detail/charset.hpp defines find_if_pred /
     # find_if_not_pred only under BOOST_URL_USE_SSE2 (x86 + SSE2); the mingw
     # x86_64 snapshot carried them, but macOS arm64 (no __SSE2__) fails.
@@ -480,6 +498,20 @@ def main():
           "  // (detail/sse2.hpp, __SSE2__); absent on arm64 (NEON branch).\n"
           "  using boost::bloom::detail::m128ix2;\n"
           "#endif")
+
+    # M9: align — detail::alignment_of is config-selected by
+    # boost/align/alignment_of.hpp: `using std::alignment_of;` (cxx11 branch)
+    # on x86/clang-msvc, but a real `struct alignment_of` on the
+    # BOOST_CLANG && !__x86_64__ branch (macOS arm64, and 32-bit unix gcc).
+    # The generated snapshot (mingw → cxx11) emits `using std::alignment_of;`
+    # in the module purview, which conflicts with the struct the macOS GMF
+    # declares. The detail name is NOT needed by the exported surface — the
+    # public boost::alignment::alignment_of inherits from it via the GMF and
+    # consumers instantiate it fine (verified gcc/clang, struct and cxx11
+    # paths) — so drop the export line.
+    patch("src/gen_exports/align.inc",
+          "  using std::add_lvalue_reference;\n  using std::alignment_of;\n",
+          "  using std::add_lvalue_reference;\n")
 
     # M9: parser — parse_int/parse_real live in an `inline namespace
     # BOOST_PARSER_NUMERIC_NS` (std_charconv | boost_charconv | spirit_parsers,

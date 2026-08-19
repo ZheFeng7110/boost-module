@@ -10,7 +10,12 @@ import boost.statechart;
 #include <boost/mpl/list.hpp>
 #if defined(__GNUC__) && !defined(__clang__)
 // gcc: import skipped above — bring the statechart API in via header instead.
-#include <boost/statechart.hpp>
+// (deps/boost has no master boost/statechart.hpp — vendored subset — so
+// include the individual headers the test uses.)
+#include <boost/statechart/event.hpp>
+#include <boost/statechart/state_machine.hpp>
+#include <boost/statechart/simple_state.hpp>
+#include <boost/statechart/transition.hpp>
 #endif
 
 namespace sc = boost::statechart;

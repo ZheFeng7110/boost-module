@@ -92,6 +92,12 @@ FEATURE_FLAGS = {
 EXTRAS = {
     "system": ["src/boost_system_extras.cpp"],
     "thread": ["src/boost_thread_extras.cpp"],
+    # M9: gcc 16.1.0 module consumers emit a partial vtable for
+    # leaf::detail::exception<bad_result> whose non-virtual thunks stay
+    # undefined (same pipeline bug as thread's clone_impl, cf. M7c). The
+    # extern template in leaf.inc suppresses the consumer's instantiation;
+    # this TU's explicit instantiation provides the complete vtable + thunks.
+    "leaf": ["src/boost_leaf_extras.cpp"],
 }
 
 # Base `[build].flags` / ldflags that no longer live in features.

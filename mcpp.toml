@@ -101,6 +101,7 @@ sources = [
     "src/integer.cppm",
     "src/intrusive.cppm",
     "src/leaf.cppm",
+    "src/boost_leaf_extras.cpp",
     "src/lexical_cast.cppm",
     "src/lockfree.cppm",
     "src/logic.cppm",
@@ -312,7 +313,7 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   sources = ["src/intrusive.cppm"]
   implies = ["move"]
 [features.leaf]
-  sources = ["src/leaf.cppm"]
+  sources = ["src/leaf.cppm", "src/boost_leaf_extras.cpp"]
 [features.lexical_cast]
   sources = ["src/lexical_cast.cppm"]
   implies = ["assert", "config", "core"]
