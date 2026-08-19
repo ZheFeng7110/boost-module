@@ -50,7 +50,12 @@ export namespace boost { namespace safe_numerics {
   using boost::safe_numerics::loose_exception_policy;
   using boost::safe_numerics::loose_trap_policy;
   using boost::safe_numerics::make_checked_result;
+#if !defined(__GNUC__) || defined(__clang__)
+  // M9 platform guard: make_error_code references the TU-local
+  // safe_numerics_error_category (anonymous class); gcc 16 rejects the
+  // export under [basic.link] TU-local exposure rules.
   using boost::safe_numerics::make_error_code;
+#endif
   using boost::safe_numerics::make_interval;
   using boost::safe_numerics::make_safe_literal_impl;
   using boost::safe_numerics::make_safe_numerics_action;

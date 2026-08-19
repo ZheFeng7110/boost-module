@@ -53,8 +53,12 @@ export namespace boost { namespace signals2 { namespace detail {
   using boost::signals2::detail::combiner_invoker;
   using boost::signals2::detail::connection_body;
   using boost::signals2::detail::connection_body_base;
+#if defined(BOOST_HAS_WINTHREADS)
   using boost::signals2::detail::critical_section;
+#endif
+#if defined(BOOST_HAS_WINTHREADS)
   using boost::signals2::detail::critical_section_debug;
+#endif
   using boost::signals2::detail::deconstruct_deleter;
   using boost::signals2::detail::default_grow_policy;
   using boost::signals2::detail::do_postconstruct;
@@ -90,7 +94,9 @@ export namespace boost { namespace signals2 { namespace detail {
   using boost::signals2::detail::reference_tag;
   using boost::signals2::detail::replace_slot_function;
   using boost::signals2::detail::result_type_wrapper;
+#if defined(BOOST_HAS_WINTHREADS)
   using boost::signals2::detail::rtl_critical_section;
+#endif
   using boost::signals2::detail::scope_guard;
   using boost::signals2::detail::scope_guard_impl_base;
   using boost::signals2::detail::signal_impl;

@@ -446,6 +446,40 @@ def main():
         "to_chars_simd_core",
     ])
 
+    # M9: signals2 — critical_section / critical_section_debug /
+    # rtl_critical_section live in lwm_win32_cs.hpp, included only under
+    # BOOST_HAS_WINTHREADS (mutex.hpp selector); POSIX takes lwm_pthreads.hpp.
+    guard_entity_lines("src/gen_exports/signals2.inc", "defined(BOOST_HAS_WINTHREADS)", [
+        "critical_section",
+        "critical_section_debug",
+        "rtl_critical_section",
+    ])
+
+    # M9: safe_numerics — make_error_code references safe_numerics_error_category
+    # (a const anonymous-class variable, exception.hpp:84-118), which is TU-local.
+    # gcc 16 enforces [basic.link] TU-local exposure for module exports; clang and
+    # MSVC do not. The entity is still declared in the GMF and usable internally;
+    # only the export is suppressed on gcc.
+    patch("src/gen_exports/safe_numerics.inc",
+          "  using boost::safe_numerics::make_error_code;",
+          "#if !defined(__GNUC__) || defined(__clang__)\n"
+          "  // M9 platform guard: make_error_code references the TU-local\n"
+          "  // safe_numerics_error_category (anonymous class); gcc 16 rejects the\n"
+          "  // export under [basic.link] TU-local exposure rules.\n"
+          "  using boost::safe_numerics::make_error_code;\n"
+          "#endif")
+
+    # M9: flyweight — the generator leaked the entire transitive surface of
+    # boost.container / boost.interprocess(.winapi) / boost.intrusive /
+    # boost.move_detail / boost.mpl / boost.parameter / boost.multi_index into
+    # flyweight.inc (932 entities). Those namespaces are internal dependencies
+    # whose availability is platform-dependent (interprocess.winapi is Windows-
+    # only; container option types are macro-generated, declared only on the
+    # mingw snapshot include path). The committed form is hand-trimmed to
+    # flyweight's own surface (boost::flyweight + boost::flyweights::*); restore
+    # it after regeneration. Mirrors the algorithm.inc convention.
+    restore_from_git("src/gen_exports/flyweight.inc")
+
     # M6: thread module — mingw snapshot exports Windows-only entities (win32
     # thread primitives + boost.winapi) that the POSIX GMF include set never
     # declares. Guard the entirely-windows namespace blocks wholesale, and the
