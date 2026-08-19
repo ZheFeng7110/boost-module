@@ -125,6 +125,27 @@ def main():
           "// are claimed by boost.core itself), so consumers import boost.core on their\n"
           "// own. (Clang has no such issue; tracked as a gcc bug for M6 CI.)\n")
 
+    # M9: winapi.cppm — boost/winapi/* headers are Windows-only (basic_types.hpp
+    # #errors "Win32 functions not available" off-Windows). The winapi module
+    # is in the default closure (system/thread imply it + `export import
+    # boost.winapi;`), so on POSIX it must compile as a valid empty module.
+    # Guards mirror basic_types.hpp. Three patches: open the GMF guard at the
+    # first include, close it before `export module`, and guard the .inc.
+    patch("src/winapi.cppm",
+          "module;\n#include <boost/winapi/bcrypt.hpp>",
+          "module;\n"
+          "// M9 platform guard: boost/winapi/* #error off-Windows (basic_types.hpp).\n"
+          "#if defined(_WIN32) || defined(__CYGWIN__)\n"
+          "#include <boost/winapi/bcrypt.hpp>")
+    patch("src/winapi.cppm",
+          "#include <boost/winapi/waitable_timer.hpp>\n\nexport module boost.winapi;",
+          "#include <boost/winapi/waitable_timer.hpp>\n#endif\n\nexport module boost.winapi;")
+    patch("src/winapi.cppm",
+          '#include "gen_exports/winapi.inc"\n',
+          '#if defined(_WIN32) || defined(__CYGWIN__)\n'
+          '#include "gen_exports/winapi.inc"\n'
+          '#endif\n')
+
     # ---- .inc platform guards (M3 §5) ----
     # M9: int128_type/uint128_type are declared in boost/config/suffix.hpp, so
     # with boost.config as a module they moved from core.inc to config.inc.
