@@ -1,9 +1,12 @@
 // boost.openmethod smoke — open methods (macros are include-only; mixing
-// include + import is standard-compliant)
+// include + import is standard-compliant, but gcc 16 ODR-conflicts on it —
+// see describe.cpp — so the import is skipped on gcc)
 #include "test_assert.hpp"
 #include <cassert>
 #include <string>
+#if !defined(__GNUC__) || defined(__clang__)
 import boost.openmethod;
+#endif
 #include <boost/openmethod.hpp>
 
 struct A {

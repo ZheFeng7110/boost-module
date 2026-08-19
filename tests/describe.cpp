@@ -5,7 +5,13 @@
 #include <cassert>
 #include <string>
 #include <type_traits>
+// gcc 16: mixing `import boost.describe;` with `#include <boost/describe.hpp>`
+// in one TU ODR-conflicts (redefinition of make_void/mp_list etc.); clang/MSVC
+// accept it. BOOST_DESCRIBE_* are macros anyway (include-only per M3 policy),
+// so on gcc the test is pure-header.
+#if !defined(__GNUC__) || defined(__clang__)
 import boost.describe;
+#endif
 #include <boost/describe.hpp>
 
 struct Point {

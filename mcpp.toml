@@ -110,6 +110,7 @@ sources = [
     "src/openmethod.cppm",
     "src/outcome.cppm",
     "src/parser.cppm",
+    "deps/boost/libs/charconv/src/*.cpp",
     "src/pfr.cppm",
     "src/poly_collection.cppm",
     "src/pool.cppm",
@@ -337,7 +338,7 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   sources = ["src/outcome.cppm"]
   implies = ["assert", "config", "core", "smart_ptr", "system", "throw_exception", "type_traits"]
 [features.parser]
-  sources = ["src/parser.cppm"]
+  sources = ["src/parser.cppm", "deps/boost/libs/charconv/src/*.cpp"]
   implies = ["assert"]
 [features.pfr]
   sources = ["src/pfr.cppm"]

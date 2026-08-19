@@ -73,6 +73,12 @@ COMPILED_TU_GLOBS = {
                          "deps/boost/libs/thread/src/win32/*.cpp",
                          "deps/boost/libs/thread/src/pthread/once.cpp",
                          "deps/boost/libs/thread/src/pthread/thread.cpp"],
+    # M9: parser pulls boost/charconv when std::from_chars is unavailable
+    # (detail/numeric.hpp picks boost_charconv branch; seen on the linux-llvm
+    # CI leg). boost.charconv is a compiled lib — ship its TUs with the parser
+    # feature so the module's consumers link. On platforms where the std
+    # branch is active the TUs compile but produce no referenced symbols.
+    "parser":           ["deps/boost/libs/charconv/src/*.cpp"],
 }
 
 # Per-lib private compile flags (feature `flags` = private per-TU, never

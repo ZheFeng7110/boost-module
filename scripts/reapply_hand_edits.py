@@ -470,6 +470,17 @@ def main():
           "  using boost::dll::detail::last_error_code;\n"
           "#endif")
 
+    # M9: bloom — m128ix2 lives in detail/fast_multiblock32_sse2.hpp, included
+    # only under BOOST_BLOOM_SSE2 (detail/sse2.hpp: __SSE2__ && x86). Absent on
+    # macOS arm64 (no __SSE2__; NEON branch active instead).
+    patch("src/gen_exports/bloom.inc",
+          "  using boost::bloom::detail::m128ix2;",
+          "#if defined(BOOST_BLOOM_SSE2)\n"
+          "  // M9 platform guard: m128ix2 is the SSE2 branch of fast_multiblock32\n"
+          "  // (detail/sse2.hpp, __SSE2__); absent on arm64 (NEON branch).\n"
+          "  using boost::bloom::detail::m128ix2;\n"
+          "#endif")
+
     # M9: parser — parse_int/parse_real live in an `inline namespace
     # BOOST_PARSER_NUMERIC_NS` (std_charconv | boost_charconv | spirit_parsers,
     # selected by numeric.hpp at include time). The mingw snapshot used

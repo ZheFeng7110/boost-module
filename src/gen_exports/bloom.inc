@@ -40,7 +40,11 @@ export namespace boost { namespace bloom { namespace detail {
   using boost::bloom::detail::is_transparent;
   using boost::bloom::detail::is_unsigned_integral_or_extended_unsigned_integral;
   using boost::bloom::detail::is_unsigned_or_extended_unsigned;
+#if defined(BOOST_BLOOM_SSE2)
+  // M9 platform guard: m128ix2 is the SSE2 branch of fast_multiblock32
+  // (detail/sse2.hpp, __SSE2__); absent on arm64 (NEON branch).
   using boost::bloom::detail::m128ix2;
+#endif
   using boost::bloom::detail::move_assign_if;
   using boost::bloom::detail::multiblock_fpr_base;
   using boost::bloom::detail::mulx64;

@@ -5,7 +5,12 @@
 // directly here as they are the library's public API).
 #include "test_assert.hpp"
 #include <boost/scope_exit.hpp>
+// gcc 16: import + include of the same lib ODR-conflicts (see describe.cpp);
+// the module import is skipped on gcc. boost.core has no include counterpart
+// here, so its import stays (ignore_unused / BOOST_VERSION).
+#if !defined(__GNUC__) || defined(__clang__)
 import boost.scope_exit;
+#endif
 import boost.core;
 
 int main() {

@@ -1,9 +1,17 @@
 // boost.statechart smoke — simple state machine (mpl::list is include-only;
-// mixing include + import is standard-compliant)
+// mixing include + import is standard-compliant, but gcc 16 ODR-conflicts on
+// it — same redefinition pattern as describe.cpp — so the import is skipped on
+// gcc, keeping the test pure-header)
 #include "test_assert.hpp"
 #include <cassert>
+#if !defined(__GNUC__) || defined(__clang__)
 import boost.statechart;
+#endif
 #include <boost/mpl/list.hpp>
+#if defined(__GNUC__) && !defined(__clang__)
+// gcc: import skipped above — bring the statechart API in via header instead.
+#include <boost/statechart.hpp>
+#endif
 
 namespace sc = boost::statechart;
 namespace mpl = boost::mpl;
