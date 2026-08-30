@@ -1,7 +1,9 @@
 boost.assert
+boost.atomic
 boost.chrono
 boost.config
 boost.core
+boost.date_time
 boost.io
 boost.optional
 boost.smart_ptr

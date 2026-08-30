@@ -28,7 +28,8 @@ export namespace boost { namespace io {
   using boost::io::make_ostream_joiner;
   using boost::io::onullstream;
   using boost::io::ostream_joiner;
-  using boost::io::ostream_put;
+  // M11: ostream_put dropped — declared only via io/ostream_put.hpp (curated
+  // out of the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::io::quoted;
   using boost::io::wios_all_saver;
   using boost::io::wios_exception_saver;

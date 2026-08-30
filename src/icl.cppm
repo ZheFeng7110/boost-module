@@ -17,23 +17,15 @@ module;
 
 export module boost.icl;
 
-export import boost.algorithm;
 export import boost.assert;
 export import boost.config;
-export import boost.core;
-export import boost.intrusive;
+export import boost.container;
+export import boost.date_time;
 export import boost.io;
 export import boost.iterator;
-export import boost.lexical_cast;
-export import boost.move;
-export import boost.range;
 export import boost.rational;
-export import boost.smart_ptr;
-export import boost.throw_exception;
-export import boost.tokenizer;
 export import boost.type_traits;
 export import boost.utility;
-export import boost.winapi;
 
 #include "gen_exports/icl.inc"
 

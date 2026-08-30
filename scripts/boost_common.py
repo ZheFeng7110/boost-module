@@ -66,7 +66,17 @@ LIBS_T1A = [
     "type_index", "unordered", "utility", "uuid", "winapi",
     "yap",
 ]
-TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A
+# M11 T2 (boost-mcpp-all-libs-features-plan.md §2/§4): compiled libraries —
+# one module each plus its libs/<lib>/src TUs (see the M11 design doc §2 for
+# the per-lib TU table: exclusions for external-library backends, per-OS dirs
+# and upstream CMake deviations). math has src/tr1 only (deprecated std::tr1
+# wrappers; upstream CMake is INTERFACE) — its feature ships no TU.
+LIBS_T2 = [
+    "atomic", "charconv", "cobalt", "container", "contract", "date_time",
+    "graph", "iostreams", "log", "math", "nowide", "process",
+    "random", "serialization", "test", "timer", "type_erasure", "wave",
+]
+TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2
 
 # M10 T3 (boost-mcpp-all-libs-features-plan.md §2): macro-driven include-only
 # libraries — no module, no feature, no build work (user decision §5.3). Their
@@ -85,6 +95,13 @@ LIBS_T3 = [
 # internal-linkage constexpr-object APIs (hof, units) — same consumer rule
 # as T3, recorded in the M9 doc.
 LIBS_INCLUDE_ONLY_M9 = ["predef", "static_assert", "hof", "units"]
+# M11 downgrade to include-only: exception — the clone_impl<T> member bodies
+# attached to the boost.exception CMI as lazily loaded pendings trip gcc 16.1
+# ("recursive lazy load / failed to load pendings for clone_impl") in ANY
+# consumer TU that includes <memory>/<string>/<functional> — i.e. every real
+# consumer. Explicit instantiations in the module TU do not dodge it. The API
+# is header-only, so consumers #include <boost/exception/all.hpp> (T3 rule).
+LIBS_INCLUDE_ONLY_M11 = ["exception"]
 
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
@@ -98,6 +115,13 @@ CLANG_ARGS = [
     "--target=x86_64-w64-mingw32",
     "-DBOOST_ALL_NO_LIB",
     "-D_WIN32_WINNT=0x0A00",
+    # M11: asio (cobalt/log/process TUs) errors "WinSock.h has already been
+    # included" when windows.h pulled winsock1 before asio's winsock2 — which
+    # any boost.winapi -> windows.h chain does. WIN32_LEAN_AND_MEAN makes
+    # windows.h skip winsock.h entirely; asio then includes winsock2.h itself
+    # (defining _WINSOCKAPI_ instead is wrong: asio treats it as evidence that
+    # winsock1 is already in and hard-errors, verified).
+    "-DWIN32_LEAN_AND_MEAN",
     "-w",
 ]
 
@@ -306,11 +330,22 @@ def gfm_headers_of(lib: str):
     while missing:
         # sources of the missing subset
         sub = {str(h.resolve()).lower(): h for h in missing}
+        added = False
         for k in list(sub):
             if any(k in inc_of.get(other, ()) for other in sub if other != k):
                 continue
             h = sub[k]
             reach_from(k)
+            chosen.append(h)
+            added = True
+        if not added:
+            # Every remaining header is included by another member of the
+            # remaining subset — a pure include cycle with no entry source
+            # (first seen with boost.math, M11). Pick one representative so
+            # the loop terminates; its transitive in-set includes are pulled
+            # in by reach_from, the rest of the cycle on a later pass.
+            h = sorted(sub.values(), key=lambda p: p.as_posix())[0]
+            reach_from(str(h.resolve()).lower())
             chosen.append(h)
         missing = [h for h in headers if str(h.resolve()).lower() not in reached]
     return sorted(chosen, key=lambda p: p.as_posix())

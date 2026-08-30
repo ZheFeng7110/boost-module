@@ -13,6 +13,7 @@ export module boost.flyweight;
 
 export import boost.assert;
 export import boost.config;
+export import boost.container;
 export import boost.core;
 export import boost.intrusive;
 export import boost.move;

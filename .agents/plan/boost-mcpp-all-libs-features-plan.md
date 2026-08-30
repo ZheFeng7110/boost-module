@@ -4,7 +4,8 @@
 > 前置: [boost-mcpp-module-plan.md](boost-mcpp-module-plan.md) (M0–M6 已完成, 27 库接入, CI 四腿全绿)
 > 本次范围: 全部 155 个库的接入方案 + mcpp features 选择性构建; 用户决策记录于 §5
 > 进度: **M8 done (2026-08-15)** — features 基建落地, 27 库全部迁入 feature, build.mcpp 动态汇总
-> 后续: M9 done (2026-08-17, T1a 58 库) · M10 done (2026-08-30, T3 边界确认) — 详见各设计文档
+> 后续: M9 done (2026-08-17, T1a 58 库) · M10 done (2026-08-30, T3 边界确认) ·
+> M11 done (2026-08-30, T2 18 库模块 + exception 降级 include-only) — 详见各设计文档
 
 ## 0. 目标
 
@@ -176,9 +177,23 @@ boost.boost = { path = "..", features = ["all"] }
   mingw 本地全量 105/107 (thread/url 为 M6 §5 已知基线)
 - 设计文档: `.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`
 
-### M11 — 编译库批量接入 (T2, 19 库)
-- 每库: `.cppm` + `libs/*/src/**` 进 feature; per-OS TU 用 thread 模式 (`!` 排除); per-库私有 flags (thread 的 BOOST_THREAD_BUILD_LIB 模式推广, 如 math 的 quadmath 等)
-- 验证: 每库 smoke + 链接正确性 (模块声明 ↔ 库 TU 定义, M4 §5 模式)
+### M11 — 编译库批量接入 (T2, 18 库模块 + exception 降级) ✅ 已完成 (2026-08-30)
+- ✅ 18 库接入为模块 (atomic/charconv/cobalt/container/contract/date_time/
+  graph/iostreams/log/math/nowide/process/random/serialization/test/timer/
+  type_erasure/wave) + 各库 `libs/*/src` TU 进 feature (thread 模式 per-OS
+  互斥推广到 log; per-TU 排除: atomic sse41、log dump_avx2/ssse3、cobalt ssl、
+  iostreams 外部后端、container dlmalloc/alloc_lib、test 的 main 提供者、
+  math 全部 tr1 TU — math 实为 header-only)
+- ✅ exception 降级 include-only: gcc 16.1 模块 CMI pendings bug
+  (clone_impl) 使任何真实消费者 TU 失败, 上游头不可裁剪 (§5.3 先例 M9)
+- ✅ 修复 gen_features/gfm_headers_of 纯 include 环死循环 (boost.math 首触);
+  WIN32_LEAN_AND_MEAN 全包 (asio winsock1 冲突); include_dirs += log/src、
+  atomic/src; target.windows ldflags += ws2_32/ntdll/shell32/advapi32/
+  secur32/user32/synchronization; EXTRA_IMPLIES parser→charconv
+- ✅ 验证: llvm/msvc 默认 build ✅ + 126/126 测试 ✅ + --features all
+  build/test ✅ + examples ✅; gcc/mingw 默认 build ✅、`mcpp test` 失败于
+  test.m.o (上游 nfp 匿名命名空间 TU-local 暴露, 已知限制 §6.5)
+- 设计文档: `.agents/docs/2026-08-30-m11-t2-compiled-libs.md`
 
 ### M12 — 重型模板库 (T1b, ~15 库, opt-in)
 - 巨型 GFM (asio/hana/geometry/gil 等) 编译时/内存门禁; 裁剪与拆分策略 (M2 §11 自动裁剪可能不够 → curated GFM 拆分)

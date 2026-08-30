@@ -404,6 +404,7 @@ def main():
     # atomic/detail/type_traits/make_signed.hpp, which pulls
     # boost/type_traits/make_signed.hpp only under BOOST_HAS_INT128 (under the
     # MSVC ABI it uses std::make_signed instead).
+    # M11: boost.atomic may now claim them — best-effort.
     patch("src/gen_exports/thread.inc",
           "  using boost::make_signed;\n"
           "  using boost::make_strict_lock;",
@@ -413,14 +414,94 @@ def main():
           "  // MSVC ABI the atomic headers use std::make_signed instead.\n"
           "  using boost::make_signed;\n"
           "#endif\n"
-          "  using boost::make_strict_lock;")
+          "  using boost::make_strict_lock;",
+          required=False)
     patch("src/gen_exports/thread.inc",
           "  using boost::make_unsigned;\n"
           "  using boost::memory_order;",
           "#if defined(BOOST_HAS_INT128)\n"
           "  using boost::make_unsigned;\n"
           "#endif\n"
-          "  using boost::memory_order;")
+          "  using boost::memory_order;",
+          required=False)
+
+    # M11: math — float80_t / float_fast80_t / float_least80_t are the
+    # cstdfloat long-double typedefs (cstdfloat_types.hpp), declared only for
+    # 80-bit long double (same condition family as the M9 decimal guard).
+    for name in ["float80_t", "float_fast80_t", "float_least80_t"]:
+        patch("src/gen_exports/math.inc",
+              f"  using boost::{name};",
+              f"#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384\n"
+              f"  // M11 platform guard: cstdfloat_types.hpp declares the 80-bit long-double\n"
+              f"  // typedefs only where long double really is 80-bit; MSVC long double is 53-bit.\n"
+              f"  using boost::{name};\n"
+              f"#endif")
+    # M11: iostreams — codecvt_impl exists only on the libstdc++/older-dinkumware
+    # workaround paths (detail/codecvt_helper.hpp); MSVC STL declares neither.
+    patch("src/gen_exports/iostreams.inc",
+          "  using boost::iostreams::detail::codecvt_impl;",
+          "#if defined(BOOST_IOSTREAMS_NO_PRIMARY_CODECVT_DEFINITION) || \\\n"
+          "    defined(BOOST_IOSTREAMS_EMPTY_PRIMARY_CODECVT_DEFINITION) || \\\n"
+          "    defined(BOOST_IOSTREAMS_NO_LOCALE)\n"
+          "  // M11 platform guard: detail/codecvt_helper.hpp declares codecvt_impl only\n"
+          "  // on these std::codecvt workaround paths (libstdc++ mingw snapshot); the\n"
+          "  // MSVC STL takes none of them.\n"
+          "  using boost::iostreams::detail::codecvt_impl;\n"
+          "#endif")
+    # M11: process — asio selects posix_thread when BOOST_ASIO_HAS_PTHREADS
+    # (asio/detail/thread.hpp checks pthreads BEFORE windows; mingw-gcc defines
+    # it via boost config's BOOST_HAS_PTHREADS). The MSVC flavor uses win_thread
+    # and never declares posix_thread.
+    patch("src/gen_exports/process.inc",
+          "  using boost::asio::detail::posix_thread;",
+          "#if defined(BOOST_ASIO_HAS_PTHREADS)\n"
+          "  // M11 platform guard: asio/detail/thread.hpp includes posix_thread.hpp only\n"
+          "  // under BOOST_ASIO_HAS_PTHREADS (mingw snapshot); the MSVC flavor takes\n"
+          "  // win_thread.\n"
+          "  using boost::asio::detail::posix_thread;\n"
+          "#endif")
+
+    # M11: graph — graph's bundle transitively pulls multiprecision/proto/
+    # serialization interop headers; their directive-expansion/injection
+    # leaks export entities that the MSVC ABI never declares (BOOST_HAS_INT128
+    # is off under the clang-msvc flavor; proto's extended-template matching is
+    # gcc-specific). Guards mirror the upstream header conditions.
+    for name in ["int128_type", "uint128_type"]:
+        patch("src/gen_exports/graph.inc",
+              f"  using boost::multiprecision::{name};",
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: standalone_config.hpp declares multiprecision::{name} only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::{name};\n#endif")
+    for name in ["template_arity", "template_arity_helper", "template_arity_impl2"]:
+        patch("src/gen_exports/graph.inc",
+              f"  using boost::proto::detail::{name};",
+              f"#if defined(BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING)\n  // M11 platform guard: proto/detail/template_arity.hpp declares {name} only under\n  // BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING (gcc extended-template matching).\n  using boost::proto::detail::{name};\n#endif")
+    for name in ["divide_subtract", "divide_unsigned_helper"]:
+        patch("src/gen_exports/graph.inc",
+              f"  using boost::multiprecision::backends::{name};",
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int divide helpers take double_limb_type (= __int128)\n  // and are declared only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::backends::{name};\n#endif")
+    for name in ["divide_subtract", "int128_type", "uint128_type"]:
+        patch("src/gen_exports/graph.inc",
+              f"  using boost::serialization::cpp_int_detail::{name};",
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int interop surface exists only under BOOST_HAS_INT128\n  // (multiprecision detail; off under the clang-msvc flavor).\n  using boost::serialization::cpp_int_detail::{name};\n#endif")
+
+    # M11: charconv — the mingw snapshot exports entities the MSVC ABI never
+    # declares (mirrors the M9 decimal guards):
+    # ieee754_binary80: bit_layouts.hpp defines it only for 80-bit long double
+    # (MSVC long double is 53-bit); to_chars128: to_chars_integer_impl.hpp
+    # declares it only under BOOST_CHARCONV_HAS_INT128.
+    patch("src/gen_exports/charconv.inc",
+          "  using boost::charconv::detail::ieee754_binary80;",
+          "#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384\n"
+          "  // M11 platform guard: bit_layouts.hpp defines ieee754_binary80 only for\n"
+          "  // 80-bit long double (x86-64 gcc/mingw); MSVC long double is 53-bit.\n"
+          "  using boost::charconv::detail::ieee754_binary80;\n"
+          "#endif")
+    patch("src/gen_exports/charconv.inc",
+          "  using boost::charconv::detail::to_chars128;\n",
+          "#if defined(BOOST_CHARCONV_HAS_INT128)\n"
+          "  // M11 platform guard: to_chars128 exists only under BOOST_CHARCONV_HAS_INT128\n"
+          "  // (to_chars_integer_impl.hpp).\n"
+          "  using boost::charconv::detail::to_chars128;\n"
+          "#endif\n")
 
     # M9: pfr — clang_wrapper_t is the clang-only NTTP wrapper
     # (core_name20_static.hpp #ifdef __clang__ branch; gcc takes the #else
@@ -446,6 +527,216 @@ def main():
     # from_chars_x86.hpp / to_chars_x86.hpp / uuid_x86.ipp / simd_vector.hpp,
     # all included under BOOST_UUID_USE_SSE2 (config.hpp: __GNUC__ && __SSE2__,
     # or MSVC _M_X64). Absent on macOS arm64 (no __SSE2__).
+    # M11: iostreams — boost/iostreams/filter/regex.hpp is curated out of the
+    # module GMF (its boost::regex dependency trips the gcc 16.1 module
+    # abi-tag streaming bug in cpp_regex_traits); drop the GMF include and the
+    # regex filter exports. Best-effort: a regen from the curated libs.json
+    # produces neither.
+    patch("src/iostreams.cppm",
+          "#include <boost/iostreams/filter/regex.hpp>\n",
+          "// M11: filter/regex.hpp curated out of the GMF — the cpp_regex_traits\n"
+          "// abi-tag streaming bug (gcc 16.1); consumers include it themselves.\n",
+          required=False)
+    patch("src/iostreams.cppm",
+          "export import boost.regex;\n",
+          "// M11: stale boost.regex import removed with filter/{regex,grep}.hpp\n"
+          "// curation (gcc 16.1 cpp_regex_traits abi-tag streaming bug).\n",
+          required=False)
+    for name in ["basic_regex_filter", "regex_filter", "wregex_filter"]:
+        patch("src/gen_exports/iostreams.inc",
+              f"  using boost::iostreams::{name};\n",
+              f"  // M11: {name} dropped — declared only via filter/regex.hpp (curated\n"
+              f"  // out of the module GMF; gcc 16.1 abi-tag streaming bug).\n",
+              required=False)
+    # M11: test — boost/test/data/test_case.hpp is curated out of the module
+    # GMF: its transitive chain (dataset → monomorphic/generators → random.hpp)
+    # exposes anonymous-namespace keyword objects (TU-local) that hard-error on
+    # gcc 16.1. Drop the GMF include and the data::* export blocks.
+    patch("src/test.cppm",
+          "#include <boost/test/data/test_case.hpp>\n",
+          "// M11: data/test_case.hpp curated out of the GMF — random.hpp exposes\n"
+          "// anonymous-namespace keywords (TU-local), hard-erroring on gcc 16.1.\n"
+          "// Consumers include it themselves for BOOST_DATA_TEST_CASE.\n",
+          required=False)
+    patch("src/gen_exports/test.inc",
+          "export namespace boost { namespace unit_test { namespace data {\n"
+          "  using boost::unit_test::data::for_each_sample;",
+          "  // M11: boost::unit_test::data::* blocks dropped — declared only via\n"
+          "  // data/test_case.hpp's chain (curated out of the module GMF; gcc 16.1\n"
+          "  // TU-local exposure in random.hpp).\n"
+          "#if 0\n"
+          "export namespace boost { namespace unit_test { namespace data {\n"
+          "  using boost::unit_test::data::for_each_sample;",
+          required=False)
+    patch("src/gen_exports/test.inc",
+          "  using boost::unit_test::data::result_of::make;\n}}}}",
+          "  using boost::unit_test::data::result_of::make;\n}}}}\n#endif",
+          required=False)
+    # M11: io — boost/io/ostream_put.hpp is curated out of the io module GMF:
+    # its function-local unnamed enum (buffer_fill) streamed from two module
+    # CMIs (boost.io + boost.utility via string_view) mismatches on gcc 16.1.
+    # Nothing from it appears in io.inc.
+    # M11: graph — multiprecision detail unmentionable placeholders have no
+    # external linkage; gcc refuses the export.
+    for name in ["unmentionable", "unmentionable_type"]:
+        patch("src/gen_exports/graph.inc",
+              f"  using boost::multiprecision::detail::{name};\n",
+              f"  // M11: {name} dropped — no external linkage (multiprecision detail\n"
+              f"  // placeholder); gcc refuses the export.\n",
+              required=False)
+    # M11: io — boost/io/ostream_put.hpp is curated out of the io module GMF:
+    # its function-local unnamed enum (buffer_fill) streamed from two module
+    # CMIs (boost.io + boost.utility via string_view) mismatches on gcc 16.1.
+    # Nothing from it appears in io.inc. NB: runs after the git restores below
+    # in file order? No — placed after them via main() ordering: keep it here
+    # only if the restore list does not include io.cppm (it does not).
+    patch("src/io.cppm",
+          "#include <boost/io/ostream_put.hpp>\n",
+          "// M11: ostream_put.hpp curated out of the io module GMF — its\n"
+          "// buffer_fill enum mismatches between the boost.io/boost.utility CMIs\n"
+          "// on gcc 16.1; consumers include the header themselves.\n",
+          required=False)
+    for name in ["basic_grep_filter", "grep_filter", "wgrep_filter"]:
+        patch("src/gen_exports/iostreams.inc",
+              f"  using boost::iostreams::{name};\n",
+              f"  // M11: {name} dropped — declared only via filter/grep.hpp (curated\n"
+              f"  // out of the module GMF; same gcc 16.1 regex traits bug).\n",
+              required=False)
+    # M11: utility — boost/utility/string_ref.hpp (deprecated upstream) pulls
+    # boost/io/detail/buffer_fill.hpp whose unnamed enum mismatches between the
+    # boost.io and boost.utility BMIs on gcc 16.1. Curated out of the module
+    # GMF; drop the include and the string_ref exports.
+    patch("src/utility.cppm",
+          "#include <boost/utility/string_ref.hpp>\n",
+          "// M11: string_ref.hpp curated out of the GMF — its buffer_fill enum\n"
+          "// mismatches between the boost.io/boost.utility BMIs on gcc 16.1;\n"
+          "// consumers include the deprecated header themselves.\n",
+          required=False)
+    for name in ["basic_string_ref", "string_ref", "u16string_ref",
+                 "u32string_ref", "wstring_ref"]:
+        patch("src/gen_exports/utility.inc",
+              f"  using boost::{name};\n",
+              f"  // M11: {name} dropped — declared only via string_ref.hpp (curated out of\n"
+              f"  // the module GMF; gcc 16.1 buffer_fill enum mismatch).\n",
+              required=False)
+    patch("src/gen_exports/utility.inc",
+          "  using boost::detail::string_ref_traits_eq;\n",
+          "  // M11: string_ref_traits_eq dropped — string_ref.hpp curated out of the GMF.\n",
+          required=False)
+    # M11: test — boost/test/data/monomorphic/generators/random.hpp + keywords.hpp
+    # curated out of the GMF: random.hpp's templates expose keywords.hpp's
+    # anonymous-namespace keyword objects (TU-local), hard-erroring on gcc 16.1.
+    # M11: test — boost/test/minimal.hpp is the minimal-mode single-header
+    # (it includes impl/execution_monitor.ipp + impl/debug.ipp and DEFINES
+    # ::main); with it out of the libs.json entry (M11 curation), drop its
+    # include from the module GMF, include the real public headers that were
+    # only reachable through it, and drop the minimal_test / impl-only exports
+    # from the .inc. Best-effort anchors: a future regen from the curated
+    # libs.json produces neither the minimal.hpp include nor those lines.
+    patch("src/test.cppm",
+          "#include <boost/test/minimal.hpp>\n",
+          "// M11: boost/test/minimal.hpp removed — the minimal-mode single-header defines\n"
+          "// ::main via impl/execution_monitor.ipp + impl/debug.ipp, which collided with\n"
+          "// every test program's main at link time. Curated out of libs.json.\n"
+          "// The boost::debug / boost::detail::execution_monitor declarations were only\n"
+          "// reachable through minimal.hpp; include the real public headers explicitly.\n"
+          "#include <boost/test/debug.hpp>\n"
+          "#include <boost/test/execution_monitor.hpp>\n",
+          required=False)
+    patch("src/test.cppm",
+          "// every test program's main at link time. Curated out of libs.json.\n",
+          "// every test program's main at link time. Curated out of libs.json.\n"
+          "// The boost::debug / boost::detail::execution_monitor declarations were only\n"
+          "// reachable through minimal.hpp; include the real public headers explicitly.\n"
+          "#include <boost/test/debug.hpp>\n"
+          "#include <boost/test/execution_monitor.hpp>\n",
+          required=False)
+    patch("src/gen_exports/test.inc",
+          "  using boost::minimal_test::caller;\n"
+          "  using boost::minimal_test::const_string;\n"
+          "  using boost::minimal_test::errors_counter;\n"
+          "  using boost::minimal_test::report_critical_error;\n"
+          "  using boost::minimal_test::report_error;\n",
+          "  // M11: boost::minimal_test::* dropped — declared only via minimal.hpp (curated\n"
+          "  // out of the module GMF; it defines ::main and the minimal framework inline).\n",
+          required=False)
+    patch("src/gen_exports/test.inc",
+          "  using boost::debug::safe_handle_helper;\n",
+          "  // M11: boost::debug::safe_handle_helper dropped — declared only in\n"
+          "  // impl/debug.ipp (windows impl), unreachable without minimal.hpp.\n",
+          required=False)
+    patch("src/test.cppm",
+          "#include <boost/test/utils/timer.hpp>\n",
+          "// M11: boost/test/utils/timer.hpp removed — it defines get_tick_freq without\n"
+          "// inline, so the module TU collided with framework.o (framework.ipp).\n"
+          "// Curated out of libs.json; nothing from it appears in test.inc.\n",
+          required=False)
+    patch("src/gen_exports/test.inc",
+          "export namespace boost { namespace unit_test { namespace timer {\n"
+          "  using boost::unit_test::timer::elapsed_time;\n"
+          "  using boost::unit_test::timer::microsecond_wall_time;\n"
+          "  using boost::unit_test::timer::second_wall_time;\n"
+          "  using boost::unit_test::timer::timer;\n"
+          "}}}\n"
+          "\n"
+          "export namespace boost { namespace unit_test { namespace timer { namespace details {\n"
+          "  using boost::unit_test::timer::details::get_tick_freq;\n"
+          "}}}}\n",
+          "  // M11: boost::unit_test::timer::* dropped — declared only in utils/timer.hpp\n"
+          "  // (curated out of the module GMF; its get_tick_freq definition is non-inline\n"
+          "  // and collided with framework.o).\n",
+          required=False)
+    # boost::detail::{do_invoke,extract,forward,fpe_except_guard,
+    # system_signal_exception,typeid_name} are declared in
+    # impl/execution_monitor.ipp only — with minimal.hpp out of the GMF they are
+    # unreachable on every platform; consumers include the public headers.
+    for name in ["do_invoke", "extract", "forward", "fpe_except_guard",
+                 "system_signal_exception", "typeid_name"]:
+        patch("src/gen_exports/test.inc",
+              f"  using boost::detail::{name};\n",
+              f"  // M11: boost::detail::{name} dropped — declared only in impl/execution_monitor.ipp.\n",
+              required=False)
+
+    # M11: atomic — the mingw snapshot exports boost::is_integral/is_signed/
+    # make_signed/make_unsigned (atomic/detail/type_traits/*.hpp use the
+    # Boost.TypeTraits versions only under BOOST_HAS_INT128; the MSVC ABI takes
+    # the std:: versions and never declares the boost:: ones) plus the
+    # gcc-only backends (convert_memory_order_to_gcc, *_gcc_atomic,
+    # *_gcc_x86 — same conditions as the M4/M7 thread.inc guards).
+    patch("src/gen_exports/atomic.inc",
+          "  using boost::is_integral;\n"
+          "  using boost::is_signed;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M11 platform guard: atomic/detail/type_traits/is_integral.hpp (and\n"
+          "  // is_signed) pull the boost:: trait only under BOOST_HAS_INT128 (libstdc++\n"
+          "  // __int128 workaround); the MSVC ABI takes the std:: trait instead.\n"
+          "  using boost::is_integral;\n"
+          "  using boost::is_signed;\n"
+          "#endif")
+    patch("src/gen_exports/atomic.inc",
+          "  using boost::make_signed;\n"
+          "  using boost::make_unsigned;\n"
+          "  using boost::memory_order;\n"
+          "  using boost::memory_order_acq_rel;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M11 platform guard: atomic/detail/type_traits/make_signed.hpp — as above.\n"
+          "  using boost::make_signed;\n"
+          "  using boost::make_unsigned;\n"
+          "#endif\n"
+          "  using boost::memory_order;\n"
+          "  using boost::memory_order_acq_rel;")
+    for name in ["convert_memory_order_to_gcc",
+                 "core_operations_gcc_atomic",
+                 "fence_operations_gcc_atomic"]:
+        patch("src/gen_exports/atomic.inc",
+              f"  using boost::atomics::detail::{name};",
+              f"#if defined(__GNUC__)\n  // M11 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).\n  using boost::atomics::detail::{name};\n#endif")
+    for name in ["core_arch_operations_gcc_x86",
+                 "core_arch_operations_gcc_x86_base",
+                 "fence_arch_operations_gcc_x86"]:
+        patch("src/gen_exports/atomic.inc",
+              f"  using boost::atomics::detail::{name};",
+              f"#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))\n  // M11 platform guard: gcc_x86 backend of boost/atomic (platform.hpp); x86 only.\n  using boost::atomics::detail::{name};\n#endif")
     guard_entity_lines("src/gen_exports/uuid.inc", "defined(BOOST_UUID_USE_SSE2)", [
         "compare",
         "countr_zero_nz",
@@ -613,23 +904,29 @@ def main():
     # entities (convert_memory_order_to_gcc, core_arch_operations_gcc_x86*,
     # core_operations_gcc_atomic, fence_arch_operations_gcc_x86,
     # fence_operations_gcc_atomic); absent under the MSVC ABI.
+    # M11: with boost.atomic as a module these entities are claimed by it
+    # (first-wins) and migrate out of thread.inc — anchors may be gone, so
+    # the guards are best-effort (required=False).
     for name in ["convert_memory_order_to_gcc",
                  "core_operations_gcc_atomic",
                  "fence_operations_gcc_atomic"]:
         patch("src/gen_exports/thread.inc",
               f"  using boost::atomics::detail::{name};",
-              f"#if defined(__GNUC__)\n  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).\n  using boost::atomics::detail::{name};\n#endif")
+              f"#if defined(__GNUC__)\n  // M4 platform guard: gcc-only branch of boost/atomic (snapshot = mingw flavor).\n  using boost::atomics::detail::{name};\n#endif",
+              required=False)
     # M7: the *_gcc_x86 backend classes need the same condition as the
     # boost/atomic gcc_x86 backend (platform.hpp: __GNUC__ && x86 arch). Plain
     # __GNUC__ broke macOS arm64 (clang defines __GNUC__, but the gcc_aarch64
     # backend applies); bare __i386__/__x86_64__ would wrongly export them
     # under the MSVC ABI (clang-cl defines no __GNUC__).
+    # M11: entities may migrate to boost.atomic — best-effort.
     for name in ["core_arch_operations_gcc_x86",
                  "core_arch_operations_gcc_x86_base",
                  "fence_arch_operations_gcc_x86"]:
         patch("src/gen_exports/thread.inc",
               f"  using boost::atomics::detail::{name};",
-              f"#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))\n  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).\n  using boost::atomics::detail::{name};\n#endif")
+              f"#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))\n  // M7 platform guard: gcc_x86 backend of boost/atomic (platform.hpp) exists only on x86; __GNUC__ is defined by clang too, so it broke macOS arm64 (gcc_aarch64 backend).\n  using boost::atomics::detail::{name};\n#endif",
+              required=False)
     patch("src/gen_exports/variant.inc",
           "  using boost::mpl::aux::arity_helper;\n  using boost::mpl::aux::arity_tag;",
           "#if defined(__GNUC__)\n  // M3 hand-guard: gcc-preprocessed mpl headers only (BOOST_MPL_CFG_COMPILER_DIR=gcc).\n"
@@ -643,6 +940,22 @@ def main():
     patch("src/gen_exports/variant.inc",
           "  using boost::mpl::aux::template_arity_impl;",
           "#if defined(__GNUC__)\n  // M3 hand-guard: as above (template_arity_impl).\n  using boost::mpl::aux::template_arity_impl;\n#endif")
+
+    # M9: heap's container templates (d_ary_heap etc.) instantiate the intrusive
+    # placement new (`::new(p, boost_move_new_t()) T`) in the consumer TU, where
+    # the global operator new overload from move/detail/placement_new.hpp (a GMF
+    # include) is not visible. M0 rule: re-export the global operator new
+    # overloads from the module purview.
+    patch("src/heap.cppm",
+          '#include "gen_exports/heap.inc"',
+          "// M9: heap's container templates (d_ary_heap etc.) instantiate the intrusive\n"
+          "// placement new (`::new(p, boost_move_new_t()) T`) in the consumer TU, where\n"
+          "// the global operator new overload from move/detail/placement_new.hpp (a GMF\n"
+          "// include) is not visible. M0 rule: re-export the global operator new\n"
+          "// overloads from the module purview.\n"
+          "export using ::operator new;\n\n"
+          '#include "gen_exports/heap.inc"',
+          required=False)
 
     # ---- algorithm: M3 workaround (string.hpp GFM + *regex entity pruning) ----
     # algorithm.inc is regenerated with string_regex.hpp in the GFM; the M3
@@ -660,6 +973,23 @@ def main():
                 "mp11", "optional", "range", "rational", "scope", "scope_exit",
                 "static_string", "tuple", "type_traits", "variant", "variant2"]:
         restore_from_git(f"src/{rel}.cppm")
+
+    # M11: io — boost/io/ostream_put.hpp is curated out of the io module GMF:
+    # its function-local unnamed enum (buffer_fill) streamed from two module
+    # CMIs (boost.io + boost.utility via string_view) mismatches on gcc 16.1.
+    # Nothing from it appears in io.inc. NB: io.cppm is git-restored above, so
+    # this patch must run after the restores.
+    patch("src/io.cppm",
+          "#include <boost/io/ostream_put.hpp>\n",
+          "// M11: ostream_put.hpp curated out of the io module GMF — its\n"
+          "// buffer_fill enum mismatches between the boost.io/boost.utility CMIs\n"
+          "// on gcc 16.1; consumers include the header themselves.\n",
+          required=False)
+    patch("src/gen_exports/io.inc",
+          "  using boost::io::ostream_put;\n",
+          "  // M11: ostream_put dropped — declared only via io/ostream_put.hpp (curated\n"
+          "  // out of the module GMF; gcc 16.1 buffer_fill enum mismatch).\n",
+          required=False)
 
     print("done.")
 

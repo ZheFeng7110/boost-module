@@ -1,6 +1,5 @@
 boost.assert
-boost.config
-boost.core
 boost.multi_index
 boost.optional
+boost.serialization
 boost.type_traits

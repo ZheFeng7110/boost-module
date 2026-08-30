@@ -46,7 +46,10 @@ namespace std{ using ::isspace; }
 #undef iswspace
 #endif
 
-namespace { // anonymous
+namespace boost { // M11: was anonymous — TU-local exposure breaks gcc module builds (see M11 design doc §6); moved into boost::archive::iterators::detail
+namespace archive {
+namespace iterators {
+namespace detail {
 
 template<class CharType>
 struct remove_whitespace_predicate;
@@ -69,7 +72,7 @@ struct remove_whitespace_predicate<wchar_t>
 };
 #endif
 
-} // namespace anonymous
+} } } } // namespace detail, iterators, archive, boost
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // convert base64 file data (including whitespace and padding) to binary
@@ -132,7 +135,7 @@ public:
 template<class Base>
 class remove_whitespace :
     public filter_iterator<
-        remove_whitespace_predicate<
+        detail::remove_whitespace_predicate<
             typename boost::iterator_value<Base>::type
             //typename Base::value_type
         >,
@@ -141,7 +144,7 @@ class remove_whitespace :
 {
     friend class boost::iterator_core_access;
     typedef filter_iterator<
-        remove_whitespace_predicate<
+        detail::remove_whitespace_predicate<
             typename boost::iterator_value<Base>::type
             //typename Base::value_type
         >,

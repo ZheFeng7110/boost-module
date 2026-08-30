@@ -1,5 +1,9 @@
-// boost.io smoke — quoted, ostream_joiner, saver types
+// boost.io smoke — quoted, ostream_joiner, saver types. ostream_put is
+// include-side (curated out of the module GMF, M11: gcc 16.1 buffer_fill
+// enum mismatch); the rest comes from the module. The include sits before
+// the imports so the TU's own STL definitions load first (M9 §4 pattern).
 #include "test_assert.hpp"
+#include <boost/io/ostream_put.hpp>
 import std;
 import boost.io;
 

@@ -44,9 +44,11 @@ module;
 export module boost.thread;
 
 export import boost.assert;
+export import boost.atomic;
 export import boost.chrono;
 export import boost.config;
 export import boost.core;
+export import boost.date_time;
 export import boost.io;
 export import boost.optional;
 export import boost.smart_ptr;

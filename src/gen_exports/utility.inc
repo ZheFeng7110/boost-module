@@ -3,7 +3,8 @@
 
 export namespace boost {
   using boost::base_from_member;
-  using boost::basic_string_ref;
+  // M11: basic_string_ref dropped — declared only via string_ref.hpp (curated out of
+  // the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::basic_string_view;
   using boost::compressed_pair;
   using boost::enable_if_c;
@@ -37,7 +38,8 @@ export namespace boost {
   using boost::operator>;
   using boost::operator>=;
   using boost::result_of;
-  using boost::string_ref;
+  // M11: string_ref dropped — declared only via string_ref.hpp (curated out of
+  // the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::string_view;
   using boost::swap;
   using boost::tr1_result_of;
@@ -53,12 +55,15 @@ export namespace boost {
   using boost::typed_in_place_factory8;
   using boost::typed_in_place_factory9;
   using boost::typed_in_place_factory_base;
-  using boost::u16string_ref;
+  // M11: u16string_ref dropped — declared only via string_ref.hpp (curated out of
+  // the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::u16string_view;
-  using boost::u32string_ref;
+  // M11: u32string_ref dropped — declared only via string_ref.hpp (curated out of
+  // the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::u32string_view;
   using boost::value_initialized;
-  using boost::wstring_ref;
+  // M11: wstring_ref dropped — declared only via string_ref.hpp (curated out of
+  // the module GMF; gcc 16.1 buffer_fill enum mismatch).
   using boost::wstring_view;
 }
 
@@ -78,7 +83,7 @@ export namespace boost { namespace detail {
   using boost::detail::result_of_pointer;
   using boost::detail::result_of_void_impl;
   using boost::detail::result_of_yes_type;
-  using boost::detail::string_ref_traits_eq;
+  // M11: string_ref_traits_eq dropped — string_ref.hpp curated out of the GMF.
   using boost::detail::string_view_traits_eq;
   using boost::detail::tr1_result_of_impl;
   using boost::detail::zero_init;

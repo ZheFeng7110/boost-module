@@ -9,10 +9,9 @@ module;
 export module boost.property_tree;
 
 export import boost.assert;
-export import boost.config;
-export import boost.core;
 export import boost.multi_index;
 export import boost.optional;
+export import boost.serialization;
 export import boost.type_traits;
 
 #include "gen_exports/property_tree.inc"

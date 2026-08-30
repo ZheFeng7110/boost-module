@@ -10,14 +10,10 @@ module;
 export module boost.histogram;
 
 export import boost.assert;
-export import boost.config;
 export import boost.core;
-export import boost.lexical_cast;
-export import boost.move;
+export import boost.math;
 export import boost.mp11;
-export import boost.throw_exception;
-export import boost.type_traits;
-export import boost.utility;
+export import boost.serialization;
 
 #include "gen_exports/histogram.inc"
 

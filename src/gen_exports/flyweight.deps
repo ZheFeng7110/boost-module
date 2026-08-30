@@ -1,5 +1,6 @@
 boost.assert
 boost.config
+boost.container
 boost.core
 boost.intrusive
 boost.move

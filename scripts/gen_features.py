@@ -75,10 +75,121 @@ COMPILED_TU_GLOBS = {
                          "deps/boost/libs/thread/src/pthread/thread.cpp"],
     # M9: parser pulls boost/charconv when std::from_chars is unavailable
     # (detail/numeric.hpp picks boost_charconv branch; seen on the linux-llvm
-    # CI leg). boost.charconv is a compiled lib — ship its TUs with the parser
-    # feature so the module's consumers link. On platforms where the std
-    # branch is active the TUs compile but produce no referenced symbols.
-    "parser":           ["deps/boost/libs/charconv/src/*.cpp"],
+    # CI leg). boost.charconv is a module since M11 — parser now *implies* it
+    # (EXTRA_IMPLIES below) instead of shipping its TUs, so the TU glob is not
+    # duplicated across two features (double ADD when both are active).
+    # M11 T2 compiled libs (design doc §2 — per-lib TU table with exclusions):
+    # atomic: find_address_sse41.cpp excluded — upstream compiles it with
+    # per-TU -msse4.1 flags only after a compiler probe; without its
+    # BOOST_ATOMIC_USE_SSE41 the lock_pool takes the SSE2 path (this is the
+    # upstream "probe failed" fallback, which we mirror).
+    "atomic":           ["deps/boost/libs/atomic/src/lock_pool.cpp",
+                         "deps/boost/libs/atomic/src/find_address_sse2.cpp"],
+    "charconv":         ["deps/boost/libs/charconv/src/*.cpp"],
+    # cobalt: io/*.cpp enumerated to exclude ssl.cpp (OpenSSL — external, M13);
+    # main.cpp defines main_promise::run_main only, not ::main.
+    "cobalt":           ["deps/boost/libs/cobalt/src/*.cpp",
+                         "deps/boost/libs/cobalt/src/detail/*.cpp",
+                         "deps/boost/libs/cobalt/src/io/steady_timer.cpp",
+                         "deps/boost/libs/cobalt/src/io/system_timer.cpp",
+                         "deps/boost/libs/cobalt/src/io/signal_set.cpp",
+                         "deps/boost/libs/cobalt/src/io/sleep.cpp",
+                         "deps/boost/libs/cobalt/src/io/read.cpp",
+                         "deps/boost/libs/cobalt/src/io/write.cpp",
+                         "deps/boost/libs/cobalt/src/io/serial_port.cpp",
+                         "deps/boost/libs/cobalt/src/io/pipe.cpp",
+                         "deps/boost/libs/cobalt/src/io/file.cpp",
+                         "deps/boost/libs/cobalt/src/io/random_access_file.cpp",
+                         "deps/boost/libs/cobalt/src/io/stream_file.cpp",
+                         "deps/boost/libs/cobalt/src/io/endpoint.cpp",
+                         "deps/boost/libs/cobalt/src/io/socket.cpp",
+                         "deps/boost/libs/cobalt/src/io/datagram_socket.cpp",
+                         "deps/boost/libs/cobalt/src/io/seq_packet_socket.cpp",
+                         "deps/boost/libs/cobalt/src/io/stream_socket.cpp",
+                         "deps/boost/libs/cobalt/src/io/resolver.cpp",
+                         "deps/boost/libs/cobalt/src/io/acceptor.cpp"],
+    # container: alloc_lib.c excluded (C TU) AND dlmalloc.cpp excluded — its
+    # dlmalloc_* wrappers call the boost_cont_* C API defined in alloc_lib.c,
+    # so shipping either alone leaves undefined symbols. This mirrors the
+    # upstream "BOOST_CONTAINER_HEADER_ONLY" degradation (no extended
+    # allocators); the pmr resource TUs are self-contained.
+    "container":        ["deps/boost/libs/container/src/global_resource.cpp",
+                         "deps/boost/libs/container/src/monotonic_buffer_resource.cpp",
+                         "deps/boost/libs/container/src/pool_resource.cpp",
+                         "deps/boost/libs/container/src/synchronized_pool_resource.cpp",
+                         "deps/boost/libs/container/src/unsynchronized_pool_resource.cpp"],
+    "contract":         ["deps/boost/libs/contract/src/contract.cpp"],
+    # date_time: upstream CMake compiles only greg_month.cpp — the other
+    # b2-era gregorian/posix_time TUs conflict with the 1.91 headers
+    # (greg_weekday.hpp defines the as_*_string methods inline unconditionally).
+    "date_time":        ["deps/boost/libs/date_time/src/gregorian/greg_month.cpp"],
+    # exception is include-only on gcc 16.1 (see boost_common.py
+    # LIBS_INCLUDE_ONLY_M11) — its clone TU ships no feature.
+    "graph":            ["deps/boost/libs/graph/src/*.cpp"],
+    # iostreams: external-library backends (zlib/gzip/bzip2/lzma/zstd, M13
+    # boundary) excluded — only the system-library-free device TUs ship.
+    "iostreams":        ["deps/boost/libs/iostreams/src/file_descriptor.cpp",
+                         "deps/boost/libs/iostreams/src/mapped_file.cpp"],
+    # log: windows/posix dirs are per-OS exclusive via the target tables'
+    # `!` rules (same basename symbols in ipc_reliable_message_queue.cpp /
+    # object_name.cpp). dump_avx2/dump_ssse3 are `!`-excluded on BOTH targets
+    # (unconditional <immintrin.h> breaks arm64; their symbols are only
+    # referenced under consumer-set BOOST_LOG_USE_AVX2/SSSE3, which the fixed
+    # module interface cannot honor — M4 §9 pattern). event_log_backend.cpp
+    # ships: its generated windows/simple_event_log.h is vendored as a
+    # hand-written stub (see that file; the .mc constants only need to be
+    # self-consistent event IDs).
+    "log":              ["deps/boost/libs/log/src/*.cpp",
+                         "deps/boost/libs/log/src/setup/*.cpp",
+                         "deps/boost/libs/log/src/windows/*.cpp",
+                         "deps/boost/libs/log/src/posix/*.cpp"],
+    # math: no TU — libs/math/src has only the deprecated std::tr1 wrappers
+    # (upstream CMake: add_library(boost_math INTERFACE)). Header-only module.
+    "nowide":           ["deps/boost/libs/nowide/src/*.cpp"],
+    # process: flat glob — every platform TU is internally guarded with
+    # `#if defined(BOOST_PROCESS_V2_POSIX/WINDOWS)` (verified); all src TUs
+    # are the v2 API.
+    "process":          ["deps/boost/libs/process/src/**/*.cpp"],
+    "random":           ["deps/boost/libs/random/src/random_device.cpp"],
+    "serialization":    ["deps/boost/libs/serialization/src/*.cpp"],
+    # test: unit_test_main.cpp / cpp_main.cpp / test_main.cpp are EXCLUDED —
+    # they are upstream's prg_exec_monitor / test_exec_monitor entry points
+    # that define ::main or reference the user's test_main(); `mcpp test`
+    # links every TU into each test program, so they collide there (no archive
+    # pull-on-demand in that mode). Consumers own main + the unit_test_main
+    # runner (the runner comes from #including impl/unit_test_main.ipp with
+    # BOOST_TEST_NO_MAIN, cf. tests/test.cpp); all framework services are
+    # linked from the remaining TUs.
+    "test":             ["deps/boost/libs/test/src/compiler_log_formatter.cpp",
+                         "deps/boost/libs/test/src/debug.cpp",
+                         "deps/boost/libs/test/src/decorator.cpp",
+                         "deps/boost/libs/test/src/execution_monitor.cpp",
+                         "deps/boost/libs/test/src/framework.cpp",
+                         "deps/boost/libs/test/src/junit_log_formatter.cpp",
+                         "deps/boost/libs/test/src/plain_report_formatter.cpp",
+                         "deps/boost/libs/test/src/progress_monitor.cpp",
+                         "deps/boost/libs/test/src/results_collector.cpp",
+                         "deps/boost/libs/test/src/results_reporter.cpp",
+                         "deps/boost/libs/test/src/test_framework_init_observer.cpp",
+                         "deps/boost/libs/test/src/test_tools.cpp",
+                         "deps/boost/libs/test/src/test_tree.cpp",
+                         "deps/boost/libs/test/src/unit_test_log.cpp",
+                         "deps/boost/libs/test/src/unit_test_monitor.cpp",
+                         "deps/boost/libs/test/src/unit_test_parameters.cpp",
+                         "deps/boost/libs/test/src/xml_log_formatter.cpp",
+                         "deps/boost/libs/test/src/xml_report_formatter.cpp"],
+    "timer":            ["deps/boost/libs/timer/src/*.cpp"],
+    "type_erasure":     ["deps/boost/libs/type_erasure/src/dynamic_binding.cpp"],
+    "wave":             ["deps/boost/libs/wave/src/*.cpp",
+                         "deps/boost/libs/wave/src/cpplexer/**/*.cpp"],
+}
+
+# Hand-maintained implies additions (union with the generated .deps edges).
+# parser: its GMF includes boost/charconv.hpp only where std::from_chars is
+# unavailable (linux-llvm CI leg) — the mingw-generated .deps lacks the edge,
+# but the consumer-side link dependency is unconditional on that branch.
+EXTRA_IMPLIES = {
+    "parser": ["charconv"],
 }
 
 # Per-lib private compile flags (feature `flags` = private per-TU, never
@@ -86,6 +197,11 @@ COMPILED_TU_GLOBS = {
 FEATURE_FLAGS = {
     "thread": [{"glob": "deps/boost/libs/thread/src/**",
                 "defines": ["BOOST_THREAD_BUILD_LIB"]}],
+    # log: the windows/ TUs include <security.h>, whose sspi.h chain requires
+    # one of SECURITY_WIN32/KERNEL/MAC — upstream CMake defines SECURITY_WIN32
+    # for exactly these TUs (CMakeLists.txt:324).
+    "log":    [{"glob": "deps/boost/libs/log/src/windows/**",
+                "defines": ["SECURITY_WIN32"]}],
 }
 
 # Library-owned extras (non-module TU needed by the module, M5/M7).
@@ -141,9 +257,17 @@ def all_sources():
     return out
 
 
+def dep_edges():
+    """{lib: set(lib)} — .deps import edges + hand-maintained EXTRA_IMPLIES."""
+    graph = {lib: deps_of(lib) for lib in LIBS}
+    for lib, extra in EXTRA_IMPLIES.items():
+        graph.setdefault(lib, set()).update(extra)
+    return graph
+
+
 def default_closure(candidates):
     """Candidates + their implies closure (within the full lib set)."""
-    graph = {lib: deps_of(lib) for lib in LIBS}
+    graph = dep_edges()
     active = set(candidates)
     changed = True
     while changed:
@@ -157,7 +281,7 @@ def default_closure(candidates):
 
 
 def assert_closed(closure):
-    graph = {lib: deps_of(lib) for lib in LIBS}
+    graph = dep_edges()
     missing = sorted({d for lib in closure for d in graph[lib]} - set(closure))
     if missing:
         raise SystemExit(
@@ -187,7 +311,7 @@ def render_toml_block():
             ", ".join('"{}"'.format(s) for s in feature_sources(lib))))
         if lib in FEATURE_FLAGS:
             lines.append("  flags = {}".format(_flags_toml(FEATURE_FLAGS[lib])))
-        deps = sorted(deps_of(lib))
+        deps = sorted(deps_of(lib) | set(EXTRA_IMPLIES.get(lib, ())))
         if deps:
             lines.append("  implies = [{}]".format(
                 ", ".join('"{}"'.format(d) for d in deps)))
