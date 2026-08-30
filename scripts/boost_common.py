@@ -68,6 +68,24 @@ LIBS_T1A = [
 ]
 TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A
 
+# M10 T3 (boost-mcpp-all-libs-features-plan.md §2): macro-driven include-only
+# libraries — no module, no feature, no build work (user decision §5.3). Their
+# public API surface is macro-injection-driven (BOOST_PP_/BOOST_FUSION_/
+# BOOST_SPIRIT_... families); a named module can neither export macros nor
+# stay in sync with the config-macro-driven re-configuration these headers
+# perform, so consumers #include them directly (import + include mixing is
+# standard-compliant). The boundary is verified by gen_audit.py --macros.
+LIBS_T3 = [
+    "preprocessor", "mpl", "fusion", "proto", "spirit", "xpressive",
+    "lambda", "lambda2", "bind", "typeof", "vmd", "phoenix", "parameter",
+    "metaparse", "function_types", "tti", "local_function", "msm", "foreach",
+]
+# M9 downgrades to include-only (plan §2 note + 2026-08-17 M9 doc §1): pure
+# macro libs (predef: .h only; static_assert: module name is a keyword) and
+# internal-linkage constexpr-object APIs (hof, units) — same consumer rule
+# as T3, recorded in the M9 doc.
+LIBS_INCLUDE_ONLY_M9 = ["predef", "static_assert", "hof", "units"]
+
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
 # load time: without it libclang cannot find its own builtin headers (e.g.

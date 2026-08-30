@@ -4,6 +4,7 @@
 > 前置: [boost-mcpp-module-plan.md](boost-mcpp-module-plan.md) (M0–M6 已完成, 27 库接入, CI 四腿全绿)
 > 本次范围: 全部 155 个库的接入方案 + mcpp features 选择性构建; 用户决策记录于 §5
 > 进度: **M8 done (2026-08-15)** — features 基建落地, 27 库全部迁入 feature, build.mcpp 动态汇总
+> 后续: M9 done (2026-08-17, T1a 58 库) · M10 done (2026-08-30, T3 边界确认) — 详见各设计文档
 
 ## 0. 目标
 
@@ -162,9 +163,18 @@ boost.boost = { path = "..", features = ["all"] }
 - 验证: 88/88 测试全绿 (llvm/msvc), 默认集/全量 build + examples 全过
 - 设计文档: `.agents/docs/2026-08-17-m9-t1a-header-only-libs.md`
 
-### M10 — 宏驱动库边界确认 (T3, ~19 库)
-- gen_audit 宏面统计核对名单; 文档记录 include-only 用法 (macros.hpp 旁路头不扩展)
-- 无模块/无 feature/无构建工作; 验证: 代表性 include 冒烟 (import+include 混用)
+### M10 — 宏驱动库边界确认 (T3, ~19 库) ✅ 已完成 (2026-08-30)
+- ✅ gen_audit.py 新增 `--macros` 宏面统计 (公共头 #define 唯一宏数 × 宏族分桶 +
+  模块库 .inc 导出面对比), 名单核实: 19 库全部 own-family 主导, 无增删
+  (preprocessor 22.9k 宏 / metaparse 2.4k / parameter 1.1k / spirit 1.0k …;
+  模块库宏面 ≤ ~600 且全封 GMF 内部)
+- ✅ include-only 用法文档化 (消费者直接 include 上游头, 宏 API 只能来自
+  include; import+include 同 TU 混用标准允许; macros.hpp 旁路头确认不逐库
+  扩展); T3 对 mcpp.toml / features.lst 零声明
+- ✅ 验证: 19 个新冒烟测试 (统一 `import boost.config;` + 库头混用), llvm/msvc
+  107/107 全绿, gcc 16.1.0 19/19 全绿且无需 describe 式 gcc 守卫; examples 绿;
+  mingw 本地全量 105/107 (thread/url 为 M6 §5 已知基线)
+- 设计文档: `.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`
 
 ### M11 — 编译库批量接入 (T2, 19 库)
 - 每库: `.cppm` + `libs/*/src/**` 进 feature; per-OS TU 用 thread 模式 (`!` 排除); per-库私有 flags (thread 的 BOOST_THREAD_BUILD_LIB 模式推广, 如 math 的 quadmath 等)

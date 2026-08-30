@@ -24,7 +24,7 @@
 | M7 | 剩余库接入与发布 (被 M8–M14 计划拆分) | ⏳ |
 | M8 | mcpp features 基建 (build.mcpp 动态汇总 + 生成器全库化) | ✅ |
 | M9 | 纯头库批量接入 (T1a, 58 库) + 88/88 测试 | ✅ |
-| M10 | 宏驱动库边界确认 (include-only) | ⏳ |
+| M10 | 宏驱动库边界确认 (T3, 19 库 include-only) + 宏面统计 + 107/107 | ✅ |
 | M11 | 编译库批量接入 (T2, 19 库) | ⏳ |
 | M12 | 重型模板库接入 (T1b, ~15 库 opt-in) | ⏳ |
 | M13 | 外部依赖/asm 库 (T4: context/fiber/coroutine/locale 等) | ⏳ |
@@ -65,6 +65,33 @@ boost.boost = { path = "..", features = ["all"] }
 零激活时是合法空壳。详见
 [`.agents/docs/2026-08-15-m8-mcpp-features-infra.md`](.agents/docs/2026-08-15-m8-mcpp-features-infra.md)。
 
+## 宏驱动库 (include-only, M10)
+
+**23 个库保持 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
+
+- **T3 宏驱动 (19)**: preprocessor / mpl / fusion / proto / spirit / xpressive /
+  lambda / lambda2 / bind / typeof / vmd / phoenix / parameter / metaparse /
+  function_types / tti / local_function / msm / foreach —— 公共 API 是
+  BOOST_PP_/BOOST_FOREACH/BOOST_TTI_* 等**宏族** (宏是预处理器层面的 API,
+  named modules 永远无法导出),名单由 `gen_audit.py --macros` 宏面统计核实。
+- **M9 降级 (4)**: predef (纯 .h 检测宏)、static_assert (模块名含关键字)、
+  hof / units (公共 API 为内部链接 constexpr 对象)。
+
+用法 (与模块 import 同 TU 混用,标准允许):
+
+```cpp
+#include <boost/preprocessor/cat.hpp>   // 宏 API: 只能 include (宏不跨模块边界)
+#include <boost/foreach.hpp>
+import boost.core;                      // 模块化库照常 import,两者共存
+
+static_assert(BOOST_PP_CAT(1, 2) == 12);
+BOOST_FOREACH (int x, vec) { /* ... */ }
+```
+
+`include/boost-module/macros.hpp` 旁路头仅承载包级版本宏 (BOOST_VERSION),
+不逐库扩展宏面 —— T3 宏 API 一律 include 上游头获取。
+详见 [`.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`](.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md)。
+
 ## 辅助脚本
 
 脚本依赖 **libclang**（`scripts/gen_exports.py` / `scripts/gen_audit.py` 用它解析
@@ -102,7 +129,8 @@ uv run scripts/import_boost.py                       # 重新导入官方 boost 
   `mcpp.toml` 的 `[features]` 块（每库一个 feature，`sources` = 该库 `.cppm` + 编译库
   TU globs，`implies` = 模块 import 边）与 `scripts/features.lst`（build.mcpp 消费）。
   默认集 = 18 库闭包，其余 9 库 opt-in（`--features <库>` 显式激活）。
-- `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单。
+- `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单；
+  `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
   （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
 
