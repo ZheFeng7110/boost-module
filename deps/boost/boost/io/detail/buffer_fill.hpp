@@ -21,9 +21,15 @@ buffer_fill(std::basic_streambuf<charT, traits>& buf, charT ch,
     std::size_t size)
 {
     charT fill[] = { ch, ch, ch, ch, ch, ch, ch, ch };
-    enum {
-        chunk = sizeof fill / sizeof(charT)
-    };
+    // M11 vendored edit (gcc C++23 modules): the unnamed enum inside this
+    // inline template failed to stream consistently across CMIs that include
+    // this header from different module faces (boost.utility via
+    // utility/string_view.hpp, boost.filesystem/wave via filesystem/path.hpp →
+    // io/quoted.hpp) — gcc hard-errors "definition of enum ... does not match"
+    // when a consumer TU loads both pendings. A constexpr local is
+    // behavior-identical and streams fine. Replay after re-running
+    // import_boost (see M11 doc §6.9).
+    constexpr std::size_t chunk = sizeof fill / sizeof(charT);
     for (; size > chunk; size -= chunk) {
         if (static_cast<std::size_t>(buf.sputn(fill, chunk)) != chunk) {
             return false;

@@ -7,7 +7,14 @@ module;
 #include <boost/log/sources/logger.hpp>
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/support/exception.hpp>
+// M11 platform guard (POSIX): phoenix function machinery was reached
+// only via the windows-only is_debugger_present predicate header in the
+// mingw snapshot; include the cross-platform umbrella explicitly so the
+// shared-surface `using` lines resolve.
+#include <boost/phoenix/function.hpp>
+#if defined(_WIN32)
 #include <boost/log/support/regex.hpp>
+#endif
 #include <boost/log/support/spirit_classic.hpp>
 #include <boost/log/support/spirit_qi.hpp>
 #include <boost/log/support/std_regex.hpp>

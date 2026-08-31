@@ -10,6 +10,10 @@ module;
 #include <boost/process/v1/async_pipe.hpp>
 #include <boost/process/v1/exception.hpp>
 #include <boost/process/v1/extend.hpp>
+// M11 platform guard: v1/v2 windows launchers are Windows-only headers
+// (boost/winapi basic_types.hpp #errors off-Windows); M9 winapi.cppm
+// convention. POSIX face = platform-neutral + posix-self-guarded surface.
+#if defined(_WIN32) || defined(__CYGWIN__)
 #include <boost/process/v1/windows.hpp>
 #include <boost/process/v2/windows/show_window.hpp>
 #include <boost/process/v2/windows/with_logon_launcher.hpp>
@@ -20,6 +24,16 @@ module;
 #include <boost/process/windows/show_window.hpp>
 #include <boost/process/windows/with_logon_launcher.hpp>
 #include <boost/process/windows/with_token_launcher.hpp>
+#endif
+// M11 platform guard (POSIX): the mingw snapshot's GMF reached the v2
+// core (basic_process) and the launcher detail helpers only through the
+// windows launcher chain; on POSIX include the cross-platform core and
+// the posix default launcher explicitly so the shared-surface `using`
+// lines resolve.
+#if !defined(_WIN32) && !defined(__CYGWIN__)
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/posix/default_launcher.hpp>
+#endif
 
 export module boost.process;
 

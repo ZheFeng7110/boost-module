@@ -654,7 +654,11 @@ export namespace boost { namespace container { namespace dtl {
   using boost::container::dtl::version;
   using boost::container::dtl::version_type;
   using boost::container::dtl::void_t;
+#if defined(_WIN32)
+  // M11 platform guard: win_critical_section is the non-pthread branch
+  // of container/detail/thread_mutex.hpp; POSIX uses pthread_mutex.
   using boost::container::dtl::win_critical_section;
+#endif
 }}}
 
 export namespace boost { namespace container { namespace dtl { namespace impl {
@@ -772,11 +776,15 @@ export namespace boost { namespace container { namespace stable_vector_detail {
   using boost::container::stable_vector_detail::node_base;
 }}}
 
+#if defined(_WIN32)
 export namespace boost { namespace container_winapi {
+  // M11 platform guard: container_winapi DWORD_/BOOL_/SleepEx are
+  // declared only in the _WIN32 branch of container/detail/mutex.hpp.
   using ::SleepEx;
   using boost::container_winapi::BOOL_;
   using boost::container_winapi::DWORD_;
 }}
+#endif
 
 export namespace boost { namespace interprocess {
   using boost::interprocess::offset_ptr;

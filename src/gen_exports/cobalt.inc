@@ -34,9 +34,13 @@ export namespace boost { namespace asio {
   using boost::asio::async_result;
   using boost::asio::bad_executor;
   using boost::asio::basic_datagram_socket;
+#if defined(BOOST_ASIO_HAS_FILE)
   using boost::asio::basic_file;
+#endif
   using boost::asio::basic_inline_executor;
+#if defined(BOOST_ASIO_HAS_FILE)
   using boost::asio::basic_random_access_file;
+#endif
   using boost::asio::basic_readable_pipe;
   using boost::asio::basic_seq_packet_socket;
   using boost::asio::basic_serial_port;
@@ -45,7 +49,9 @@ export namespace boost { namespace asio {
   using boost::asio::basic_socket_acceptor;
   using boost::asio::basic_socket_iostream;
   using boost::asio::basic_socket_streambuf;
+#if defined(BOOST_ASIO_HAS_FILE)
   using boost::asio::basic_stream_file;
+#endif
   using boost::asio::basic_stream_socket;
   using boost::asio::basic_system_executor;
   using boost::asio::basic_waitable_timer;
@@ -117,7 +123,9 @@ export namespace boost { namespace asio {
   using boost::asio::executor_arg_t;
   using boost::asio::executor_binder;
   using boost::asio::executor_work_guard;
+#if defined(BOOST_ASIO_HAS_FILE)
   using boost::asio::file_base;
+#endif
   using boost::asio::get_associated_allocator;
   using boost::asio::get_associated_cancellation_slot;
   using boost::asio::get_associated_executor;
@@ -299,7 +307,9 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::allocator_binder_async_result_return_type;
   using boost::asio::detail::allocator_binder_completion_handler_async_result;
   using boost::asio::detail::allocator_binder_result_type;
+#if defined(_WIN32)
   using boost::asio::detail::apc_function;
+#endif
   using boost::asio::detail::append_handler;
   using boost::asio::detail::append_signature;
   using boost::asio::detail::are_any_lvalue_completion_signatures;
@@ -477,8 +487,12 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::non_const_lvalue;
   using boost::asio::detail::noncopyable;
   using boost::asio::detail::null_event;
+#if defined(_WIN32)
   using boost::asio::detail::null_reactor;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::null_signal_blocker;
+#endif
   using boost::asio::detail::on_work_finished_memfn_helper;
   using boost::asio::detail::on_work_started_memfn_helper;
   using boost::asio::detail::one_arg_handler_test;
@@ -535,7 +549,9 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::scoped_lock;
   using boost::asio::detail::scoped_ptr;
   using boost::asio::detail::select_interrupter;
+#if defined(_WIN32)
   using boost::asio::detail::select_reactor;
+#endif
   using boost::asio::detail::service_base;
   using boost::asio::detail::service_id;
   using boost::asio::detail::service_registry;
@@ -556,7 +572,9 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::socket_addr_type;
   using boost::asio::detail::socket_holder;
   using boost::asio::detail::socket_iostream_base;
+#if defined(_WIN32)
   using boost::asio::detail::socket_select_interrupter;
+#endif
   using boost::asio::detail::socket_streambuf_buffers;
   using boost::asio::detail::socket_streambuf_io_context;
   using boost::asio::detail::socket_type;
@@ -594,38 +612,102 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::u_short_type;
   using boost::asio::detail::wait_handler;
   using boost::asio::detail::wait_op;
+#if defined(_WIN32)
   using boost::asio::detail::win_event;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_fd_set_adapter;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_global;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_global_impl;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_file_service;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_handle_read_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_handle_service;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_handle_write_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_io_context;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_null_buffers_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_operation;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_overlapped_ptr;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_serial_port_service;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_accept_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_connect_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_connect_op_base;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_move_accept_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_recv_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_recvfrom_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_recvmsg_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_send_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_service;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_socket_service_base;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_thread_info;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_iocp_wait_op;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_mutex;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_static_mutex;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_thread;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_thread_base;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::win_thread_function;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::winsock_init;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::winsock_init_base;
+#endif
   using boost::asio::detail::work_dispatcher;
   using boost::asio::detail::work_dispatcher_function;
   using boost::asio::detail::work_result;
@@ -668,12 +750,24 @@ export namespace boost { namespace asio { namespace detail { namespace socket_op
   using boost::asio::detail::socket_ops::call_setsockopt;
   using boost::asio::detail::socket_ops::clear_last_error;
   using boost::asio::detail::socket_ops::close;
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_accept;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_connect;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_recv;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_recvfrom;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_recvmsg;
+#endif
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::complete_iocp_send;
+#endif
   using boost::asio::detail::socket_ops::connect;
   using boost::asio::detail::socket_ops::freeaddrinfo;
   using boost::asio::detail::socket_ops::get_last_error;
@@ -692,7 +786,9 @@ export namespace boost { namespace asio { namespace detail { namespace socket_op
   using boost::asio::detail::socket_ops::init_msghdr_msg_name;
   using boost::asio::detail::socket_ops::ioctl;
   using boost::asio::detail::socket_ops::listen;
+#if defined(_WIN32)
   using boost::asio::detail::socket_ops::msghdr;
+#endif
   using boost::asio::detail::socket_ops::network_to_host_long;
   using boost::asio::detail::socket_ops::network_to_host_short;
   using boost::asio::detail::socket_ops::non_blocking_connect;

@@ -45,8 +45,14 @@ export namespace boost { namespace nowide { namespace detail {
   using boost::nowide::detail::StreamTypeInOut;
   using boost::nowide::detail::StreamTypeOut;
   using boost::nowide::detail::buf_holder;
+#if defined(_WIN32)
+  // M11 platform guard: console_input_buffer is the windows console machinery (detail/console_buffer.hpp); POSIX nowide uses std:: streams directly.
   using boost::nowide::detail::console_input_buffer;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: console_output_buffer is the windows console machinery (detail/console_buffer.hpp); POSIX nowide uses std:: streams directly.
   using boost::nowide::detail::console_output_buffer;
+#endif
   using boost::nowide::detail::const_data_result;
   using boost::nowide::detail::copy_uint16_t;
   using boost::nowide::detail::enable_if_path_t;
@@ -70,11 +76,21 @@ export namespace boost { namespace nowide { namespace detail {
   using boost::nowide::detail::requires_wide_char;
   using boost::nowide::detail::requires_wide_string_container;
   using boost::nowide::detail::size_result;
+#if defined(_WIN32)
+  // M11 platform guard: detail::stat is the BOOST_WINDOWS branch of
+  // stat.hpp; POSIX exposes ::stat via a using-declaration instead.
   using boost::nowide::detail::stat;
+#endif
   using boost::nowide::detail::void_t;
   using boost::nowide::detail::wfopen;
+#if defined(_WIN32)
+  // M11 platform guard: winconsole_istream is the windows console stream branch of iostream.hpp; POSIX takes std:: streams directly.
   using boost::nowide::detail::winconsole_istream;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: winconsole_ostream is the windows console stream branch of iostream.hpp; POSIX takes std:: streams directly.
   using boost::nowide::detail::winconsole_ostream;
+#endif
   using boost::nowide::detail::write_state;
 }}}
 

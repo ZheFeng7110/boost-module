@@ -5,6 +5,13 @@ module;
 #include <boost/nowide/filesystem.hpp>
 #include <boost/nowide/fstream.hpp>
 #include <boost/nowide/iostream.hpp>
+// M11 platform guard (POSIX): cstdio/stackstring/convert were reached
+// only via windows-flavored transitive includes in the mingw snapshot;
+// include the cross-platform headers explicitly so the shared-surface
+// `using` lines resolve.
+#include <boost/nowide/cstdio.hpp>
+#include <boost/nowide/stackstring.hpp>
+#include <boost/nowide/convert.hpp>
 #include <boost/nowide/quoted.hpp>
 #include <boost/nowide/stat.hpp>
 

@@ -156,7 +156,9 @@ export namespace boost { namespace date_time {
   using boost::date_time::time_duration;
   using boost::date_time::time_facet;
   using boost::date_time::time_formats;
+#if defined(_WIN32)
   using boost::date_time::time_from_ftime;
+#endif
   using boost::date_time::time_input_facet;
   using boost::date_time::time_is_dst_result;
   using boost::date_time::time_is_dst_result::ambiguous;
@@ -486,7 +488,9 @@ export namespace boost { namespace numeric { namespace convdetail {
 
 export namespace boost { namespace posix_time {
   using boost::posix_time::duration_from_string;
+#if defined(_WIN32)
   using boost::posix_time::from_ftime;
+#endif
   using boost::posix_time::from_iso_extended_string;
   using boost::posix_time::from_iso_string;
   using boost::posix_time::from_time_t;

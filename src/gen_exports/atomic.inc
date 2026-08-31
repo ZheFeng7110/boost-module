@@ -224,7 +224,11 @@ export namespace boost { namespace atomics { namespace detail {
   using boost::atomics::detail::wait_operations;
   using boost::atomics::detail::wait_operations_emulated;
   using boost::atomics::detail::wait_operations_generic;
+#if defined(BOOST_WINDOWS)
+  // M11 platform guard: wait_ops_windows.hpp (wait backend = windows,
+  // platform.hpp BOOST_WINDOWS); POSIX uses futex/darwin_ulock/generic.
   using boost::atomics::detail::wait_operations_windows;
+#endif
   using boost::atomics::detail::wait_some;
   using boost::atomics::detail::zero_extend;
   using boost::atomics::detail::zero_extend_impl;

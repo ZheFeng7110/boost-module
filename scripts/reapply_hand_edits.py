@@ -46,6 +46,49 @@ def restore_from_git(rel):
         print(f"  git checkout failed for {rel}: {r.stderr[:200]}", file=sys.stderr)
 
 
+def strip_log_version_namespace(rel):
+    """Rewrite log.inc to be inline-namespace-agnostic (M11 CI fix, POSIX legs).
+
+    The mingw snapshot qualifies every log entity with the version inline
+    namespace `v2s_mt_nt62` (boost/log/detail/config.hpp picks the name by
+    platform: v2s_mt_nt62 on Windows, v2s_mt_posix on POSIX). Inline namespaces
+    are transparent for qualified lookup from the enclosing namespace, so:
+
+      - `export namespace ... { namespace log { namespace v2s_mt_nt62 { ... }`
+        openers drop the `namespace v2s_mt_nt62 {` segment (and its matching
+        `}` — the last brace of the block's closing line);
+      - `using boost::log::v2s_mt_nt62::X;` lines re-qualify as
+        `using boost::log::X;` (resolves through whichever inline namespace is
+        active on the compiling platform).
+
+    Idempotent: no-op when `v2s_mt_nt62` is absent.
+    """
+    p = ROOT / rel
+    s = p.read_text(encoding="utf-8")
+    if "v2s_mt_nt62" not in s:
+        print(f"  skip   {rel} (no v2s_mt_nt62)")
+        return False
+    OPEN = " namespace log { namespace v2s_mt_nt62 {"
+    out = []
+    pending = 0  # dropped openers awaiting one `}` removal at their closer
+    for line in s.splitlines(keepends=True):
+        stripped = line.rstrip("\n")
+        if OPEN in stripped:
+            stripped = stripped.replace(OPEN, " namespace log {")
+            pending += 1
+            out.append(stripped + "\n")
+            continue
+        body = stripped.rstrip()
+        if pending and body and set(body) == {"}"}:
+            stripped = body[:-1] + stripped[len(body):]
+            pending -= 1
+        stripped = stripped.replace("boost::log::v2s_mt_nt62::", "boost::log::")
+        out.append(stripped + "\n")
+    p.write_text("".join(out), encoding="utf-8", newline="\n")
+    print(f"  stripped {rel} (version inline namespace, {pending} unclosed)")
+    return True
+
+
 def guard_entity_lines(rel, cond, names):
     """Wrap each `  using boost::...;` line whose entity appears in `names`
     (as a ::-delimited segment) in `#if cond` / `#endif`. Idempotent — a line
@@ -460,6 +503,165 @@ def main():
           "  // win_thread.\n"
           "  using boost::asio::detail::posix_thread;\n"
           "#endif")
+    # M11 CI fix (POSIX legs): the process GMF includes ten windows-only headers
+    # (v1/windows.hpp, v2/windows/*, windows/* launchers) — boost/winapi
+    # basic_types.hpp #errors off-Windows, same reason as the M9 winapi.cppm
+    # guard. The remaining GMF includes self-guard per-platform upstream.
+    patch("src/process.cppm",
+          "#include <boost/process/v1/extend.hpp>\n"
+          "#include <boost/process/v1/windows.hpp>\n"
+          "#include <boost/process/v2/windows/show_window.hpp>\n"
+          "#include <boost/process/v2/windows/with_logon_launcher.hpp>\n"
+          "#include <boost/process/v2/windows/with_token_launcher.hpp>\n"
+          "#include <boost/process/windows/as_user_launcher.hpp>\n"
+          "#include <boost/process/windows/creation_flags.hpp>\n"
+          "#include <boost/process/windows/default_launcher.hpp>\n"
+          "#include <boost/process/windows/show_window.hpp>\n"
+          "#include <boost/process/windows/with_logon_launcher.hpp>\n"
+          "#include <boost/process/windows/with_token_launcher.hpp>\n",
+          "#include <boost/process/v1/extend.hpp>\n"
+          "// M11 platform guard: v1/v2 windows launchers are Windows-only headers\n"
+          "// (boost/winapi basic_types.hpp #errors off-Windows); M9 winapi.cppm\n"
+          "// convention. POSIX face = platform-neutral + posix-self-guarded surface.\n"
+          "#if defined(_WIN32) || defined(__CYGWIN__)\n"
+          "#include <boost/process/v1/windows.hpp>\n"
+          "#include <boost/process/v2/windows/show_window.hpp>\n"
+          "#include <boost/process/v2/windows/with_logon_launcher.hpp>\n"
+          "#include <boost/process/v2/windows/with_token_launcher.hpp>\n"
+          "#include <boost/process/windows/as_user_launcher.hpp>\n"
+          "#include <boost/process/windows/creation_flags.hpp>\n"
+          "#include <boost/process/windows/default_launcher.hpp>\n"
+          "#include <boost/process/windows/show_window.hpp>\n"
+          "#include <boost/process/windows/with_logon_launcher.hpp>\n"
+          "#include <boost/process/windows/with_token_launcher.hpp>\n"
+          "#endif\n")
+    # M11 CI fix (POSIX legs), second step: the mingw snapshot's GMF reached the
+    # v2 core (basic_process) and the launcher detail helpers only through the
+    # windows launcher chain; on POSIX include the cross-platform core and the
+    # posix default launcher explicitly so the shared-surface `using` lines
+    # resolve.
+    patch("src/process.cppm",
+          "#include <boost/process/windows/with_token_launcher.hpp>\n"
+          "#endif\n\nexport module boost.process;",
+          "#include <boost/process/windows/with_token_launcher.hpp>\n"
+          "#endif\n"
+          "// M11 platform guard (POSIX): the mingw snapshot's GMF reached the v2\n"
+          "// core (basic_process) and the launcher detail helpers only through the\n"
+          "// windows launcher chain; on POSIX include the cross-platform core and\n"
+          "// the posix default launcher explicitly so the shared-surface `using`\n"
+          "// lines resolve.\n"
+          "#if !defined(_WIN32) && !defined(__CYGWIN__)\n"
+          "#include <boost/process/v2/process.hpp>\n"
+          "#include <boost/process/v2/posix/default_launcher.hpp>\n"
+          "#endif\n\nexport module boost.process;")
+    # M11 CI fix (POSIX legs): windows-only entities in process.inc — the
+    # windows-flavored snapshot exports them, but their headers are only pulled
+    # by the windows GMF branches above. Conditions mirror upstream:
+    # asio windows services under BOOST_ASIO_WINDOWS (= _WIN32), process
+    # v1/v2 windows detail under BOOST_WINDOWS_API (= _WIN32).
+    patch("src/gen_exports/process.inc",
+          "  using boost::asio::detail::win_object_handle_service;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: win_object_handle_service is the asio windows\n"
+          "  // branch (BOOST_ASIO_WINDOWS); POSIX asio never declares it.\n"
+          "  using boost::asio::detail::win_object_handle_service;\n"
+          "#endif")
+    patch("src/gen_exports/process.inc",
+          "export namespace boost { namespace asio { namespace windows {\n"
+          "  using boost::asio::windows::basic_object_handle;\n"
+          "  using boost::asio::windows::basic_overlapped_handle;\n"
+          "  using boost::asio::windows::basic_stream_handle;\n"
+          "  using boost::asio::windows::object_handle;\n"
+          "  using boost::asio::windows::stream_handle;\n"
+          "}}}",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace asio { namespace windows {\n"
+          "  // M11 platform guard: asio/windows/* handle types are Windows-only\n"
+          "  // (BOOST_ASIO_WINDOWS); POSIX asio never declares them.\n"
+          "  using boost::asio::windows::basic_object_handle;\n"
+          "  using boost::asio::windows::basic_overlapped_handle;\n"
+          "  using boost::asio::windows::basic_stream_handle;\n"
+          "  using boost::asio::windows::object_handle;\n"
+          "  using boost::asio::windows::stream_handle;\n"
+          "}}}\n"
+          "#endif")
+    patch("src/gen_exports/process.inc",
+          "export namespace boost { namespace process { namespace v1 { namespace detail { namespace windows {\n"
+          "  using boost::process::v1::detail::windows::apply_out_handles;",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace process { namespace v1 { namespace detail { namespace windows {\n"
+          "  // M11 platform guard: v1 detail windows impls (incl. the NT workaround\n"
+          "  // block below) are declared only by the windows GMF branches.\n"
+          "  using boost::process::v1::detail::windows::apply_out_handles;")
+    patch("src/gen_exports/process.inc",
+          "  using boost::process::v1::detail::windows::workaround::set_information_job_object;\n"
+          "}}}}}}\n",
+          "  using boost::process::v1::detail::windows::workaround::set_information_job_object;\n"
+          "}}}}}}\n"
+          "#endif\n")
+    patch("src/gen_exports/process.inc",
+          "  using boost::process::v2::detail::basic_process_handle_win;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: basic_process_handle_win is the windows variant\n"
+          "  // (detail/process_handle_windows.hpp); POSIX takes process_handle_fd.\n"
+          "  using boost::process::v2::detail::basic_process_handle_win;\n"
+          "#endif")
+    patch("src/gen_exports/process.inc",
+          "  using boost::process::v2::detail::open_process_;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: open_process_ lives in detail/process_handle_windows.hpp.\n"
+          "  using boost::process::v2::detail::open_process_;\n"
+          "#endif")
+    # M11 CI fix (POSIX legs): the process_handle_windows detail helpers have no
+    # fd-variant counterparts (basic_process_handle_fd implements them inline);
+    # is_exec_type is in detail/environment_win.hpp. All Windows-only.
+    for name in ["check_handle_", "check_pid_", "check_running_", "get_exit_code_",
+                 "interrupt_", "request_exit_", "resume_", "suspend_",
+                 "terminate_", "terminate_if_running_"]:
+        patch("src/gen_exports/process.inc",
+              f"  using boost::process::v2::detail::{name};",
+              f"#if defined(_WIN32)\n  // M11 platform guard: {name} lives in detail/process_handle_windows.hpp (no fd-variant counterpart).\n  using boost::process::v2::detail::{name};\n#endif")
+    patch("src/gen_exports/process.inc",
+          "  using boost::process::v2::environment::detail::is_exec_type;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: is_exec_type lives in detail/environment_win.hpp;\n"
+          "  // POSIX environment detail does not declare it.\n"
+          "  using boost::process::v2::environment::detail::is_exec_type;\n"
+          "#endif")
+    # M11 CI fix (POSIX legs): the generic-launcher initializer machinery
+    # (probe/invoke/has_* + all_are_initializers/is_initializer + base/derived)
+    # is flat in boost::process::v2::detail on Windows (windows/default_launcher.hpp)
+    # but nested under v2::posix::detail with a different name set on POSIX
+    # (fork-based launchers have no initializer-probe support), so these shared
+    # .inc lines only resolve on Windows.
+    for name in ["all_are_initializers", "base", "derived",
+                 "has_on_error", "has_on_setup", "has_on_success",
+                 "invoke_on_error", "invoke_on_setup", "invoke_on_success",
+                 "is_initializer", "on_error", "on_setup", "on_success",
+                 "probe_on_error", "probe_on_setup", "probe_on_success"]:
+        patch("src/gen_exports/process.inc",
+              f"  using boost::process::v2::detail::{name};",
+              f"#if defined(_WIN32)\n  // M11 platform guard: {name} is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.\n  using boost::process::v2::detail::{name};\n#endif")
+    patch("src/gen_exports/process.inc",
+          "export namespace boost { namespace process { namespace v2 { namespace windows {\n"
+          "  using boost::process::v2::windows::as_user_launcher;\n"
+          "  using boost::process::v2::windows::default_launcher;\n"
+          "  using boost::process::v2::windows::process_creation_flags;\n"
+          "  using boost::process::v2::windows::process_show_window;\n"
+          "  using boost::process::v2::windows::with_logon_launcher;\n"
+          "  using boost::process::v2::windows::with_token_launcher;\n"
+          "}}}}",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace process { namespace v2 { namespace windows {\n"
+          "  // M11 platform guard: v2 windows launchers are Windows-only headers.\n"
+          "  using boost::process::v2::windows::as_user_launcher;\n"
+          "  using boost::process::v2::windows::default_launcher;\n"
+          "  using boost::process::v2::windows::process_creation_flags;\n"
+          "  using boost::process::v2::windows::process_show_window;\n"
+          "  using boost::process::v2::windows::with_logon_launcher;\n"
+          "  using boost::process::v2::windows::with_token_launcher;\n"
+          "}}}}\n"
+          "#endif")
 
     # M11: graph — graph's bundle transitively pulls multiprecision/proto/
     # serialization interop headers; their directive-expansion/injection
@@ -737,6 +939,270 @@ def main():
         patch("src/gen_exports/atomic.inc",
               f"  using boost::atomics::detail::{name};",
               f"#if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))\n  // M11 platform guard: gcc_x86 backend of boost/atomic (platform.hpp); x86 only.\n  using boost::atomics::detail::{name};\n#endif")
+    # M11: wait_operations_windows lives in wait_ops_windows.hpp, which
+    # platform.hpp includes only under BOOST_WINDOWS (wait backend = windows);
+    # POSIX takes futex/darwin_ulock/generic and never declares it. Same entity
+    # the M6 thread.inc guard carried before it migrated to atomic.inc.
+    patch("src/gen_exports/atomic.inc",
+          "  using boost::atomics::detail::wait_operations_windows;",
+          "#if defined(BOOST_WINDOWS)\n"
+          "  // M11 platform guard: wait_ops_windows.hpp (wait backend = windows,\n"
+          "  // platform.hpp BOOST_WINDOWS); POSIX uses futex/darwin_ulock/generic.\n"
+          "  using boost::atomics::detail::wait_operations_windows;\n"
+          "#endif")
+    # M11: container — win_critical_section lives in the non-pthread branch of
+    # container/detail/thread_mutex.hpp (POSIX takes the BOOST_HAS_PTHREADS
+    # pthread_mutex branch), and the whole boost::container_winapi block
+    # (DWORD_/BOOL_/::SleepEx) is declared only under the
+    # _WIN32/__WIN32__/WIN32 spin-lock-yield branch of container/detail/mutex.hpp.
+    patch("src/gen_exports/container.inc",
+          "  using boost::container::dtl::win_critical_section;\n",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: win_critical_section is the non-pthread branch\n"
+          "  // of container/detail/thread_mutex.hpp; POSIX uses pthread_mutex.\n"
+          "  using boost::container::dtl::win_critical_section;\n"
+          "#endif\n")
+    patch("src/gen_exports/container.inc",
+          "export namespace boost { namespace container_winapi {\n"
+          "  using ::SleepEx;\n"
+          "  using boost::container_winapi::BOOL_;\n"
+          "  using boost::container_winapi::DWORD_;\n"
+          "}}",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace container_winapi {\n"
+          "  // M11 platform guard: container_winapi DWORD_/BOOL_/SleepEx are\n"
+          "  // declared only in the _WIN32 branch of container/detail/mutex.hpp.\n"
+          "  using ::SleepEx;\n"
+          "  using boost::container_winapi::BOOL_;\n"
+          "  using boost::container_winapi::DWORD_;\n"
+          "}}\n"
+          "#endif")
+    # M11: date_time — time_from_ftime (date_time/filetime_functions.hpp) and
+    # posix_time::from_ftime (posix_time/conversion.hpp) exist only under
+    # BOOST_HAS_FTIME (win32 FILETIME); same entities the M6 thread.inc guard
+    # carried before them.
+    guard_entity_lines("src/gen_exports/date_time.inc", "defined(_WIN32)", [
+        "time_from_ftime",
+        "from_ftime",
+    ])
+    # M11 CI fix (POSIX legs): nowide — the mingw snapshot's GMF reached
+    # cstdio/stackstring/convert entities only through windows-flavored
+    # transitive includes; add the cross-platform headers explicitly. The
+    # console machinery and detail::stat are BOOST_WINDOWS branches upstream
+    # (POSIX nowide uses std:: streams and ::stat directly) — guard those.
+    patch("src/nowide.cppm",
+          "#include <boost/nowide/iostream.hpp>\n#include <boost/nowide/quoted.hpp>",
+          "#include <boost/nowide/iostream.hpp>\n"
+          "// M11 platform guard (POSIX): cstdio/stackstring/convert were reached\n"
+          "// only via windows-flavored transitive includes in the mingw snapshot;\n"
+          "// include the cross-platform headers explicitly so the shared-surface\n"
+          "// `using` lines resolve.\n"
+          "#include <boost/nowide/cstdio.hpp>\n"
+          "#include <boost/nowide/stackstring.hpp>\n"
+          "#include <boost/nowide/convert.hpp>\n"
+          "#include <boost/nowide/quoted.hpp>")
+    for name in ["console_input_buffer", "console_output_buffer"]:
+        patch("src/gen_exports/nowide.inc",
+              f"  using boost::nowide::detail::{name};",
+              f"#if defined(_WIN32)\n  // M11 platform guard: {name} is the windows console machinery (detail/console_buffer.hpp); POSIX nowide uses std:: streams directly.\n  using boost::nowide::detail::{name};\n#endif")
+    for name in ["winconsole_istream", "winconsole_ostream"]:
+        patch("src/gen_exports/nowide.inc",
+              f"  using boost::nowide::detail::{name};",
+              f"#if defined(_WIN32)\n  // M11 platform guard: {name} is the windows console stream branch of iostream.hpp; POSIX takes std:: streams directly.\n  using boost::nowide::detail::{name};\n#endif")
+    patch("src/gen_exports/nowide.inc",
+          "  using boost::nowide::detail::stat;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: detail::stat is the BOOST_WINDOWS branch of\n"
+          "  // stat.hpp; POSIX exposes ::stat via a using-declaration instead.\n"
+          "  using boost::nowide::detail::stat;\n"
+          "#endif")
+    # M11 CI fix (POSIX legs): log — the mingw snapshot bakes the Windows
+    # version inline namespace (v2s_mt_nt62) into every qualified name; POSIX
+    # uses v2s_mt_posix. Inline namespaces are lookup-transparent, so drop the
+    # segment (see strip_log_version_namespace).
+    strip_log_version_namespace("src/gen_exports/log.inc")
+    # M11 CI fix (POSIX legs), follow-ups for log:
+    #  - phoenix function machinery (function_eval family) was reached on the
+    #    mingw snapshot only through the windows-only is_debugger_present
+    #    predicate header; include the cross-platform umbrella explicitly.
+    patch("src/log.cppm",
+          "#include <boost/log/support/exception.hpp>\n"
+          "#include <boost/log/support/regex.hpp>",
+          "#include <boost/log/support/exception.hpp>\n"
+          "// M11 platform guard (POSIX): phoenix function machinery was reached\n"
+          "// only via the windows-only is_debugger_present predicate header in the\n"
+          "// mingw snapshot; include the cross-platform umbrella explicitly so the\n"
+          "// shared-surface `using` lines resolve.\n"
+          "#include <boost/phoenix/function.hpp>\n"
+          "#if defined(_WIN32)\n"
+          "#include <boost/log/support/regex.hpp>\n"
+          "#endif\n",
+          required=False)
+    # Bridge for the intermediate state the 2/2 fix below had first applied
+    # (phoenix include without the regex-support #if guard yet).
+    patch("src/log.cppm",
+          "#include <boost/phoenix/function.hpp>\n#include <boost/log/support/regex.hpp>",
+          "#include <boost/phoenix/function.hpp>\n"
+          "#if defined(_WIN32)\n"
+          "#include <boost/log/support/regex.hpp>\n"
+          "#endif",
+          required=False)
+    # M11 CI fix (POSIX legs) 2/2: gcc modules merge the regex decls seen via
+    # the imported boost.regex / boost.range CMIs (recorded with the __cxx11
+    # abi tag) with the GMF's own textual re-parse of cpp_regex_traits.hpp
+    # (recorded without tags) and hard-error "mismatching abi tags" on
+    # cpp_regex_traits<char>::get_catalog_name_inst. Keep the boost.regex
+    # support header to the Windows face only (clang/msvc merge fine) and drop
+    # the one export line that needs it; POSIX consumers include
+    # <boost/log/support/regex.hpp> directly (T3 rule).
+    patch("src/gen_exports/log.inc",
+          "  using boost::log::aux::boost_regex_expression_tag;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: needs support/regex.hpp, excluded from the\n"
+          "  // POSIX GMF (gcc abi-tag merge bug, see log.cppm).\n"
+          "  using boost::log::aux::boost_regex_expression_tag;\n"
+          "#endif")
+    # M11 CI fix (POSIX legs): cobalt — the mingw snapshot's GMF reached the
+    # asio reactor / hash_map detail headers only through windows-flavored
+    # chains (cobalt on POSIX selects epoll, so select_reactor.hpp et al. were
+    # never included); include the cross-platform headers explicitly so the
+    # shared-surface `using` lines resolve on POSIX (they are redundant but
+    # harmless on Windows).
+    patch("src/cobalt.cppm",
+          "#include <boost/cobalt.hpp>\n#include <boost/cobalt/composition.hpp>",
+          "#include <boost/cobalt.hpp>\n"
+          "// M11 platform guard (POSIX): asio reactor/hash_map details were only\n"
+          "// reached through windows-flavored chains in the mingw snapshot (POSIX\n"
+          "// cobalt selects the epoll reactor); include them explicitly so the\n"
+          "// shared-surface `using` lines resolve.\n"
+          "#include <boost/asio/detail/hash_map.hpp>\n"
+          "#include <boost/asio/detail/null_reactor.hpp>\n"
+          "#include <boost/asio/detail/select_reactor.hpp>\n"
+          "#include <boost/cobalt/composition.hpp>",
+          required=False)
+    # M11 CI fix (POSIX legs) 2/2: fd_set_adapter / reactor_op_queue /
+    # socket_select_interrupter are per-OS-selected headers with no outer
+    # platform guard; null_reactor.hpp and select_reactor.hpp self-guard empty
+    # on the epoll/kqueue paths (their entities are guarded _WIN32 in the
+    # .inc instead).
+    patch("src/cobalt.cppm",
+          "#include <boost/asio/detail/select_reactor.hpp>\n#include <boost/cobalt/composition.hpp>",
+          "#include <boost/asio/detail/select_reactor.hpp>\n"
+          "// fd_set_adapter / reactor_op_queue / socket_select_interrupter are\n"
+          "// per-OS-selected headers with no outer platform guard; the reactor\n"
+          "// headers above self-guard empty on the epoll/kqueue paths (their\n"
+          "// entities are guarded _WIN32 in the .inc instead).\n"
+          "#include <boost/asio/detail/fd_set_adapter.hpp>\n"
+          "#include <boost/asio/detail/reactor_op_queue.hpp>\n"
+          "#include <boost/asio/detail/socket_select_interrupter.hpp>\n"
+          "#include <boost/cobalt/composition.hpp>",
+          required=False)
+    # Windows-only asio surface: IOCP/file backends, winsock init, APC, and the
+    # win_* detail family (asio/detail/config.hpp BOOST_ASIO_HAS_FILE is
+    # windows-random-access-handle / io_uring only; the posix signal blocker
+    # replaces null_signal_blocker).
+    guard_entity_lines("src/gen_exports/cobalt.inc", "defined(BOOST_ASIO_HAS_FILE)", [
+        "basic_file",
+        "basic_random_access_file",
+        "basic_stream_file",
+        "file_base",
+    ])
+    guard_entity_lines("src/gen_exports/cobalt.inc", "defined(_WIN32)", [
+        "apc_function",
+        "null_reactor",
+        "select_reactor",
+        "null_signal_blocker",
+        "socket_select_interrupter",
+        "win_event",
+        "win_fd_set_adapter",
+        "win_global",
+        "win_global_impl",
+        "win_iocp_file_service",
+        "win_iocp_handle_read_op",
+        "win_iocp_handle_service",
+        "win_iocp_handle_write_op",
+        "win_iocp_io_context",
+        "win_iocp_null_buffers_op",
+        "win_iocp_operation",
+        "win_iocp_overlapped_ptr",
+        "win_iocp_serial_port_service",
+        "win_iocp_socket_accept_op",
+        "win_iocp_socket_connect_op",
+        "win_iocp_socket_connect_op_base",
+        "win_iocp_socket_move_accept_op",
+        "win_iocp_socket_recv_op",
+        "win_iocp_socket_recvfrom_op",
+        "win_iocp_socket_recvmsg_op",
+        "win_iocp_socket_send_op",
+        "win_iocp_socket_service",
+        "win_iocp_socket_service_base",
+        "win_iocp_thread_info",
+        "win_iocp_wait_op",
+        "win_mutex",
+        "win_static_mutex",
+        "win_thread",
+        "win_thread_base",
+        "win_thread_function",
+        "winsock_init",
+        "winsock_init_base",
+        "complete_iocp_accept",
+        "complete_iocp_connect",
+        "complete_iocp_recv",
+        "complete_iocp_recvfrom",
+        "complete_iocp_recvmsg",
+        "complete_iocp_send",
+        "msghdr",
+    ])
+    #  - windows-only surface: is_debugger_present (BOOST_WINDOWS branch of
+    #    expressions/predicates/is_debugger_present.hpp), the event-log /
+    #    debug-output keywords and sinks (sinks/event_log_backend.hpp etc.),
+    #    and spirit's decode_utf16 (wchar_t==2 branch of spirit utf8.hpp).
+    guard_entity_lines("src/gen_exports/log.inc", "defined(_WIN32)", [
+        "log_name",
+        "log_source",
+        "message_file",
+        "registration",
+        "basic_debug_output_backend",
+        "basic_event_log_backend",
+        "basic_simple_event_log_backend",
+        "debug_output_backend",
+        "event_log_backend",
+        "simple_event_log_backend",
+        "wdebug_output_backend",
+        "wevent_log_backend",
+        "wsimple_event_log_backend",
+    ])
+    patch("src/gen_exports/log.inc",
+          "  using boost::log::expressions::is_debugger_present;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: is_debugger_present is the BOOST_WINDOWS branch\n"
+          "  // of expressions/predicates/is_debugger_present.hpp.\n"
+          "  using boost::log::expressions::is_debugger_present;\n"
+          "#endif")
+    patch("src/gen_exports/log.inc",
+          "  using boost::log::expressions::aux::is_debugger_present;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: aux::is_debugger_present — as above.\n"
+          "  using boost::log::expressions::aux::is_debugger_present;\n"
+          "#endif")
+    patch("src/gen_exports/log.inc",
+          "export namespace boost { namespace log { namespace sinks { namespace event_log {\n"
+          "  using boost::log::sinks::event_log::basic_event_composer;",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace log { namespace sinks { namespace event_log {\n"
+          "  // M11 platform guard: event_log sink mapping/composer types are\n"
+          "  // Windows-only (sinks/event_log_backend.hpp).\n"
+          "  using boost::log::sinks::event_log::basic_event_composer;")
+    patch("src/gen_exports/log.inc",
+          "  using boost::log::sinks::event_log::wevent_composer;\n}}}}\n",
+          "  using boost::log::sinks::event_log::wevent_composer;\n}}}}\n#endif\n")
+    patch("src/gen_exports/log.inc",
+          "  using boost::spirit::detail::decode_utf16;",
+          "#if defined(_WIN32)\n"
+          "  // M11 platform guard: decode_utf16 is the wchar_t==2 branch of\n"
+          "  // spirit/home/support/utf8.hpp (MSVC/mingw); POSIX wchar_t is 4 bytes.\n"
+          "  using boost::spirit::detail::decode_utf16;\n"
+          "#endif")
     guard_entity_lines("src/gen_exports/uuid.inc", "defined(BOOST_UUID_USE_SSE2)", [
         "compare",
         "countr_zero_nz",

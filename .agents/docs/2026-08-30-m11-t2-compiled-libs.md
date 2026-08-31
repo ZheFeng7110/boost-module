@@ -137,16 +137,83 @@ main 方案)/timer(cpu_timer TUs)/type_erasure(编译期面,§6.6)/wave
    boost/process.hpp 不入包。
 4. log:event_log_backend.cpp 依赖 mc.exe 生成的 simple_event_log.h,
    deps 内手写了等价桩(常量仅需自洽);dump_avx2/ssse3 不入包。
-5. **gcc 16.1 `mcpp test`(test 模式全量编译)失败于 test.m.o**:上游
+5. **gcc 16.1 `mcpp test`(test 模式全量编译)失败于 test.m.o** — ~~上游
    Boost.Test 的 nfp 关键字惯用法在 ~7 个头使用匿名命名空间,模板暴露
-   TU-local 实体被 gcc 硬错(llvm/msvc 无此检查)。默认 build 不受影响
-   (test 为 opt-in);需要 gcc 侧 CI 策略调整或上游修补(后续工作)。
+   TU-local 实体被 gcc 硬错(llvm/msvc 无此检查)~~ **已修复(见 §7):runtime
+   modifier.hpp 与 token_iterator.hpp 的匿名命名空间改命名命名空间 + inline
+   变量。**
 6. type_erasure:any<> 动态分发路径在 clang-msvc 模块消费者侧不能实例化
    (vtable.hpp 的 vtable_storage static_cast 与模块 ODR 不兼容);模块面
    与概念模板可用,smoke 覆盖编译期面。
 7. test 模块的宏面(BOOST_TEST_*)与 T3 同理不可导出——消费者 include
    boost/test/unit_test.hpp 拿宏 + import boost.test 拿编译框架。
 8. 消费者自定义的 log/process 特性宏随构建期固定(M4 §9 同型)。
-9. 上游 vendored 头修改 1 处:boost/archive/iterators/remove_whitespace.hpp
-   匿名命名空间 → boost::archive::iterators::detail(TU-local 暴露,
-   serialization/iostreams 模块 TU 在 gcc 上硬错);重跑 import_boost 需回放。
+9. 上游 vendored 头修改 4 处(重跑 import_boost 需回放):
+   - boost/archive/iterators/remove_whitespace.hpp:匿名命名空间 →
+     boost::archive::iterators::detail(TU-local 暴露,serialization/iostreams
+     模块 TU 在 gcc 上硬错);
+   - boost/io/detail/buffer_fill.hpp:inline 模板内的匿名 enum → constexpr
+     局部变量(枚举跨 CMI 流不一致,utility/filesystem/wave 组合 gcc 硬错
+     "definition of enum ... does not match");
+   - boost/test/utils/runtime/modifier.hpp:匿名命名空间 → runtime_detail +
+     inline 变量 + using 指令(nfp 关键词 TU-local 暴露,§6.5);
+   - boost/test/utils/iterator/token_iterator.hpp:同上(token 关键词)。
+
+## 7. CI 修复 — POSIX 腿(mingw 快照平台面,2026-08-31)
+
+M11 首次 CI(35c25093)linux-gcc/linux-llvm/macos-llvm 全部在 Build 步骤失败:
+18 个新模块的 .inc/.cppm 是 **mingw 快照**——MSVC/clang-windows 在 CI 里编译过,
+但 POSIX 面从未编译过(gcc 在 atomic.m.o 首败,后面还压着一批)。全部修复经
+本地 `mcpp build --target x86_64-linux-musl`(gcc 16.1 交叉)逐轮复现+验证:
+默认 build、`--features all`(103 模块全量)、`mcpp test` 编译面、examples
+编译面均通过;Windows 侧默认 + `--features all` 回归通过。
+
+### 7.1 reapply_hand_edits.py 新增守卫(全部镜像上游头条件)
+
+- atomic.inc:wait_operations_windows(BOOST_WINDOWS — wait_ops_windows.hpp
+  仅 Windows wait backend;M6 时在 thread.inc,实体迁来后漏掉);
+- container.inc:win_critical_section(thread_mutex.hpp 非 pthread 分支)、
+  boost::container_winapi 块(mutex.hpp `_WIN32/__WIN32__/WIN32` 自旋分支);
+- date_time.inc:time_from_ftime / posix_time::from_ftime(BOOST_HAS_FTIME,
+  M6 同款 FILETIME 对);
+- nowide.cppm:GMF 显式补 cstdio/stackstring/convert(跨平台头,mingw 经
+  windows 链传递可达);nowide.inc:console 机制 + detail::stat(_WIN32);
+- process.cppm:v1/v2 windows launcher 十连 include 整体 `#if _WIN32||
+  __CYGWIN__`(winapi basic_types.hpp #error,同 M9 winapi.cppm);POSIX 分支
+  补 boost/process/v2/process.hpp + posix/default_launcher.hpp(v2 核心原来
+  只经 windows launcher 链可达);process.inc:asio windows 服务/句柄、
+  v1/v2 windows detail 块、process_handle_windows 的 `*_` 助手、
+  environment_win 的 is_exec_type、windows 平铺的 launcher 机制
+  (probe/invoke/has_*/all_are_initializers — POSIX 嵌在 v2::posix::detail
+  且名称集不同);
+- cobalt.cppm:GMF 显式补 asio detail hash_map/fd_set_adapter/
+  reactor_op_queue/socket_select_interrupter(跨平台,mingw 经 windows 链
+  可达);cobalt.inc:asio file 四件(BOOST_ASIO_HAS_FILE)、win_*/iocp/
+  winsock/apc、null_reactor/select_reactor/null_signal_blocker/
+  socket_select_interrupter(IOCP/winsock 分支;epoll/kqueue 路径不声明);
+- log.inc:**strip_log_version_namespace()** — mingw 快照把版本内联命名空间
+  v2s_mt_nt62 烤进所有限定名,POSIX 是 v2s_mt_posix;内联命名空间对外查找
+  透明,故剥掉该层(opener 去段 + using 行去限定,配平括号);
+  另守 is_debugger_present(BOOST_WINDOWS)、event_log/debug_output 关键词
+  与 sinks、sinks::event_log 块、spirit decode_utf16(wchar_t==2 分支);
+- log.cppm:GMF 补 boost/phoenix/function.hpp(phoenix function 机制原来只
+  经 windows-only is_debugger_present 头可达);support/regex.hpp 仅保留在
+  Windows 面 — gcc 把 CMI(带 __cxx11 tag)与 GMF 文本重解析(无 tag)合并时
+  硬报 "mismatching abi tags"(cpp_regex_traits<char>::get_catalog_name_inst),
+  对应导出行 boost_regex_expression_tag 加 _WIN32 守护;
+- test.cppm 的 test.m.o nfp 硬错由 §6.9 vendored 修复解除(§6.5)。
+
+### 7.2 mcpp.toml
+
+- `_WIN32_WINNT=0x0A00` 从 [build].defines 移入 [target.windows.build].defines:
+  POSIX 上该宏触发 asio 的 Windows-App 探测(config.hpp `_WIN32_WINNT>=0x0603`
+  → winapifamily.h → WINAPI_FAMILY_PARTITION 未定义,cobalt/process 依赖
+  扫描硬错)。BOOST_ALL_NO_LIB/_MT/WIN32_LEAN_AND_MEAN/SECURITY_WIN32 保持
+  全包(POSIX 无害)。
+
+### 7.3 已知边界
+
+- linux-gnu(glibc)腿未本地验证(musl 交叉代表 POSIX 面);macOS arm64 依
+  守护条件推定(epoll 分支→select_reactor 系不导出,与上游一致)。
+- 本机交叉链接受 lld(zlib) 限制,mcpp test/examples 的链接+运行交给 CI
+  原生腿(M10 时已验证)。

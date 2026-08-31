@@ -162,12 +162,18 @@ struct token_assigner<single_pass_traversal_tag> {
 // **************                  modifiers                   ************** //
 // ************************************************************************** //
 
-namespace {
-nfp::keyword<struct dropped_delimeters_t >           dropped_delimeters;
-nfp::keyword<struct kept_delimeters_t >              kept_delimeters;
-nfp::typed_keyword<bool,struct keep_empty_tokens_t > keep_empty_tokens;
-nfp::typed_keyword<std::size_t,struct max_tokens_t > max_tokens;
+// M11 vendored edit (gcc C++23 modules): the token keywords lived in an
+// anonymous namespace (TU-local), and token_iterator_base's modifier handling
+// exposed them from the test module surface. Named namespace with inline
+// variables + using-directive keeps the unqualified-lookup behavior. Replay
+// after re-running import_boost (see M11 doc §6.9).
+namespace token_iterator_detail {
+inline nfp::keyword<struct dropped_delimeters_t >           dropped_delimeters;
+inline nfp::keyword<struct kept_delimeters_t >              kept_delimeters;
+inline nfp::typed_keyword<bool,struct keep_empty_tokens_t > keep_empty_tokens;
+inline nfp::typed_keyword<std::size_t,struct max_tokens_t > max_tokens;
 }
+using namespace token_iterator_detail;
 
 // ************************************************************************** //
 // **************             token_iterator_base              ************** //

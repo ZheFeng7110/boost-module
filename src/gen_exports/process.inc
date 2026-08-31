@@ -80,7 +80,11 @@ export namespace boost { namespace asio { namespace detail {
   using boost::asio::detail::transfer_all_t;
   using boost::asio::detail::transfer_at_least_t;
   using boost::asio::detail::transfer_exactly_t;
+#if defined(_WIN32)
+  // M11 platform guard: win_object_handle_service is the asio windows
+  // branch (BOOST_ASIO_WINDOWS); POSIX asio never declares it.
   using boost::asio::detail::win_object_handle_service;
+#endif
   using boost::asio::detail::work_dispatcher;
   using boost::asio::detail::write;
   using boost::asio::detail::write_dynbuf_v1_op;
@@ -100,13 +104,17 @@ export namespace boost { namespace asio { namespace ip {
   using boost::asio::ip::udp;
 }}}
 
+#if defined(_WIN32)
 export namespace boost { namespace asio { namespace windows {
+  // M11 platform guard: asio/windows/* handle types are Windows-only
+  // (BOOST_ASIO_WINDOWS); POSIX asio never declares them.
   using boost::asio::windows::basic_object_handle;
   using boost::asio::windows::basic_overlapped_handle;
   using boost::asio::windows::basic_stream_handle;
   using boost::asio::windows::object_handle;
   using boost::asio::windows::stream_handle;
 }}}
+#endif
 
 export namespace boost { namespace fusion {
   using boost::fusion::as_deque;
@@ -418,7 +426,10 @@ export namespace boost { namespace process { namespace v1 { namespace detail {
   using boost::process::v1::detail::valid_argument_list;
 }}}}
 
+#if defined(_WIN32)
 export namespace boost { namespace process { namespace v1 { namespace detail { namespace windows {
+  // M11 platform guard: v1 detail windows impls (incl. the NT workaround
+  // block below) are declared only by the windows GMF branches.
   using boost::process::v1::detail::windows::apply_out_handles;
   using boost::process::v1::detail::windows::associate_completion_port;
   using boost::process::v1::detail::windows::async_handler;
@@ -522,6 +533,7 @@ export namespace boost { namespace process { namespace v1 { namespace detail { n
   using boost::process::v1::detail::windows::workaround::nt_system_query_information;
   using boost::process::v1::detail::windows::workaround::set_information_job_object;
 }}}}}}
+#endif
 
 export namespace boost { namespace process { namespace v1 { namespace extend {
   using boost::process::v1::extend::foreach_used_handle;
@@ -561,41 +573,126 @@ export namespace boost { namespace process { namespace v2 {
 }}}
 
 export namespace boost { namespace process { namespace v2 { namespace detail {
+#if defined(_WIN32)
+  // M11 platform guard: all_are_initializers is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::all_are_initializers;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: base is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::base;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: basic_process_handle_win is the windows variant
+  // (detail/process_handle_windows.hpp); POSIX takes process_handle_fd.
   using boost::process::v2::detail::basic_process_handle_win;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: check_handle_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::check_handle_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: check_pid_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::check_pid_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: check_running_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::check_running_;
+#endif
   using boost::process::v2::detail::conv_string;
   using boost::process::v2::detail::convert_to_utf8;
   using boost::process::v2::detail::convert_to_wide;
+#if defined(_WIN32)
+  // M11 platform guard: derived is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::derived;
+#endif
   using boost::process::v2::detail::do_throw_error;
+#if defined(_WIN32)
+  // M11 platform guard: get_exit_code_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::get_exit_code_;
+#endif
   using boost::process::v2::detail::get_last_error;
+#if defined(_WIN32)
+  // M11 platform guard: has_on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::has_on_error;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: has_on_setup is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::has_on_setup;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: has_on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::has_on_success;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: interrupt_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::interrupt_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: invoke_on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::invoke_on_error;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: invoke_on_setup is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::invoke_on_setup;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: invoke_on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::invoke_on_success;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: is_initializer is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::is_initializer;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::on_error;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: on_setup is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::on_setup;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::on_success;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: open_process_ lives in detail/process_handle_windows.hpp.
   using boost::process::v2::detail::open_process_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: probe_on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::probe_on_error;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: probe_on_setup is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::probe_on_setup;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: probe_on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
   using boost::process::v2::detail::probe_on_success;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: request_exit_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::request_exit_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: resume_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::resume_;
+#endif
   using boost::process::v2::detail::size_as_utf8;
   using boost::process::v2::detail::size_as_wide;
+#if defined(_WIN32)
+  // M11 platform guard: suspend_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::suspend_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: terminate_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::terminate_;
+#endif
+#if defined(_WIN32)
+  // M11 platform guard: terminate_if_running_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
   using boost::process::v2::detail::terminate_if_running_;
+#endif
   using boost::process::v2::detail::throw_error;
 }}}}
 
@@ -643,7 +740,11 @@ export namespace boost { namespace process { namespace v2 { namespace environmen
   using boost::process::v2::environment::detail::find_key;
   using boost::process::v2::environment::detail::get;
   using boost::process::v2::environment::detail::hash_step;
+#if defined(_WIN32)
+  // M11 platform guard: is_exec_type lives in detail/environment_win.hpp;
+  // POSIX environment detail does not declare it.
   using boost::process::v2::environment::detail::is_exec_type;
+#endif
   using boost::process::v2::environment::detail::is_executable;
   using boost::process::v2::environment::detail::load_native_handle;
   using boost::process::v2::environment::detail::native_handle_deleter;
@@ -668,7 +769,9 @@ export namespace boost { namespace process { namespace v2 { namespace ext {
   using boost::process::v2::ext::exe;
 }}}}
 
+#if defined(_WIN32)
 export namespace boost { namespace process { namespace v2 { namespace windows {
+  // M11 platform guard: v2 windows launchers are Windows-only headers.
   using boost::process::v2::windows::as_user_launcher;
   using boost::process::v2::windows::default_launcher;
   using boost::process::v2::windows::process_creation_flags;
@@ -676,6 +779,7 @@ export namespace boost { namespace process { namespace v2 { namespace windows {
   using boost::process::v2::windows::with_logon_launcher;
   using boost::process::v2::windows::with_token_launcher;
 }}}}
+#endif
 
 export namespace boost { namespace system {
   using boost::system::error_category;

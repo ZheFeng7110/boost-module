@@ -62,812 +62,853 @@ export namespace boost { namespace intrusive {
   using boost::intrusive::list_base_hook;
 }}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 {
-  using boost::log::v2s_mt_nt62::abstract_ordering;
-  using boost::log::v2s_mt_nt62::add_common_attributes;
-  using boost::log::v2s_mt_nt62::add_console_log;
-  using boost::log::v2s_mt_nt62::add_file_log;
-  using boost::log::v2s_mt_nt62::add_scoped_logger_attribute;
-  using boost::log::v2s_mt_nt62::add_scoped_thread_attribute;
-  using boost::log::v2s_mt_nt62::add_value;
-  using boost::log::v2s_mt_nt62::add_value_manip;
-  using boost::log::v2s_mt_nt62::arithmetic_types;
-  using boost::log::v2s_mt_nt62::as_action;
-  using boost::log::v2s_mt_nt62::as_action_adapter;
-  using boost::log::v2s_mt_nt62::assign_fun;
-  using boost::log::v2s_mt_nt62::attribute;
-  using boost::log::v2s_mt_nt62::attribute_cast;
-  using boost::log::v2s_mt_nt62::attribute_name;
-  using boost::log::v2s_mt_nt62::attribute_name_info;
-  using boost::log::v2s_mt_nt62::attribute_name_info_tag;
-  using boost::log::v2s_mt_nt62::attribute_set;
-  using boost::log::v2s_mt_nt62::attribute_value;
-  using boost::log::v2s_mt_nt62::attribute_value_ordering;
-  using boost::log::v2s_mt_nt62::attribute_value_set;
-  using boost::log::v2s_mt_nt62::auto_newline;
-  using boost::log::v2s_mt_nt62::auto_newline_manip;
-  using boost::log::v2s_mt_nt62::bad_alloc;
-  using boost::log::v2s_mt_nt62::basic_filter_factory;
-  using boost::log::v2s_mt_nt62::basic_formatter;
-  using boost::log::v2s_mt_nt62::basic_formatter_factory;
-  using boost::log::v2s_mt_nt62::basic_formatting_ostream;
-  using boost::log::v2s_mt_nt62::basic_record_ostream;
-  using boost::log::v2s_mt_nt62::basic_settings;
-  using boost::log::v2s_mt_nt62::basic_settings_section;
-  using boost::log::v2s_mt_nt62::basic_string_literal;
-  using boost::log::v2s_mt_nt62::begins_with_fun;
-  using boost::log::v2s_mt_nt62::bind1st;
-  using boost::log::v2s_mt_nt62::bind2nd;
-  using boost::log::v2s_mt_nt62::bind3rd;
-  using boost::log::v2s_mt_nt62::bind_assign;
-  using boost::log::v2s_mt_nt62::bind_output;
-  using boost::log::v2s_mt_nt62::bind_to_log;
-  using boost::log::v2s_mt_nt62::binder1st;
-  using boost::log::v2s_mt_nt62::binder2nd;
-  using boost::log::v2s_mt_nt62::binder3rd;
-  using boost::log::v2s_mt_nt62::boost_date_time_types;
-  using boost::log::v2s_mt_nt62::boost_date_types;
-  using boost::log::v2s_mt_nt62::boost_time_duration_types;
-  using boost::log::v2s_mt_nt62::boost_time_period_types;
-  using boost::log::v2s_mt_nt62::boost_time_types;
-  using boost::log::v2s_mt_nt62::bounded_dump_manip;
-  using boost::log::v2s_mt_nt62::capacity_limit_reached;
-  using boost::log::v2s_mt_nt62::contains_fun;
-  using boost::log::v2s_mt_nt62::conversion_error;
-  using boost::log::v2s_mt_nt62::core;
-  using boost::log::v2s_mt_nt62::core_ptr;
-  using boost::log::v2s_mt_nt62::current_scope;
-  using boost::log::v2s_mt_nt62::current_scope_info;
-  using boost::log::v2s_mt_nt62::current_scope_info_tag;
-  using boost::log::v2s_mt_nt62::date_time_types;
-  using boost::log::v2s_mt_nt62::date_types;
-  using boost::log::v2s_mt_nt62::default_attribute_types;
-  using boost::log::v2s_mt_nt62::default_attribute_value_types;
-  using boost::log::v2s_mt_nt62::dump;
-  using boost::log::v2s_mt_nt62::dump_elements;
-  using boost::log::v2s_mt_nt62::dump_manip;
-  using boost::log::v2s_mt_nt62::dynamic_type_dispatcher;
-  using boost::log::v2s_mt_nt62::ends_with_fun;
-  using boost::log::v2s_mt_nt62::equal_to;
-  using boost::log::v2s_mt_nt62::exception_handler;
-  using boost::log::v2s_mt_nt62::extract;
-  using boost::log::v2s_mt_nt62::extract_or_default;
-  using boost::log::v2s_mt_nt62::extract_or_throw;
-  using boost::log::v2s_mt_nt62::fallback_to_default;
-  using boost::log::v2s_mt_nt62::fallback_to_none;
-  using boost::log::v2s_mt_nt62::fallback_to_throw;
-  using boost::log::v2s_mt_nt62::filter;
-  using boost::log::v2s_mt_nt62::filter_factory;
-  using boost::log::v2s_mt_nt62::floating_point_types;
-  using boost::log::v2s_mt_nt62::formatter;
-  using boost::log::v2s_mt_nt62::formatter_factory;
-  using boost::log::v2s_mt_nt62::formatting_ostream;
-  using boost::log::v2s_mt_nt62::fun_ref;
-  using boost::log::v2s_mt_nt62::function_reference_wrapper;
-  using boost::log::v2s_mt_nt62::greater;
-  using boost::log::v2s_mt_nt62::greater_equal;
-  using boost::log::v2s_mt_nt62::in_range_fun;
-  using boost::log::v2s_mt_nt62::init_from_settings;
-  using boost::log::v2s_mt_nt62::init_from_stream;
-  using boost::log::v2s_mt_nt62::integral_types;
-  using boost::log::v2s_mt_nt62::invalid_type;
-  using boost::log::v2s_mt_nt62::invalid_value;
-  using boost::log::v2s_mt_nt62::invoke_manip;
-  using boost::log::v2s_mt_nt62::invoke_manipulator;
-  using boost::log::v2s_mt_nt62::less;
-  using boost::log::v2s_mt_nt62::less_equal;
-  using boost::log::v2s_mt_nt62::limitation_error;
-  using boost::log::v2s_mt_nt62::lock_access_mode;
-  using boost::log::v2s_mt_nt62::lock_access_mode::exclusive_access;
-  using boost::log::v2s_mt_nt62::lock_access_mode::shared_access;
-  using boost::log::v2s_mt_nt62::lock_access_mode::unlocked_access;
-  using boost::log::v2s_mt_nt62::logic_error;
-  using boost::log::v2s_mt_nt62::make_attr_ordering;
-  using boost::log::v2s_mt_nt62::make_exception_handler;
-  using boost::log::v2s_mt_nt62::make_exception_suppressor;
-  using boost::log::v2s_mt_nt62::matches_fun;
-  using boost::log::v2s_mt_nt62::missing_value;
-  using boost::log::v2s_mt_nt62::native_date_time_types;
-  using boost::log::v2s_mt_nt62::native_date_types;
-  using boost::log::v2s_mt_nt62::native_time_duration_types;
-  using boost::log::v2s_mt_nt62::native_time_types;
-  using boost::log::v2s_mt_nt62::no_lock;
-  using boost::log::v2s_mt_nt62::nop;
-  using boost::log::v2s_mt_nt62::not_equal_to;
-  using boost::log::v2s_mt_nt62::nothrow_exception_handler;
-  using boost::log::v2s_mt_nt62::numeric_types;
-  using boost::log::v2s_mt_nt62::odr_violation;
-  using boost::log::v2s_mt_nt62::once_block_flag;
-  using boost::log::v2s_mt_nt62::operator!=;
-  using boost::log::v2s_mt_nt62::operator<;
-  using boost::log::v2s_mt_nt62::operator<<;
-  using boost::log::v2s_mt_nt62::operator<=;
-  using boost::log::v2s_mt_nt62::operator==;
-  using boost::log::v2s_mt_nt62::operator>;
-  using boost::log::v2s_mt_nt62::operator>=;
-  using boost::log::v2s_mt_nt62::optional_manip;
-  using boost::log::v2s_mt_nt62::optional_manipulator;
-  using boost::log::v2s_mt_nt62::output_fun;
-  using boost::log::v2s_mt_nt62::parse_error;
-  using boost::log::v2s_mt_nt62::parse_filter;
-  using boost::log::v2s_mt_nt62::parse_formatter;
-  using boost::log::v2s_mt_nt62::parse_settings;
-  using boost::log::v2s_mt_nt62::permissions;
-  using boost::log::v2s_mt_nt62::position_info;
-  using boost::log::v2s_mt_nt62::position_info_tag;
-  using boost::log::v2s_mt_nt62::process_id;
-  using boost::log::v2s_mt_nt62::range_manip;
-  using boost::log::v2s_mt_nt62::range_manipulator;
-  using boost::log::v2s_mt_nt62::record;
-  using boost::log::v2s_mt_nt62::record_ostream;
-  using boost::log::v2s_mt_nt62::record_view;
-  using boost::log::v2s_mt_nt62::register_filter_factory;
-  using boost::log::v2s_mt_nt62::register_formatter_factory;
-  using boost::log::v2s_mt_nt62::register_simple_filter_factory;
-  using boost::log::v2s_mt_nt62::register_simple_formatter_factory;
-  using boost::log::v2s_mt_nt62::register_sink_factory;
-  using boost::log::v2s_mt_nt62::runtime_error;
-  using boost::log::v2s_mt_nt62::save_result;
-  using boost::log::v2s_mt_nt62::save_result_wrapper;
-  using boost::log::v2s_mt_nt62::scoped_attribute;
-  using boost::log::v2s_mt_nt62::settings;
-  using boost::log::v2s_mt_nt62::settings_section;
-  using boost::log::v2s_mt_nt62::setup_error;
-  using boost::log::v2s_mt_nt62::sink_factory;
-  using boost::log::v2s_mt_nt62::static_type_dispatcher;
-  using boost::log::v2s_mt_nt62::str_literal;
-  using boost::log::v2s_mt_nt62::strictest_lock;
-  using boost::log::v2s_mt_nt62::string_literal;
-  using boost::log::v2s_mt_nt62::string_types;
-  using boost::log::v2s_mt_nt62::swap;
-  using boost::log::v2s_mt_nt62::system_error;
-  using boost::log::v2s_mt_nt62::thread_access_mode_of;
-  using boost::log::v2s_mt_nt62::thread_id;
-  using boost::log::v2s_mt_nt62::time_duration_types;
-  using boost::log::v2s_mt_nt62::time_period_types;
-  using boost::log::v2s_mt_nt62::time_types;
-  using boost::log::v2s_mt_nt62::to_log;
-  using boost::log::v2s_mt_nt62::to_log_fun;
-  using boost::log::v2s_mt_nt62::to_log_manip;
-  using boost::log::v2s_mt_nt62::tuple_manip;
-  using boost::log::v2s_mt_nt62::tuple_manipulator;
-  using boost::log::v2s_mt_nt62::type_dispatcher;
-  using boost::log::v2s_mt_nt62::type_info_info;
-  using boost::log::v2s_mt_nt62::type_info_info_tag;
-  using boost::log::v2s_mt_nt62::unexpected_call;
-  using boost::log::v2s_mt_nt62::use_std_allocator;
-  using boost::log::v2s_mt_nt62::value_extractor;
-  using boost::log::v2s_mt_nt62::value_ref;
-  using boost::log::v2s_mt_nt62::value_visitor_invoker;
-  using boost::log::v2s_mt_nt62::visit;
-  using boost::log::v2s_mt_nt62::visitation_result;
-  using boost::log::v2s_mt_nt62::wadd_console_log;
-  using boost::log::v2s_mt_nt62::wformatter;
-  using boost::log::v2s_mt_nt62::wformatting_ostream;
-  using boost::log::v2s_mt_nt62::wrecord_ostream;
-  using boost::log::v2s_mt_nt62::wsettings;
-  using boost::log::v2s_mt_nt62::wsettings_section;
-  using boost::log::v2s_mt_nt62::wstring_literal;
+export namespace boost { namespace log {
+  using boost::log::abstract_ordering;
+  using boost::log::add_common_attributes;
+  using boost::log::add_console_log;
+  using boost::log::add_file_log;
+  using boost::log::add_scoped_logger_attribute;
+  using boost::log::add_scoped_thread_attribute;
+  using boost::log::add_value;
+  using boost::log::add_value_manip;
+  using boost::log::arithmetic_types;
+  using boost::log::as_action;
+  using boost::log::as_action_adapter;
+  using boost::log::assign_fun;
+  using boost::log::attribute;
+  using boost::log::attribute_cast;
+  using boost::log::attribute_name;
+  using boost::log::attribute_name_info;
+  using boost::log::attribute_name_info_tag;
+  using boost::log::attribute_set;
+  using boost::log::attribute_value;
+  using boost::log::attribute_value_ordering;
+  using boost::log::attribute_value_set;
+  using boost::log::auto_newline;
+  using boost::log::auto_newline_manip;
+  using boost::log::bad_alloc;
+  using boost::log::basic_filter_factory;
+  using boost::log::basic_formatter;
+  using boost::log::basic_formatter_factory;
+  using boost::log::basic_formatting_ostream;
+  using boost::log::basic_record_ostream;
+  using boost::log::basic_settings;
+  using boost::log::basic_settings_section;
+  using boost::log::basic_string_literal;
+  using boost::log::begins_with_fun;
+  using boost::log::bind1st;
+  using boost::log::bind2nd;
+  using boost::log::bind3rd;
+  using boost::log::bind_assign;
+  using boost::log::bind_output;
+  using boost::log::bind_to_log;
+  using boost::log::binder1st;
+  using boost::log::binder2nd;
+  using boost::log::binder3rd;
+  using boost::log::boost_date_time_types;
+  using boost::log::boost_date_types;
+  using boost::log::boost_time_duration_types;
+  using boost::log::boost_time_period_types;
+  using boost::log::boost_time_types;
+  using boost::log::bounded_dump_manip;
+  using boost::log::capacity_limit_reached;
+  using boost::log::contains_fun;
+  using boost::log::conversion_error;
+  using boost::log::core;
+  using boost::log::core_ptr;
+  using boost::log::current_scope;
+  using boost::log::current_scope_info;
+  using boost::log::current_scope_info_tag;
+  using boost::log::date_time_types;
+  using boost::log::date_types;
+  using boost::log::default_attribute_types;
+  using boost::log::default_attribute_value_types;
+  using boost::log::dump;
+  using boost::log::dump_elements;
+  using boost::log::dump_manip;
+  using boost::log::dynamic_type_dispatcher;
+  using boost::log::ends_with_fun;
+  using boost::log::equal_to;
+  using boost::log::exception_handler;
+  using boost::log::extract;
+  using boost::log::extract_or_default;
+  using boost::log::extract_or_throw;
+  using boost::log::fallback_to_default;
+  using boost::log::fallback_to_none;
+  using boost::log::fallback_to_throw;
+  using boost::log::filter;
+  using boost::log::filter_factory;
+  using boost::log::floating_point_types;
+  using boost::log::formatter;
+  using boost::log::formatter_factory;
+  using boost::log::formatting_ostream;
+  using boost::log::fun_ref;
+  using boost::log::function_reference_wrapper;
+  using boost::log::greater;
+  using boost::log::greater_equal;
+  using boost::log::in_range_fun;
+  using boost::log::init_from_settings;
+  using boost::log::init_from_stream;
+  using boost::log::integral_types;
+  using boost::log::invalid_type;
+  using boost::log::invalid_value;
+  using boost::log::invoke_manip;
+  using boost::log::invoke_manipulator;
+  using boost::log::less;
+  using boost::log::less_equal;
+  using boost::log::limitation_error;
+  using boost::log::lock_access_mode;
+  using boost::log::lock_access_mode::exclusive_access;
+  using boost::log::lock_access_mode::shared_access;
+  using boost::log::lock_access_mode::unlocked_access;
+  using boost::log::logic_error;
+  using boost::log::make_attr_ordering;
+  using boost::log::make_exception_handler;
+  using boost::log::make_exception_suppressor;
+  using boost::log::matches_fun;
+  using boost::log::missing_value;
+  using boost::log::native_date_time_types;
+  using boost::log::native_date_types;
+  using boost::log::native_time_duration_types;
+  using boost::log::native_time_types;
+  using boost::log::no_lock;
+  using boost::log::nop;
+  using boost::log::not_equal_to;
+  using boost::log::nothrow_exception_handler;
+  using boost::log::numeric_types;
+  using boost::log::odr_violation;
+  using boost::log::once_block_flag;
+  using boost::log::operator!=;
+  using boost::log::operator<;
+  using boost::log::operator<<;
+  using boost::log::operator<=;
+  using boost::log::operator==;
+  using boost::log::operator>;
+  using boost::log::operator>=;
+  using boost::log::optional_manip;
+  using boost::log::optional_manipulator;
+  using boost::log::output_fun;
+  using boost::log::parse_error;
+  using boost::log::parse_filter;
+  using boost::log::parse_formatter;
+  using boost::log::parse_settings;
+  using boost::log::permissions;
+  using boost::log::position_info;
+  using boost::log::position_info_tag;
+  using boost::log::process_id;
+  using boost::log::range_manip;
+  using boost::log::range_manipulator;
+  using boost::log::record;
+  using boost::log::record_ostream;
+  using boost::log::record_view;
+  using boost::log::register_filter_factory;
+  using boost::log::register_formatter_factory;
+  using boost::log::register_simple_filter_factory;
+  using boost::log::register_simple_formatter_factory;
+  using boost::log::register_sink_factory;
+  using boost::log::runtime_error;
+  using boost::log::save_result;
+  using boost::log::save_result_wrapper;
+  using boost::log::scoped_attribute;
+  using boost::log::settings;
+  using boost::log::settings_section;
+  using boost::log::setup_error;
+  using boost::log::sink_factory;
+  using boost::log::static_type_dispatcher;
+  using boost::log::str_literal;
+  using boost::log::strictest_lock;
+  using boost::log::string_literal;
+  using boost::log::string_types;
+  using boost::log::swap;
+  using boost::log::system_error;
+  using boost::log::thread_access_mode_of;
+  using boost::log::thread_id;
+  using boost::log::time_duration_types;
+  using boost::log::time_period_types;
+  using boost::log::time_types;
+  using boost::log::to_log;
+  using boost::log::to_log_fun;
+  using boost::log::to_log_manip;
+  using boost::log::tuple_manip;
+  using boost::log::tuple_manipulator;
+  using boost::log::type_dispatcher;
+  using boost::log::type_info_info;
+  using boost::log::type_info_info_tag;
+  using boost::log::unexpected_call;
+  using boost::log::use_std_allocator;
+  using boost::log::value_extractor;
+  using boost::log::value_ref;
+  using boost::log::value_visitor_invoker;
+  using boost::log::visit;
+  using boost::log::visitation_result;
+  using boost::log::wadd_console_log;
+  using boost::log::wformatter;
+  using boost::log::wformatting_ostream;
+  using boost::log::wrecord_ostream;
+  using boost::log::wsettings;
+  using boost::log::wsettings_section;
+  using boost::log::wstring_literal;
+}}
+
+export namespace boost { namespace log { namespace attributes {
+  using boost::log::attributes::attribute_value_impl;
+  using boost::log::attributes::basic_clock;
+  using boost::log::attributes::basic_time_traits;
+  using boost::log::attributes::cast_source;
+  using boost::log::attributes::constant;
+  using boost::log::attributes::counter;
+  using boost::log::attributes::current_process_id;
+  using boost::log::attributes::current_process_name;
+  using boost::log::attributes::current_thread_id;
+  using boost::log::attributes::function;
+  using boost::log::attributes::local_clock;
+  using boost::log::attributes::local_time_traits;
+  using boost::log::attributes::make_attribute_value;
+  using boost::log::attributes::make_constant;
+  using boost::log::attributes::make_function;
+  using boost::log::attributes::mutable_constant;
+  using boost::log::attributes::named_scope;
+  using boost::log::attributes::named_scope_entry;
+  using boost::log::attributes::named_scope_list;
+  using boost::log::attributes::operator<<;
+  using boost::log::attributes::timer;
+  using boost::log::attributes::utc_clock;
+  using boost::log::attributes::utc_time_traits;
 }}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace attributes {
-  using boost::log::v2s_mt_nt62::attributes::attribute_value_impl;
-  using boost::log::v2s_mt_nt62::attributes::basic_clock;
-  using boost::log::v2s_mt_nt62::attributes::basic_time_traits;
-  using boost::log::v2s_mt_nt62::attributes::cast_source;
-  using boost::log::v2s_mt_nt62::attributes::constant;
-  using boost::log::v2s_mt_nt62::attributes::counter;
-  using boost::log::v2s_mt_nt62::attributes::current_process_id;
-  using boost::log::v2s_mt_nt62::attributes::current_process_name;
-  using boost::log::v2s_mt_nt62::attributes::current_thread_id;
-  using boost::log::v2s_mt_nt62::attributes::function;
-  using boost::log::v2s_mt_nt62::attributes::local_clock;
-  using boost::log::v2s_mt_nt62::attributes::local_time_traits;
-  using boost::log::v2s_mt_nt62::attributes::make_attribute_value;
-  using boost::log::v2s_mt_nt62::attributes::make_constant;
-  using boost::log::v2s_mt_nt62::attributes::make_function;
-  using boost::log::v2s_mt_nt62::attributes::mutable_constant;
-  using boost::log::v2s_mt_nt62::attributes::named_scope;
-  using boost::log::v2s_mt_nt62::attributes::named_scope_entry;
-  using boost::log::v2s_mt_nt62::attributes::named_scope_list;
-  using boost::log::v2s_mt_nt62::attributes::operator<<;
-  using boost::log::v2s_mt_nt62::attributes::timer;
-  using boost::log::v2s_mt_nt62::attributes::utc_clock;
-  using boost::log::v2s_mt_nt62::attributes::utc_time_traits;
+export namespace boost { namespace log { namespace attributes { namespace aux {
+  using boost::log::attributes::aux::named_scope_list_node;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace attributes { namespace aux {
-  using boost::log::v2s_mt_nt62::attributes::aux::named_scope_list_node;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux {
-  using boost::log::v2s_mt_nt62::aux::acquire_filter;
-  using boost::log::v2s_mt_nt62::aux::acquire_formatter;
-  using boost::log::v2s_mt_nt62::aux::add_console_log;
-  using boost::log::v2s_mt_nt62::aux::add_file_log;
-  using boost::log::v2s_mt_nt62::aux::apply_visitor_dispatch;
-  using boost::log::v2s_mt_nt62::aux::arity_of;
-  using boost::log::v2s_mt_nt62::aux::arity_of_impl;
-  using boost::log::v2s_mt_nt62::aux::atomic_based_event;
-  using boost::log::v2s_mt_nt62::aux::attach_attribute_name_info;
-  using boost::log::v2s_mt_nt62::aux::attribute_scope_guard;
-  using boost::log::v2s_mt_nt62::aux::attribute_set_reference_proxy;
-  using boost::log::v2s_mt_nt62::aux::basic_format;
-  using boost::log::v2s_mt_nt62::aux::basic_ostringstreambuf;
-  using boost::log::v2s_mt_nt62::aux::basic_settings_section_iterator_base;
-  using boost::log::v2s_mt_nt62::aux::boost_regex_expression_tag;
-  using boost::log::v2s_mt_nt62::aux::boost_spirit_classic_expression_tag;
-  using boost::log::v2s_mt_nt62::aux::boost_spirit_qi_expression_tag;
-  using boost::log::v2s_mt_nt62::aux::boost_xpressive_expression_tag;
-  using boost::log::v2s_mt_nt62::aux::cleanup_guard;
-  using boost::log::v2s_mt_nt62::aux::code_convert;
-  using boost::log::v2s_mt_nt62::aux::code_convert_impl;
-  using boost::log::v2s_mt_nt62::aux::copy_cv;
-  using boost::log::v2s_mt_nt62::aux::date_format_parser_callback;
-  using boost::log::v2s_mt_nt62::aux::date_time_format_parser_callback;
-  using boost::log::v2s_mt_nt62::aux::date_time_formatter;
-  using boost::log::v2s_mt_nt62::aux::decomposed_time;
-  using boost::log::v2s_mt_nt62::aux::decomposed_time_formatter_builder;
-  using boost::log::v2s_mt_nt62::aux::decomposed_time_wrapper;
-  using boost::log::v2s_mt_nt62::aux::deduce_char_type;
-  using boost::log::v2s_mt_nt62::aux::deduced_char_type;
-  using boost::log::v2s_mt_nt62::aux::default_console_stream;
-  using boost::log::v2s_mt_nt62::aux::disable_if_streamable_char_type;
-  using boost::log::v2s_mt_nt62::aux::dispatching_map_initializer;
-  using boost::log::v2s_mt_nt62::aux::dispatching_map_order;
-  using boost::log::v2s_mt_nt62::aux::dump_data;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char16;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char16_t;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char32;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char32_t;
-  using boost::log::v2s_mt_nt62::aux::dump_data_char_t;
-  using boost::log::v2s_mt_nt62::aux::dump_data_wchar;
-  using boost::log::v2s_mt_nt62::aux::dump_data_wchar_t;
-  using boost::log::v2s_mt_nt62::aux::eh_cons;
-  using boost::log::v2s_mt_nt62::aux::eh_root;
-  using boost::log::v2s_mt_nt62::aux::empty_arg_list;
-  using boost::log::v2s_mt_nt62::aux::enable_dump;
-  using boost::log::v2s_mt_nt62::aux::enable_dump_size_based;
-  using boost::log::v2s_mt_nt62::aux::enable_formatting_ostream_generic_operator;
-  using boost::log::v2s_mt_nt62::aux::enable_if_named_parameters;
-  using boost::log::v2s_mt_nt62::aux::enable_if_streamable_char_type;
-  using boost::log::v2s_mt_nt62::aux::enable_record_ostream_generic_operator;
-  using boost::log::v2s_mt_nt62::aux::event;
-  using boost::log::v2s_mt_nt62::aux::exclusive_auto_unlocker;
-  using boost::log::v2s_mt_nt62::aux::exclusive_lock_guard;
-  using boost::log::v2s_mt_nt62::aux::fake_mutex;
-  using boost::log::v2s_mt_nt62::aux::file_name_param_traits;
-  using boost::log::v2s_mt_nt62::aux::first_argument_type_of;
-  using boost::log::v2s_mt_nt62::aux::first_argument_type_of_impl;
-  using boost::log::v2s_mt_nt62::aux::format_description;
-  using boost::log::v2s_mt_nt62::aux::format_element;
-  using boost::log::v2s_mt_nt62::aux::get_pointer;
-  using boost::log::v2s_mt_nt62::aux::get_process_name;
-  using boost::log::v2s_mt_nt62::aux::get_root_type;
-  using boost::log::v2s_mt_nt62::aux::has_arg1_type;
-  using boost::log::v2s_mt_nt62::aux::has_arg2_type;
-  using boost::log::v2s_mt_nt62::aux::has_argument_type;
-  using boost::log::v2s_mt_nt62::aux::has_arity;
-  using boost::log::v2s_mt_nt62::aux::has_exception_types;
-  using boost::log::v2s_mt_nt62::aux::has_first_argument_type;
-  using boost::log::v2s_mt_nt62::aux::has_second_argument_type;
-  using boost::log::v2s_mt_nt62::aux::id;
-  using boost::log::v2s_mt_nt62::aux::insert_aligned;
-  using boost::log::v2s_mt_nt62::aux::insert_fill_chars;
-  using boost::log::v2s_mt_nt62::aux::is_character_type;
-  using boost::log::v2s_mt_nt62::aux::is_exclusively_lockable;
-  using boost::log::v2s_mt_nt62::aux::is_ostream;
-  using boost::log::v2s_mt_nt62::aux::is_shared_lockable;
-  using boost::log::v2s_mt_nt62::aux::is_spirit_classic_parser;
-  using boost::log::v2s_mt_nt62::aux::lazy_singleton;
-  using boost::log::v2s_mt_nt62::aux::light_function;
-  using boost::log::v2s_mt_nt62::aux::light_rw_mutex;
-  using boost::log::v2s_mt_nt62::aux::locking_ptr;
-  using boost::log::v2s_mt_nt62::aux::make_arg_list;
-  using boost::log::v2s_mt_nt62::aux::make_arg_type;
-  using boost::log::v2s_mt_nt62::aux::make_attr_ordering_type;
-  using boost::log::v2s_mt_nt62::aux::make_common_integral_type;
-  using boost::log::v2s_mt_nt62::aux::make_embedded_string_type;
-  using boost::log::v2s_mt_nt62::aux::make_embedded_string_type_impl;
-  using boost::log::v2s_mt_nt62::aux::make_record_pump;
-  using boost::log::v2s_mt_nt62::aux::make_self_contained_exception_handler;
-  using boost::log::v2s_mt_nt62::aux::match_traits;
-  using boost::log::v2s_mt_nt62::aux::matching_expression_kind;
-  using boost::log::v2s_mt_nt62::aux::multiple_unique_lock2;
-  using boost::log::v2s_mt_nt62::aux::once_block_sentry;
-  using boost::log::v2s_mt_nt62::aux::operator!=;
-  using boost::log::v2s_mt_nt62::aux::operator%;
-  using boost::log::v2s_mt_nt62::aux::operator&;
-  using boost::log::v2s_mt_nt62::aux::operator*;
-  using boost::log::v2s_mt_nt62::aux::operator+;
-  using boost::log::v2s_mt_nt62::aux::operator-;
-  using boost::log::v2s_mt_nt62::aux::operator/;
-  using boost::log::v2s_mt_nt62::aux::operator<;
-  using boost::log::v2s_mt_nt62::aux::operator<<;
-  using boost::log::v2s_mt_nt62::aux::operator<=;
-  using boost::log::v2s_mt_nt62::aux::operator==;
-  using boost::log::v2s_mt_nt62::aux::operator>;
-  using boost::log::v2s_mt_nt62::aux::operator>=;
-  using boost::log::v2s_mt_nt62::aux::operator>>;
-  using boost::log::v2s_mt_nt62::aux::operator^;
-  using boost::log::v2s_mt_nt62::aux::operator|;
-  using boost::log::v2s_mt_nt62::aux::parse_date_format;
-  using boost::log::v2s_mt_nt62::aux::parse_date_time_format;
-  using boost::log::v2s_mt_nt62::aux::parse_format;
-  using boost::log::v2s_mt_nt62::aux::parse_time_format;
-  using boost::log::v2s_mt_nt62::aux::process;
-  using boost::log::v2s_mt_nt62::aux::put_integer;
-  using boost::log::v2s_mt_nt62::aux::rebind_alloc;
-  using boost::log::v2s_mt_nt62::aux::record_pump;
-  using boost::log::v2s_mt_nt62::aux::root_type;
-  using boost::log::v2s_mt_nt62::aux::scoped_logger_attribute;
-  using boost::log::v2s_mt_nt62::aux::scoped_thread_attribute;
-  using boost::log::v2s_mt_nt62::aux::second_argument_type_of;
-  using boost::log::v2s_mt_nt62::aux::second_argument_type_of_impl;
-  using boost::log::v2s_mt_nt62::aux::setup_file_collector;
-  using boost::log::v2s_mt_nt62::aux::setup_filter;
-  using boost::log::v2s_mt_nt62::aux::setup_formatter;
-  using boost::log::v2s_mt_nt62::aux::sfinae_dummy;
-  using boost::log::v2s_mt_nt62::aux::shared_lock_guard;
-  using boost::log::v2s_mt_nt62::aux::single_type_dispatcher;
-  using boost::log::v2s_mt_nt62::aux::single_type_dispatcher_base;
-  using boost::log::v2s_mt_nt62::aux::singleton;
-  using boost::log::v2s_mt_nt62::aux::singular_ref;
-  using boost::log::v2s_mt_nt62::aux::singular_ref_compatibility_traits;
-  using boost::log::v2s_mt_nt62::aux::std_regex_expression_tag;
-  using boost::log::v2s_mt_nt62::aux::stream_provider;
-  using boost::log::v2s_mt_nt62::aux::strictest_lock_impl;
-  using boost::log::v2s_mt_nt62::aux::swap;
-  using boost::log::v2s_mt_nt62::aux::tagged_integer;
-  using boost::log::v2s_mt_nt62::aux::thread;
-  using boost::log::v2s_mt_nt62::aux::threadsafe_queue;
-  using boost::log::v2s_mt_nt62::aux::threadsafe_queue_impl;
-  using boost::log::v2s_mt_nt62::aux::threadsafe_queue_node;
-  using boost::log::v2s_mt_nt62::aux::time_format_parser_callback;
-  using boost::log::v2s_mt_nt62::aux::to_narrow;
-  using boost::log::v2s_mt_nt62::aux::to_tm;
-  using boost::log::v2s_mt_nt62::aux::to_wide;
-  using boost::log::v2s_mt_nt62::aux::type_sequence_dispatcher;
-  using boost::log::v2s_mt_nt62::aux::type_sequence_dispatcher_base;
-  using boost::log::v2s_mt_nt62::aux::unwrap_value_ref;
-  using boost::log::v2s_mt_nt62::aux::value_ref_base;
-  using boost::log::v2s_mt_nt62::aux::value_ref_initializer;
-  using boost::log::v2s_mt_nt62::aux::variant_ref;
-  using boost::log::v2s_mt_nt62::aux::variant_ref_compatibility_traits;
-  using boost::log::v2s_mt_nt62::aux::vistation_invoker;
+export namespace boost { namespace log { namespace aux {
+  using boost::log::aux::acquire_filter;
+  using boost::log::aux::acquire_formatter;
+  using boost::log::aux::add_console_log;
+  using boost::log::aux::add_file_log;
+  using boost::log::aux::apply_visitor_dispatch;
+  using boost::log::aux::arity_of;
+  using boost::log::aux::arity_of_impl;
+  using boost::log::aux::atomic_based_event;
+  using boost::log::aux::attach_attribute_name_info;
+  using boost::log::aux::attribute_scope_guard;
+  using boost::log::aux::attribute_set_reference_proxy;
+  using boost::log::aux::basic_format;
+  using boost::log::aux::basic_ostringstreambuf;
+  using boost::log::aux::basic_settings_section_iterator_base;
+#if defined(_WIN32)
+  // M11 platform guard: needs support/regex.hpp, excluded from the
+  // POSIX GMF (gcc abi-tag merge bug, see log.cppm).
+  using boost::log::aux::boost_regex_expression_tag;
+#endif
+  using boost::log::aux::boost_spirit_classic_expression_tag;
+  using boost::log::aux::boost_spirit_qi_expression_tag;
+  using boost::log::aux::boost_xpressive_expression_tag;
+  using boost::log::aux::cleanup_guard;
+  using boost::log::aux::code_convert;
+  using boost::log::aux::code_convert_impl;
+  using boost::log::aux::copy_cv;
+  using boost::log::aux::date_format_parser_callback;
+  using boost::log::aux::date_time_format_parser_callback;
+  using boost::log::aux::date_time_formatter;
+  using boost::log::aux::decomposed_time;
+  using boost::log::aux::decomposed_time_formatter_builder;
+  using boost::log::aux::decomposed_time_wrapper;
+  using boost::log::aux::deduce_char_type;
+  using boost::log::aux::deduced_char_type;
+  using boost::log::aux::default_console_stream;
+  using boost::log::aux::disable_if_streamable_char_type;
+  using boost::log::aux::dispatching_map_initializer;
+  using boost::log::aux::dispatching_map_order;
+  using boost::log::aux::dump_data;
+  using boost::log::aux::dump_data_char;
+  using boost::log::aux::dump_data_char16;
+  using boost::log::aux::dump_data_char16_t;
+  using boost::log::aux::dump_data_char32;
+  using boost::log::aux::dump_data_char32_t;
+  using boost::log::aux::dump_data_char_t;
+  using boost::log::aux::dump_data_wchar;
+  using boost::log::aux::dump_data_wchar_t;
+  using boost::log::aux::eh_cons;
+  using boost::log::aux::eh_root;
+  using boost::log::aux::empty_arg_list;
+  using boost::log::aux::enable_dump;
+  using boost::log::aux::enable_dump_size_based;
+  using boost::log::aux::enable_formatting_ostream_generic_operator;
+  using boost::log::aux::enable_if_named_parameters;
+  using boost::log::aux::enable_if_streamable_char_type;
+  using boost::log::aux::enable_record_ostream_generic_operator;
+  using boost::log::aux::event;
+  using boost::log::aux::exclusive_auto_unlocker;
+  using boost::log::aux::exclusive_lock_guard;
+  using boost::log::aux::fake_mutex;
+  using boost::log::aux::file_name_param_traits;
+  using boost::log::aux::first_argument_type_of;
+  using boost::log::aux::first_argument_type_of_impl;
+  using boost::log::aux::format_description;
+  using boost::log::aux::format_element;
+  using boost::log::aux::get_pointer;
+  using boost::log::aux::get_process_name;
+  using boost::log::aux::get_root_type;
+  using boost::log::aux::has_arg1_type;
+  using boost::log::aux::has_arg2_type;
+  using boost::log::aux::has_argument_type;
+  using boost::log::aux::has_arity;
+  using boost::log::aux::has_exception_types;
+  using boost::log::aux::has_first_argument_type;
+  using boost::log::aux::has_second_argument_type;
+  using boost::log::aux::id;
+  using boost::log::aux::insert_aligned;
+  using boost::log::aux::insert_fill_chars;
+  using boost::log::aux::is_character_type;
+  using boost::log::aux::is_exclusively_lockable;
+  using boost::log::aux::is_ostream;
+  using boost::log::aux::is_shared_lockable;
+  using boost::log::aux::is_spirit_classic_parser;
+  using boost::log::aux::lazy_singleton;
+  using boost::log::aux::light_function;
+  using boost::log::aux::light_rw_mutex;
+  using boost::log::aux::locking_ptr;
+  using boost::log::aux::make_arg_list;
+  using boost::log::aux::make_arg_type;
+  using boost::log::aux::make_attr_ordering_type;
+  using boost::log::aux::make_common_integral_type;
+  using boost::log::aux::make_embedded_string_type;
+  using boost::log::aux::make_embedded_string_type_impl;
+  using boost::log::aux::make_record_pump;
+  using boost::log::aux::make_self_contained_exception_handler;
+  using boost::log::aux::match_traits;
+  using boost::log::aux::matching_expression_kind;
+  using boost::log::aux::multiple_unique_lock2;
+  using boost::log::aux::once_block_sentry;
+  using boost::log::aux::operator!=;
+  using boost::log::aux::operator%;
+  using boost::log::aux::operator&;
+  using boost::log::aux::operator*;
+  using boost::log::aux::operator+;
+  using boost::log::aux::operator-;
+  using boost::log::aux::operator/;
+  using boost::log::aux::operator<;
+  using boost::log::aux::operator<<;
+  using boost::log::aux::operator<=;
+  using boost::log::aux::operator==;
+  using boost::log::aux::operator>;
+  using boost::log::aux::operator>=;
+  using boost::log::aux::operator>>;
+  using boost::log::aux::operator^;
+  using boost::log::aux::operator|;
+  using boost::log::aux::parse_date_format;
+  using boost::log::aux::parse_date_time_format;
+  using boost::log::aux::parse_format;
+  using boost::log::aux::parse_time_format;
+  using boost::log::aux::process;
+  using boost::log::aux::put_integer;
+  using boost::log::aux::rebind_alloc;
+  using boost::log::aux::record_pump;
+  using boost::log::aux::root_type;
+  using boost::log::aux::scoped_logger_attribute;
+  using boost::log::aux::scoped_thread_attribute;
+  using boost::log::aux::second_argument_type_of;
+  using boost::log::aux::second_argument_type_of_impl;
+  using boost::log::aux::setup_file_collector;
+  using boost::log::aux::setup_filter;
+  using boost::log::aux::setup_formatter;
+  using boost::log::aux::sfinae_dummy;
+  using boost::log::aux::shared_lock_guard;
+  using boost::log::aux::single_type_dispatcher;
+  using boost::log::aux::single_type_dispatcher_base;
+  using boost::log::aux::singleton;
+  using boost::log::aux::singular_ref;
+  using boost::log::aux::singular_ref_compatibility_traits;
+  using boost::log::aux::std_regex_expression_tag;
+  using boost::log::aux::stream_provider;
+  using boost::log::aux::strictest_lock_impl;
+  using boost::log::aux::swap;
+  using boost::log::aux::tagged_integer;
+  using boost::log::aux::thread;
+  using boost::log::aux::threadsafe_queue;
+  using boost::log::aux::threadsafe_queue_impl;
+  using boost::log::aux::threadsafe_queue_node;
+  using boost::log::aux::time_format_parser_callback;
+  using boost::log::aux::to_narrow;
+  using boost::log::aux::to_tm;
+  using boost::log::aux::to_wide;
+  using boost::log::aux::type_sequence_dispatcher;
+  using boost::log::aux::type_sequence_dispatcher_base;
+  using boost::log::aux::unwrap_value_ref;
+  using boost::log::aux::value_ref_base;
+  using boost::log::aux::value_ref_initializer;
+  using boost::log::aux::variant_ref;
+  using boost::log::aux::variant_ref_compatibility_traits;
+  using boost::log::aux::vistation_invoker;
   using std::allocator_traits;
+}}}
+
+export namespace boost { namespace log { namespace aux { namespace default_attribute_names {
+  using boost::log::aux::default_attribute_names::channel;
+  using boost::log::aux::default_attribute_names::line_id;
+  using boost::log::aux::default_attribute_names::message;
+  using boost::log::aux::default_attribute_names::process_id;
+  using boost::log::aux::default_attribute_names::severity;
+  using boost::log::aux::default_attribute_names::thread_id;
+  using boost::log::aux::default_attribute_names::timestamp;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux { namespace default_attribute_names {
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::channel;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::line_id;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::message;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::process_id;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::severity;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::thread_id;
-  using boost::log::v2s_mt_nt62::aux::default_attribute_names::timestamp;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux { namespace has_arity_no_adl {
-  using boost::log::v2s_mt_nt62::aux::has_arity_no_adl::checker;
-  using boost::log::v2s_mt_nt62::aux::has_arity_no_adl::has_arity_impl;
-  using boost::log::v2s_mt_nt62::aux::has_arity_no_adl::no_type;
-  using boost::log::v2s_mt_nt62::aux::has_arity_no_adl::yes_type;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux { namespace this_process {
-  using boost::log::v2s_mt_nt62::aux::this_process::get_id;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux { namespace this_thread {
-  using boost::log::v2s_mt_nt62::aux::this_thread::get_id;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace aux { namespace usestdalloc_adl_block {
-  using boost::log::v2s_mt_nt62::aux::usestdalloc_adl_block::use_std_allocator;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace expressions {
-  using boost::log::v2s_mt_nt62::expressions::attr;
-  using boost::log::v2s_mt_nt62::expressions::attribute_actor;
-  using boost::log::v2s_mt_nt62::expressions::attribute_begins_with;
-  using boost::log::v2s_mt_nt62::expressions::attribute_contains;
-  using boost::log::v2s_mt_nt62::expressions::attribute_ends_with;
-  using boost::log::v2s_mt_nt62::expressions::attribute_is_in_range;
-  using boost::log::v2s_mt_nt62::expressions::attribute_keyword;
-  using boost::log::v2s_mt_nt62::expressions::attribute_matches;
-  using boost::log::v2s_mt_nt62::expressions::attribute_terminal;
-  using boost::log::v2s_mt_nt62::expressions::begins_with;
-  using boost::log::v2s_mt_nt62::expressions::c_ascii_decor;
-  using boost::log::v2s_mt_nt62::expressions::c_ascii_pattern_replacer;
-  using boost::log::v2s_mt_nt62::expressions::c_decor;
-  using boost::log::v2s_mt_nt62::expressions::channel_severity_filter;
-  using boost::log::v2s_mt_nt62::expressions::channel_severity_filter_actor;
-  using boost::log::v2s_mt_nt62::expressions::channel_severity_filter_terminal;
-  using boost::log::v2s_mt_nt62::expressions::char_decor;
-  using boost::log::v2s_mt_nt62::expressions::char_decorator_actor;
-  using boost::log::v2s_mt_nt62::expressions::char_decorator_terminal;
-  using boost::log::v2s_mt_nt62::expressions::contains;
-  using boost::log::v2s_mt_nt62::expressions::csv_decor;
-  using boost::log::v2s_mt_nt62::expressions::ends_with;
-  using boost::log::v2s_mt_nt62::expressions::format;
-  using boost::log::v2s_mt_nt62::expressions::format_date_time;
-  using boost::log::v2s_mt_nt62::expressions::format_date_time_actor;
-  using boost::log::v2s_mt_nt62::expressions::format_date_time_terminal;
-  using boost::log::v2s_mt_nt62::expressions::format_named_scope;
-  using boost::log::v2s_mt_nt62::expressions::format_named_scope_actor;
-  using boost::log::v2s_mt_nt62::expressions::format_named_scope_terminal;
-  using boost::log::v2s_mt_nt62::expressions::format_terminal;
-  using boost::log::v2s_mt_nt62::expressions::has_attr;
-  using boost::log::v2s_mt_nt62::expressions::has_attribute;
-  using boost::log::v2s_mt_nt62::expressions::if_;
-  using boost::log::v2s_mt_nt62::expressions::is_debugger_present;
-  using boost::log::v2s_mt_nt62::expressions::is_in_range;
-  using boost::log::v2s_mt_nt62::expressions::is_keyword_descriptor;
-  using boost::log::v2s_mt_nt62::expressions::keyword_descriptor;
-  using boost::log::v2s_mt_nt62::expressions::make_c_ascii_decor;
-  using boost::log::v2s_mt_nt62::expressions::make_c_decor;
-  using boost::log::v2s_mt_nt62::expressions::make_csv_decor;
-  using boost::log::v2s_mt_nt62::expressions::make_xml_decor;
-  using boost::log::v2s_mt_nt62::expressions::matches;
-  using boost::log::v2s_mt_nt62::expressions::max_size_decor;
-  using boost::log::v2s_mt_nt62::expressions::max_size_decorator_actor;
-  using boost::log::v2s_mt_nt62::expressions::max_size_decorator_terminal;
-  using boost::log::v2s_mt_nt62::expressions::message;
-  using boost::log::v2s_mt_nt62::expressions::message_type;
-  using boost::log::v2s_mt_nt62::expressions::operator<<;
-  using boost::log::v2s_mt_nt62::expressions::pattern_replacer;
-  using boost::log::v2s_mt_nt62::expressions::record;
-  using boost::log::v2s_mt_nt62::expressions::record_type;
-  using boost::log::v2s_mt_nt62::expressions::scope_iteration_direction;
-  using boost::log::v2s_mt_nt62::expressions::scope_iteration_direction::forward;
-  using boost::log::v2s_mt_nt62::expressions::scope_iteration_direction::reverse;
-  using boost::log::v2s_mt_nt62::expressions::smessage;
-  using boost::log::v2s_mt_nt62::expressions::smessage_type;
-  using boost::log::v2s_mt_nt62::expressions::stream;
-  using boost::log::v2s_mt_nt62::expressions::stream_type;
-  using boost::log::v2s_mt_nt62::expressions::wc_ascii_decor;
-  using boost::log::v2s_mt_nt62::expressions::wc_decor;
-  using boost::log::v2s_mt_nt62::expressions::wcsv_decor;
-  using boost::log::v2s_mt_nt62::expressions::wmessage;
-  using boost::log::v2s_mt_nt62::expressions::wmessage_type;
-  using boost::log::v2s_mt_nt62::expressions::wrap_filter;
-  using boost::log::v2s_mt_nt62::expressions::wrap_formatter;
-  using boost::log::v2s_mt_nt62::expressions::wrapped_formatter_actor;
-  using boost::log::v2s_mt_nt62::expressions::wrapped_formatter_terminal;
-  using boost::log::v2s_mt_nt62::expressions::wxml_decor;
-  using boost::log::v2s_mt_nt62::expressions::xml_decor;
+export namespace boost { namespace log { namespace aux { namespace has_arity_no_adl {
+  using boost::log::aux::has_arity_no_adl::checker;
+  using boost::log::aux::has_arity_no_adl::has_arity_impl;
+  using boost::log::aux::has_arity_no_adl::no_type;
+  using boost::log::aux::has_arity_no_adl::yes_type;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace expressions { namespace aux {
-  using boost::log::v2s_mt_nt62::expressions::aux::attribute_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::attribute_predicate;
-  using boost::log::v2s_mt_nt62::expressions::aux::c_ascii_decorator_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::c_decorator_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::c_decorator_traits;
-  using boost::log::v2s_mt_nt62::expressions::aux::char_decorator_gen1;
-  using boost::log::v2s_mt_nt62::expressions::aux::char_decorator_gen2;
-  using boost::log::v2s_mt_nt62::expressions::aux::char_decorator_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::csv_decorator_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::csv_decorator_traits;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_duration_formatter_generator_traits_impl;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_formatter_generator_traits_impl;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_formatter_generator_traits;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_formatter_generator_traits_impl;
-  using boost::log::v2s_mt_nt62::expressions::aux::default_char_type;
-  using boost::log::v2s_mt_nt62::expressions::aux::default_named_scope_params;
-  using boost::log::v2s_mt_nt62::expressions::aux::format_named_scope;
-  using boost::log::v2s_mt_nt62::expressions::aux::format_named_scope_impl;
-  using boost::log::v2s_mt_nt62::expressions::aux::has_char_type;
-  using boost::log::v2s_mt_nt62::expressions::aux::if_else_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::if_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::if_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::if_then_else_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::if_then_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::is_debugger_present;
-  using boost::log::v2s_mt_nt62::expressions::aux::make_output_actor;
-  using boost::log::v2s_mt_nt62::expressions::aux::make_output_expression;
-  using boost::log::v2s_mt_nt62::expressions::aux::max_size_decorator_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::max_size_decorator_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::message_formatter;
-  using boost::log::v2s_mt_nt62::expressions::aux::operator<<;
-  using boost::log::v2s_mt_nt62::expressions::aux::parse_named_scope_format;
-  using boost::log::v2s_mt_nt62::expressions::aux::stream_ref;
-  using boost::log::v2s_mt_nt62::expressions::aux::string_const_iterator;
-  using boost::log::v2s_mt_nt62::expressions::aux::time_duration_formatter_generator_traits_impl;
-  using boost::log::v2s_mt_nt62::expressions::aux::unary_function_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::wrapped_formatter_output_terminal;
-  using boost::log::v2s_mt_nt62::expressions::aux::xml_decorator_gen;
-  using boost::log::v2s_mt_nt62::expressions::aux::xml_decorator_traits;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace expressions { namespace aux { namespace date_time_support {
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_support::decompose_date;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_support::decompose_date_duration;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_support::decompose_time;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_support::decompose_time_duration;
-  using boost::log::v2s_mt_nt62::expressions::aux::date_time_support::decompose_time_of_day;
-}}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace expressions { namespace tag {
-  using boost::log::v2s_mt_nt62::expressions::tag::message;
-  using boost::log::v2s_mt_nt62::expressions::tag::smessage;
-  using boost::log::v2s_mt_nt62::expressions::tag::wmessage;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace ipc {
-  using boost::log::v2s_mt_nt62::ipc::object_name;
-  using boost::log::v2s_mt_nt62::ipc::object_name_info;
-  using boost::log::v2s_mt_nt62::ipc::object_name_tag;
-  using boost::log::v2s_mt_nt62::ipc::reliable_message_queue;
+export namespace boost { namespace log { namespace aux { namespace this_process {
+  using boost::log::aux::this_process::get_id;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace ipc { namespace aux {
-  using boost::log::v2s_mt_nt62::ipc::aux::enable_if_byte;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace keywords { namespace tag {
-  using boost::log::v2s_mt_nt62::keywords::tag::auto_flush;
-  using boost::log::v2s_mt_nt62::keywords::tag::auto_newline_mode;
-  using boost::log::v2s_mt_nt62::keywords::tag::block_size;
-  using boost::log::v2s_mt_nt62::keywords::tag::capacity;
-  using boost::log::v2s_mt_nt62::keywords::tag::channel;
-  using boost::log::v2s_mt_nt62::keywords::tag::delimiter;
-  using boost::log::v2s_mt_nt62::keywords::tag::depth;
-  using boost::log::v2s_mt_nt62::keywords::tag::empty_marker;
-  using boost::log::v2s_mt_nt62::keywords::tag::enable_final_rotation;
-  using boost::log::v2s_mt_nt62::keywords::tag::facility;
-  using boost::log::v2s_mt_nt62::keywords::tag::file_name;
-  using boost::log::v2s_mt_nt62::keywords::tag::filter;
-  using boost::log::v2s_mt_nt62::keywords::tag::format;
-  using boost::log::v2s_mt_nt62::keywords::tag::ident;
-  using boost::log::v2s_mt_nt62::keywords::tag::incomplete_marker;
-  using boost::log::v2s_mt_nt62::keywords::tag::ip_version;
-  using boost::log::v2s_mt_nt62::keywords::tag::iteration;
-  using boost::log::v2s_mt_nt62::keywords::tag::log_name;
-  using boost::log::v2s_mt_nt62::keywords::tag::log_source;
-  using boost::log::v2s_mt_nt62::keywords::tag::max_files;
-  using boost::log::v2s_mt_nt62::keywords::tag::max_size;
-  using boost::log::v2s_mt_nt62::keywords::tag::message_file;
-  using boost::log::v2s_mt_nt62::keywords::tag::min_free_space;
-  using boost::log::v2s_mt_nt62::keywords::tag::name;
-  using boost::log::v2s_mt_nt62::keywords::tag::open_mode;
-  using boost::log::v2s_mt_nt62::keywords::tag::order;
-  using boost::log::v2s_mt_nt62::keywords::tag::ordering_window;
-  using boost::log::v2s_mt_nt62::keywords::tag::overflow_policy;
-  using boost::log::v2s_mt_nt62::keywords::tag::permissions;
-  using boost::log::v2s_mt_nt62::keywords::tag::registration;
-  using boost::log::v2s_mt_nt62::keywords::tag::rotation_size;
-  using boost::log::v2s_mt_nt62::keywords::tag::scan_method;
-  using boost::log::v2s_mt_nt62::keywords::tag::severity;
-  using boost::log::v2s_mt_nt62::keywords::tag::start_thread;
-  using boost::log::v2s_mt_nt62::keywords::tag::target;
-  using boost::log::v2s_mt_nt62::keywords::tag::target_file_name;
-  using boost::log::v2s_mt_nt62::keywords::tag::time_based_rotation;
-  using boost::log::v2s_mt_nt62::keywords::tag::use_impl;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace open_mode {
-  using boost::log::v2s_mt_nt62::open_mode::create_only_tag;
-  using boost::log::v2s_mt_nt62::open_mode::open_only_tag;
-  using boost::log::v2s_mt_nt62::open_mode::open_or_create_tag;
+export namespace boost { namespace log { namespace aux { namespace this_thread {
+  using boost::log::aux::this_thread::get_id;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace result_of {
-  using boost::log::v2s_mt_nt62::result_of::extract;
-  using boost::log::v2s_mt_nt62::result_of::extract_or_default;
-  using boost::log::v2s_mt_nt62::result_of::extract_or_throw;
+export namespace boost { namespace log { namespace aux { namespace usestdalloc_adl_block {
+  using boost::log::aux::usestdalloc_adl_block::use_std_allocator;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks {
-  using boost::log::v2s_mt_nt62::sinks::asynchronous_sink;
-  using boost::log::v2s_mt_nt62::sinks::auto_newline_mode;
-  using boost::log::v2s_mt_nt62::sinks::auto_newline_mode::always_insert;
-  using boost::log::v2s_mt_nt62::sinks::auto_newline_mode::disabled_auto_newline;
-  using boost::log::v2s_mt_nt62::sinks::auto_newline_mode::insert_if_missing;
-  using boost::log::v2s_mt_nt62::sinks::basic_custom_mapping;
-  using boost::log::v2s_mt_nt62::sinks::basic_debug_output_backend;
-  using boost::log::v2s_mt_nt62::sinks::basic_direct_mapping;
-  using boost::log::v2s_mt_nt62::sinks::basic_event_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::basic_formatted_sink_backend;
-  using boost::log::v2s_mt_nt62::sinks::basic_formatting_sink_frontend;
-  using boost::log::v2s_mt_nt62::sinks::basic_mapping;
-  using boost::log::v2s_mt_nt62::sinks::basic_simple_event_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::basic_sink_backend;
-  using boost::log::v2s_mt_nt62::sinks::basic_sink_frontend;
-  using boost::log::v2s_mt_nt62::sinks::basic_text_ostream_backend;
-  using boost::log::v2s_mt_nt62::sinks::block_on_overflow;
-  using boost::log::v2s_mt_nt62::sinks::bounded_fifo_queue;
-  using boost::log::v2s_mt_nt62::sinks::bounded_ordering_queue;
-  using boost::log::v2s_mt_nt62::sinks::combine_requirements;
-  using boost::log::v2s_mt_nt62::sinks::concurrent_feeding;
-  using boost::log::v2s_mt_nt62::sinks::debug_output_backend;
-  using boost::log::v2s_mt_nt62::sinks::drop_on_overflow;
-  using boost::log::v2s_mt_nt62::sinks::event_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::flushing;
-  using boost::log::v2s_mt_nt62::sinks::formatted_records;
-  using boost::log::v2s_mt_nt62::sinks::has_requirement;
-  using boost::log::v2s_mt_nt62::sinks::ip_versions;
-  using boost::log::v2s_mt_nt62::sinks::ip_versions::v4;
-  using boost::log::v2s_mt_nt62::sinks::ip_versions::v6;
-  using boost::log::v2s_mt_nt62::sinks::simple_event_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::sink;
-  using boost::log::v2s_mt_nt62::sinks::synchronized_feeding;
-  using boost::log::v2s_mt_nt62::sinks::synchronous_sink;
-  using boost::log::v2s_mt_nt62::sinks::syslog_backend;
-  using boost::log::v2s_mt_nt62::sinks::text_file_backend;
-  using boost::log::v2s_mt_nt62::sinks::text_ipc_message_queue_backend;
-  using boost::log::v2s_mt_nt62::sinks::text_multifile_backend;
-  using boost::log::v2s_mt_nt62::sinks::text_ostream_backend;
-  using boost::log::v2s_mt_nt62::sinks::unbounded_fifo_queue;
-  using boost::log::v2s_mt_nt62::sinks::unbounded_ordering_queue;
-  using boost::log::v2s_mt_nt62::sinks::unlocked_sink;
-  using boost::log::v2s_mt_nt62::sinks::wdebug_output_backend;
-  using boost::log::v2s_mt_nt62::sinks::wevent_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::wsimple_event_log_backend;
-  using boost::log::v2s_mt_nt62::sinks::wtext_ostream_backend;
+export namespace boost { namespace log { namespace expressions {
+  using boost::log::expressions::attr;
+  using boost::log::expressions::attribute_actor;
+  using boost::log::expressions::attribute_begins_with;
+  using boost::log::expressions::attribute_contains;
+  using boost::log::expressions::attribute_ends_with;
+  using boost::log::expressions::attribute_is_in_range;
+  using boost::log::expressions::attribute_keyword;
+  using boost::log::expressions::attribute_matches;
+  using boost::log::expressions::attribute_terminal;
+  using boost::log::expressions::begins_with;
+  using boost::log::expressions::c_ascii_decor;
+  using boost::log::expressions::c_ascii_pattern_replacer;
+  using boost::log::expressions::c_decor;
+  using boost::log::expressions::channel_severity_filter;
+  using boost::log::expressions::channel_severity_filter_actor;
+  using boost::log::expressions::channel_severity_filter_terminal;
+  using boost::log::expressions::char_decor;
+  using boost::log::expressions::char_decorator_actor;
+  using boost::log::expressions::char_decorator_terminal;
+  using boost::log::expressions::contains;
+  using boost::log::expressions::csv_decor;
+  using boost::log::expressions::ends_with;
+  using boost::log::expressions::format;
+  using boost::log::expressions::format_date_time;
+  using boost::log::expressions::format_date_time_actor;
+  using boost::log::expressions::format_date_time_terminal;
+  using boost::log::expressions::format_named_scope;
+  using boost::log::expressions::format_named_scope_actor;
+  using boost::log::expressions::format_named_scope_terminal;
+  using boost::log::expressions::format_terminal;
+  using boost::log::expressions::has_attr;
+  using boost::log::expressions::has_attribute;
+  using boost::log::expressions::if_;
+#if defined(_WIN32)
+  // M11 platform guard: is_debugger_present is the BOOST_WINDOWS branch
+  // of expressions/predicates/is_debugger_present.hpp.
+  using boost::log::expressions::is_debugger_present;
+#endif
+  using boost::log::expressions::is_in_range;
+  using boost::log::expressions::is_keyword_descriptor;
+  using boost::log::expressions::keyword_descriptor;
+  using boost::log::expressions::make_c_ascii_decor;
+  using boost::log::expressions::make_c_decor;
+  using boost::log::expressions::make_csv_decor;
+  using boost::log::expressions::make_xml_decor;
+  using boost::log::expressions::matches;
+  using boost::log::expressions::max_size_decor;
+  using boost::log::expressions::max_size_decorator_actor;
+  using boost::log::expressions::max_size_decorator_terminal;
+  using boost::log::expressions::message;
+  using boost::log::expressions::message_type;
+  using boost::log::expressions::operator<<;
+  using boost::log::expressions::pattern_replacer;
+  using boost::log::expressions::record;
+  using boost::log::expressions::record_type;
+  using boost::log::expressions::scope_iteration_direction;
+  using boost::log::expressions::scope_iteration_direction::forward;
+  using boost::log::expressions::scope_iteration_direction::reverse;
+  using boost::log::expressions::smessage;
+  using boost::log::expressions::smessage_type;
+  using boost::log::expressions::stream;
+  using boost::log::expressions::stream_type;
+  using boost::log::expressions::wc_ascii_decor;
+  using boost::log::expressions::wc_decor;
+  using boost::log::expressions::wcsv_decor;
+  using boost::log::expressions::wmessage;
+  using boost::log::expressions::wmessage_type;
+  using boost::log::expressions::wrap_filter;
+  using boost::log::expressions::wrap_formatter;
+  using boost::log::expressions::wrapped_formatter_actor;
+  using boost::log::expressions::wrapped_formatter_terminal;
+  using boost::log::expressions::wxml_decor;
+  using boost::log::expressions::xml_decor;
+}}}
+
+export namespace boost { namespace log { namespace expressions { namespace aux {
+  using boost::log::expressions::aux::attribute_output_terminal;
+  using boost::log::expressions::aux::attribute_predicate;
+  using boost::log::expressions::aux::c_ascii_decorator_gen;
+  using boost::log::expressions::aux::c_decorator_gen;
+  using boost::log::expressions::aux::c_decorator_traits;
+  using boost::log::expressions::aux::char_decorator_gen1;
+  using boost::log::expressions::aux::char_decorator_gen2;
+  using boost::log::expressions::aux::char_decorator_output_terminal;
+  using boost::log::expressions::aux::csv_decorator_gen;
+  using boost::log::expressions::aux::csv_decorator_traits;
+  using boost::log::expressions::aux::date_duration_formatter_generator_traits_impl;
+  using boost::log::expressions::aux::date_formatter_generator_traits_impl;
+  using boost::log::expressions::aux::date_time_formatter_generator_traits;
+  using boost::log::expressions::aux::date_time_formatter_generator_traits_impl;
+  using boost::log::expressions::aux::default_char_type;
+  using boost::log::expressions::aux::default_named_scope_params;
+  using boost::log::expressions::aux::format_named_scope;
+  using boost::log::expressions::aux::format_named_scope_impl;
+  using boost::log::expressions::aux::has_char_type;
+  using boost::log::expressions::aux::if_else_output_terminal;
+  using boost::log::expressions::aux::if_gen;
+  using boost::log::expressions::aux::if_output_terminal;
+  using boost::log::expressions::aux::if_then_else_gen;
+  using boost::log::expressions::aux::if_then_gen;
+#if defined(_WIN32)
+  // M11 platform guard: aux::is_debugger_present — as above.
+  using boost::log::expressions::aux::is_debugger_present;
+#endif
+  using boost::log::expressions::aux::make_output_actor;
+  using boost::log::expressions::aux::make_output_expression;
+  using boost::log::expressions::aux::max_size_decorator_gen;
+  using boost::log::expressions::aux::max_size_decorator_output_terminal;
+  using boost::log::expressions::aux::message_formatter;
+  using boost::log::expressions::aux::operator<<;
+  using boost::log::expressions::aux::parse_named_scope_format;
+  using boost::log::expressions::aux::stream_ref;
+  using boost::log::expressions::aux::string_const_iterator;
+  using boost::log::expressions::aux::time_duration_formatter_generator_traits_impl;
+  using boost::log::expressions::aux::unary_function_terminal;
+  using boost::log::expressions::aux::wrapped_formatter_output_terminal;
+  using boost::log::expressions::aux::xml_decorator_gen;
+  using boost::log::expressions::aux::xml_decorator_traits;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks { namespace aux {
-  using boost::log::v2s_mt_nt62::sinks::aux::combined_requirements;
-  using boost::log::v2s_mt_nt62::sinks::aux::direct_mapping_visitor;
-  using boost::log::v2s_mt_nt62::sinks::aux::enqueued_record;
-  using boost::log::v2s_mt_nt62::sinks::aux::make_sink_frontend_base;
+export namespace boost { namespace log { namespace expressions { namespace aux { namespace date_time_support {
+  using boost::log::expressions::aux::date_time_support::decompose_date;
+  using boost::log::expressions::aux::date_time_support::decompose_date_duration;
+  using boost::log::expressions::aux::date_time_support::decompose_time;
+  using boost::log::expressions::aux::date_time_support::decompose_time_duration;
+  using boost::log::expressions::aux::date_time_support::decompose_time_of_day;
 }}}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks { namespace event_log {
-  using boost::log::v2s_mt_nt62::sinks::event_log::basic_event_composer;
-  using boost::log::v2s_mt_nt62::sinks::event_log::custom_event_category_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::custom_event_id_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::custom_event_type_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::direct_event_category_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::direct_event_id_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::direct_event_type_mapping;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_category;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_category_tag;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_composer;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_id;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_id_tag;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_type;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_type::error;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_type::info;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_type::success;
-  using boost::log::v2s_mt_nt62::sinks::event_log::event_type::warning;
-  using boost::log::v2s_mt_nt62::sinks::event_log::make_event_category;
-  using boost::log::v2s_mt_nt62::sinks::event_log::make_event_id;
-  using boost::log::v2s_mt_nt62::sinks::event_log::make_event_type;
-  using boost::log::v2s_mt_nt62::sinks::event_log::registration_mode;
-  using boost::log::v2s_mt_nt62::sinks::event_log::registration_mode::forced;
-  using boost::log::v2s_mt_nt62::sinks::event_log::registration_mode::never;
-  using boost::log::v2s_mt_nt62::sinks::event_log::registration_mode::on_demand;
-  using boost::log::v2s_mt_nt62::sinks::event_log::wevent_composer;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks { namespace file {
-  using boost::log::v2s_mt_nt62::sinks::file::as_file_name_composer;
-  using boost::log::v2s_mt_nt62::sinks::file::collector;
-  using boost::log::v2s_mt_nt62::sinks::file::file_name_composer_adapter;
-  using boost::log::v2s_mt_nt62::sinks::file::make_collector;
-  using boost::log::v2s_mt_nt62::sinks::file::rotation_at_time_interval;
-  using boost::log::v2s_mt_nt62::sinks::file::rotation_at_time_point;
-  using boost::log::v2s_mt_nt62::sinks::file::scan_method;
-  using boost::log::v2s_mt_nt62::sinks::file::scan_method::no_scan;
-  using boost::log::v2s_mt_nt62::sinks::file::scan_method::scan_all;
-  using boost::log::v2s_mt_nt62::sinks::file::scan_method::scan_matching;
-  using boost::log::v2s_mt_nt62::sinks::file::scan_result;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks { namespace file { namespace aux {
-  using boost::log::v2s_mt_nt62::sinks::file::aux::make_collector;
-}}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sinks { namespace syslog {
-  using boost::log::v2s_mt_nt62::sinks::syslog::custom_severity_mapping;
-  using boost::log::v2s_mt_nt62::sinks::syslog::direct_severity_mapping;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::clock0;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::clock1;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::daemon;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::ftp;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::kernel;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local0;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local1;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local2;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local3;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local4;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local5;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local6;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::local7;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::log_alert;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::log_audit;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::mail;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::news;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::ntp;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::printer;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::security0;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::security1;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::syslogd;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::user;
-  using boost::log::v2s_mt_nt62::sinks::syslog::facility::uucp;
-  using boost::log::v2s_mt_nt62::sinks::syslog::impl_types;
-  using boost::log::v2s_mt_nt62::sinks::syslog::impl_types::udp_socket_based;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::alert;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::critical;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::debug;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::emergency;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::error;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::info;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::notice;
-  using boost::log::v2s_mt_nt62::sinks::syslog::level::warning;
-  using boost::log::v2s_mt_nt62::sinks::syslog::make_facility;
-  using boost::log::v2s_mt_nt62::sinks::syslog::make_level;
-}}}}}
-
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sources {
-  using boost::log::v2s_mt_nt62::sources::basic_channel_logger;
-  using boost::log::v2s_mt_nt62::sources::basic_composite_logger;
-  using boost::log::v2s_mt_nt62::sources::basic_exception_handler_logger;
-  using boost::log::v2s_mt_nt62::sources::basic_logger;
-  using boost::log::v2s_mt_nt62::sources::basic_severity_logger;
-  using boost::log::v2s_mt_nt62::sources::channel;
-  using boost::log::v2s_mt_nt62::sources::channel_logger;
-  using boost::log::v2s_mt_nt62::sources::channel_logger_mt;
-  using boost::log::v2s_mt_nt62::sources::exception_handler;
-  using boost::log::v2s_mt_nt62::sources::features;
-  using boost::log::v2s_mt_nt62::sources::logger;
-  using boost::log::v2s_mt_nt62::sources::logger_mt;
-  using boost::log::v2s_mt_nt62::sources::multi_thread_model;
-  using boost::log::v2s_mt_nt62::sources::severity;
-  using boost::log::v2s_mt_nt62::sources::severity_channel_logger;
-  using boost::log::v2s_mt_nt62::sources::severity_channel_logger_mt;
-  using boost::log::v2s_mt_nt62::sources::severity_logger;
-  using boost::log::v2s_mt_nt62::sources::severity_logger_mt;
-  using boost::log::v2s_mt_nt62::sources::single_thread_model;
-  using boost::log::v2s_mt_nt62::sources::swap;
-  using boost::log::v2s_mt_nt62::sources::wchannel_logger;
-  using boost::log::v2s_mt_nt62::sources::wchannel_logger_mt;
-  using boost::log::v2s_mt_nt62::sources::wlogger;
-  using boost::log::v2s_mt_nt62::sources::wlogger_mt;
-  using boost::log::v2s_mt_nt62::sources::wseverity_channel_logger;
-  using boost::log::v2s_mt_nt62::sources::wseverity_channel_logger_mt;
-  using boost::log::v2s_mt_nt62::sources::wseverity_logger;
-  using boost::log::v2s_mt_nt62::sources::wseverity_logger_mt;
+export namespace boost { namespace log { namespace expressions { namespace tag {
+  using boost::log::expressions::tag::message;
+  using boost::log::expressions::tag::smessage;
+  using boost::log::expressions::tag::wmessage;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace sources { namespace aux {
-  using boost::log::v2s_mt_nt62::sources::aux::get_severity_level;
-  using boost::log::v2s_mt_nt62::sources::aux::global_storage;
-  using boost::log::v2s_mt_nt62::sources::aux::inherit_features;
-  using boost::log::v2s_mt_nt62::sources::aux::logger_holder;
-  using boost::log::v2s_mt_nt62::sources::aux::logger_holder_base;
-  using boost::log::v2s_mt_nt62::sources::aux::logger_singleton;
-  using boost::log::v2s_mt_nt62::sources::aux::severity_level;
-  using boost::log::v2s_mt_nt62::sources::aux::throw_odr_violation;
-}}}}}
+export namespace boost { namespace log { namespace ipc {
+  using boost::log::ipc::object_name;
+  using boost::log::ipc::object_name_info;
+  using boost::log::ipc::object_name_tag;
+  using boost::log::ipc::reliable_message_queue;
+}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace trivial {
-  using boost::log::v2s_mt_nt62::trivial::from_string;
-  using boost::log::v2s_mt_nt62::trivial::logger;
-  using boost::log::v2s_mt_nt62::trivial::logger_type;
-  using boost::log::v2s_mt_nt62::trivial::operator<<;
-  using boost::log::v2s_mt_nt62::trivial::operator>>;
-  using boost::log::v2s_mt_nt62::trivial::severity;
-  using boost::log::v2s_mt_nt62::trivial::severity_level;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::debug;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::error;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::fatal;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::info;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::trace;
-  using boost::log::v2s_mt_nt62::trivial::severity_level::warning;
-  using boost::log::v2s_mt_nt62::trivial::severity_type;
-  using boost::log::v2s_mt_nt62::trivial::to_string;
+export namespace boost { namespace log { namespace ipc { namespace aux {
+  using boost::log::ipc::aux::enable_if_byte;
 }}}}
 
-export namespace boost { namespace log { namespace v2s_mt_nt62 { namespace trivial { namespace tag {
-  using boost::log::v2s_mt_nt62::trivial::tag::severity;
+export namespace boost { namespace log { namespace keywords { namespace tag {
+  using boost::log::keywords::tag::auto_flush;
+  using boost::log::keywords::tag::auto_newline_mode;
+  using boost::log::keywords::tag::block_size;
+  using boost::log::keywords::tag::capacity;
+  using boost::log::keywords::tag::channel;
+  using boost::log::keywords::tag::delimiter;
+  using boost::log::keywords::tag::depth;
+  using boost::log::keywords::tag::empty_marker;
+  using boost::log::keywords::tag::enable_final_rotation;
+  using boost::log::keywords::tag::facility;
+  using boost::log::keywords::tag::file_name;
+  using boost::log::keywords::tag::filter;
+  using boost::log::keywords::tag::format;
+  using boost::log::keywords::tag::ident;
+  using boost::log::keywords::tag::incomplete_marker;
+  using boost::log::keywords::tag::ip_version;
+  using boost::log::keywords::tag::iteration;
+#if defined(_WIN32)
+  using boost::log::keywords::tag::log_name;
+#endif
+#if defined(_WIN32)
+  using boost::log::keywords::tag::log_source;
+#endif
+  using boost::log::keywords::tag::max_files;
+  using boost::log::keywords::tag::max_size;
+#if defined(_WIN32)
+  using boost::log::keywords::tag::message_file;
+#endif
+  using boost::log::keywords::tag::min_free_space;
+  using boost::log::keywords::tag::name;
+  using boost::log::keywords::tag::open_mode;
+  using boost::log::keywords::tag::order;
+  using boost::log::keywords::tag::ordering_window;
+  using boost::log::keywords::tag::overflow_policy;
+  using boost::log::keywords::tag::permissions;
+#if defined(_WIN32)
+  using boost::log::keywords::tag::registration;
+#endif
+  using boost::log::keywords::tag::rotation_size;
+  using boost::log::keywords::tag::scan_method;
+  using boost::log::keywords::tag::severity;
+  using boost::log::keywords::tag::start_thread;
+  using boost::log::keywords::tag::target;
+  using boost::log::keywords::tag::target_file_name;
+  using boost::log::keywords::tag::time_based_rotation;
+  using boost::log::keywords::tag::use_impl;
+}}}}
+
+export namespace boost { namespace log { namespace open_mode {
+  using boost::log::open_mode::create_only_tag;
+  using boost::log::open_mode::open_only_tag;
+  using boost::log::open_mode::open_or_create_tag;
+}}}
+
+export namespace boost { namespace log { namespace result_of {
+  using boost::log::result_of::extract;
+  using boost::log::result_of::extract_or_default;
+  using boost::log::result_of::extract_or_throw;
+}}}
+
+export namespace boost { namespace log { namespace sinks {
+  using boost::log::sinks::asynchronous_sink;
+  using boost::log::sinks::auto_newline_mode;
+  using boost::log::sinks::auto_newline_mode::always_insert;
+  using boost::log::sinks::auto_newline_mode::disabled_auto_newline;
+  using boost::log::sinks::auto_newline_mode::insert_if_missing;
+  using boost::log::sinks::basic_custom_mapping;
+#if defined(_WIN32)
+  using boost::log::sinks::basic_debug_output_backend;
+#endif
+  using boost::log::sinks::basic_direct_mapping;
+#if defined(_WIN32)
+  using boost::log::sinks::basic_event_log_backend;
+#endif
+  using boost::log::sinks::basic_formatted_sink_backend;
+  using boost::log::sinks::basic_formatting_sink_frontend;
+  using boost::log::sinks::basic_mapping;
+#if defined(_WIN32)
+  using boost::log::sinks::basic_simple_event_log_backend;
+#endif
+  using boost::log::sinks::basic_sink_backend;
+  using boost::log::sinks::basic_sink_frontend;
+  using boost::log::sinks::basic_text_ostream_backend;
+  using boost::log::sinks::block_on_overflow;
+  using boost::log::sinks::bounded_fifo_queue;
+  using boost::log::sinks::bounded_ordering_queue;
+  using boost::log::sinks::combine_requirements;
+  using boost::log::sinks::concurrent_feeding;
+#if defined(_WIN32)
+  using boost::log::sinks::debug_output_backend;
+#endif
+  using boost::log::sinks::drop_on_overflow;
+#if defined(_WIN32)
+  using boost::log::sinks::event_log_backend;
+#endif
+  using boost::log::sinks::flushing;
+  using boost::log::sinks::formatted_records;
+  using boost::log::sinks::has_requirement;
+  using boost::log::sinks::ip_versions;
+  using boost::log::sinks::ip_versions::v4;
+  using boost::log::sinks::ip_versions::v6;
+#if defined(_WIN32)
+  using boost::log::sinks::simple_event_log_backend;
+#endif
+  using boost::log::sinks::sink;
+  using boost::log::sinks::synchronized_feeding;
+  using boost::log::sinks::synchronous_sink;
+  using boost::log::sinks::syslog_backend;
+  using boost::log::sinks::text_file_backend;
+  using boost::log::sinks::text_ipc_message_queue_backend;
+  using boost::log::sinks::text_multifile_backend;
+  using boost::log::sinks::text_ostream_backend;
+  using boost::log::sinks::unbounded_fifo_queue;
+  using boost::log::sinks::unbounded_ordering_queue;
+  using boost::log::sinks::unlocked_sink;
+#if defined(_WIN32)
+  using boost::log::sinks::wdebug_output_backend;
+#endif
+#if defined(_WIN32)
+  using boost::log::sinks::wevent_log_backend;
+#endif
+#if defined(_WIN32)
+  using boost::log::sinks::wsimple_event_log_backend;
+#endif
+  using boost::log::sinks::wtext_ostream_backend;
+}}}
+
+export namespace boost { namespace log { namespace sinks { namespace aux {
+  using boost::log::sinks::aux::combined_requirements;
+  using boost::log::sinks::aux::direct_mapping_visitor;
+  using boost::log::sinks::aux::enqueued_record;
+  using boost::log::sinks::aux::make_sink_frontend_base;
+}}}}
+
+#if defined(_WIN32)
+export namespace boost { namespace log { namespace sinks { namespace event_log {
+  // M11 platform guard: event_log sink mapping/composer types are
+  // Windows-only (sinks/event_log_backend.hpp).
+  using boost::log::sinks::event_log::basic_event_composer;
+  using boost::log::sinks::event_log::custom_event_category_mapping;
+  using boost::log::sinks::event_log::custom_event_id_mapping;
+  using boost::log::sinks::event_log::custom_event_type_mapping;
+  using boost::log::sinks::event_log::direct_event_category_mapping;
+  using boost::log::sinks::event_log::direct_event_id_mapping;
+  using boost::log::sinks::event_log::direct_event_type_mapping;
+  using boost::log::sinks::event_log::event_category;
+  using boost::log::sinks::event_log::event_category_tag;
+  using boost::log::sinks::event_log::event_composer;
+  using boost::log::sinks::event_log::event_id;
+  using boost::log::sinks::event_log::event_id_tag;
+  using boost::log::sinks::event_log::event_type;
+  using boost::log::sinks::event_log::event_type::error;
+  using boost::log::sinks::event_log::event_type::info;
+  using boost::log::sinks::event_log::event_type::success;
+  using boost::log::sinks::event_log::event_type::warning;
+  using boost::log::sinks::event_log::make_event_category;
+  using boost::log::sinks::event_log::make_event_id;
+  using boost::log::sinks::event_log::make_event_type;
+  using boost::log::sinks::event_log::registration_mode;
+  using boost::log::sinks::event_log::registration_mode::forced;
+  using boost::log::sinks::event_log::registration_mode::never;
+  using boost::log::sinks::event_log::registration_mode::on_demand;
+  using boost::log::sinks::event_log::wevent_composer;
+}}}}
+#endif
+
+export namespace boost { namespace log { namespace sinks { namespace file {
+  using boost::log::sinks::file::as_file_name_composer;
+  using boost::log::sinks::file::collector;
+  using boost::log::sinks::file::file_name_composer_adapter;
+  using boost::log::sinks::file::make_collector;
+  using boost::log::sinks::file::rotation_at_time_interval;
+  using boost::log::sinks::file::rotation_at_time_point;
+  using boost::log::sinks::file::scan_method;
+  using boost::log::sinks::file::scan_method::no_scan;
+  using boost::log::sinks::file::scan_method::scan_all;
+  using boost::log::sinks::file::scan_method::scan_matching;
+  using boost::log::sinks::file::scan_result;
+}}}}
+
+export namespace boost { namespace log { namespace sinks { namespace file { namespace aux {
+  using boost::log::sinks::file::aux::make_collector;
 }}}}}
+
+export namespace boost { namespace log { namespace sinks { namespace syslog {
+  using boost::log::sinks::syslog::custom_severity_mapping;
+  using boost::log::sinks::syslog::direct_severity_mapping;
+  using boost::log::sinks::syslog::facility;
+  using boost::log::sinks::syslog::facility::clock0;
+  using boost::log::sinks::syslog::facility::clock1;
+  using boost::log::sinks::syslog::facility::daemon;
+  using boost::log::sinks::syslog::facility::ftp;
+  using boost::log::sinks::syslog::facility::kernel;
+  using boost::log::sinks::syslog::facility::local0;
+  using boost::log::sinks::syslog::facility::local1;
+  using boost::log::sinks::syslog::facility::local2;
+  using boost::log::sinks::syslog::facility::local3;
+  using boost::log::sinks::syslog::facility::local4;
+  using boost::log::sinks::syslog::facility::local5;
+  using boost::log::sinks::syslog::facility::local6;
+  using boost::log::sinks::syslog::facility::local7;
+  using boost::log::sinks::syslog::facility::log_alert;
+  using boost::log::sinks::syslog::facility::log_audit;
+  using boost::log::sinks::syslog::facility::mail;
+  using boost::log::sinks::syslog::facility::news;
+  using boost::log::sinks::syslog::facility::ntp;
+  using boost::log::sinks::syslog::facility::printer;
+  using boost::log::sinks::syslog::facility::security0;
+  using boost::log::sinks::syslog::facility::security1;
+  using boost::log::sinks::syslog::facility::syslogd;
+  using boost::log::sinks::syslog::facility::user;
+  using boost::log::sinks::syslog::facility::uucp;
+  using boost::log::sinks::syslog::impl_types;
+  using boost::log::sinks::syslog::impl_types::udp_socket_based;
+  using boost::log::sinks::syslog::level;
+  using boost::log::sinks::syslog::level::alert;
+  using boost::log::sinks::syslog::level::critical;
+  using boost::log::sinks::syslog::level::debug;
+  using boost::log::sinks::syslog::level::emergency;
+  using boost::log::sinks::syslog::level::error;
+  using boost::log::sinks::syslog::level::info;
+  using boost::log::sinks::syslog::level::notice;
+  using boost::log::sinks::syslog::level::warning;
+  using boost::log::sinks::syslog::make_facility;
+  using boost::log::sinks::syslog::make_level;
+}}}}
+
+export namespace boost { namespace log { namespace sources {
+  using boost::log::sources::basic_channel_logger;
+  using boost::log::sources::basic_composite_logger;
+  using boost::log::sources::basic_exception_handler_logger;
+  using boost::log::sources::basic_logger;
+  using boost::log::sources::basic_severity_logger;
+  using boost::log::sources::channel;
+  using boost::log::sources::channel_logger;
+  using boost::log::sources::channel_logger_mt;
+  using boost::log::sources::exception_handler;
+  using boost::log::sources::features;
+  using boost::log::sources::logger;
+  using boost::log::sources::logger_mt;
+  using boost::log::sources::multi_thread_model;
+  using boost::log::sources::severity;
+  using boost::log::sources::severity_channel_logger;
+  using boost::log::sources::severity_channel_logger_mt;
+  using boost::log::sources::severity_logger;
+  using boost::log::sources::severity_logger_mt;
+  using boost::log::sources::single_thread_model;
+  using boost::log::sources::swap;
+  using boost::log::sources::wchannel_logger;
+  using boost::log::sources::wchannel_logger_mt;
+  using boost::log::sources::wlogger;
+  using boost::log::sources::wlogger_mt;
+  using boost::log::sources::wseverity_channel_logger;
+  using boost::log::sources::wseverity_channel_logger_mt;
+  using boost::log::sources::wseverity_logger;
+  using boost::log::sources::wseverity_logger_mt;
+}}}
+
+export namespace boost { namespace log { namespace sources { namespace aux {
+  using boost::log::sources::aux::get_severity_level;
+  using boost::log::sources::aux::global_storage;
+  using boost::log::sources::aux::inherit_features;
+  using boost::log::sources::aux::logger_holder;
+  using boost::log::sources::aux::logger_holder_base;
+  using boost::log::sources::aux::logger_singleton;
+  using boost::log::sources::aux::severity_level;
+  using boost::log::sources::aux::throw_odr_violation;
+}}}}
+
+export namespace boost { namespace log { namespace trivial {
+  using boost::log::trivial::from_string;
+  using boost::log::trivial::logger;
+  using boost::log::trivial::logger_type;
+  using boost::log::trivial::operator<<;
+  using boost::log::trivial::operator>>;
+  using boost::log::trivial::severity;
+  using boost::log::trivial::severity_level;
+  using boost::log::trivial::severity_level::debug;
+  using boost::log::trivial::severity_level::error;
+  using boost::log::trivial::severity_level::fatal;
+  using boost::log::trivial::severity_level::info;
+  using boost::log::trivial::severity_level::trace;
+  using boost::log::trivial::severity_level::warning;
+  using boost::log::trivial::severity_type;
+  using boost::log::trivial::to_string;
+}}}
+
+export namespace boost { namespace log { namespace trivial { namespace tag {
+  using boost::log::trivial::tag::severity;
+}}}}
 
 export namespace boost { namespace mpl {
   using boost::mpl::identity;
@@ -1546,7 +1587,11 @@ export namespace boost { namespace spirit {
 export namespace boost { namespace spirit { namespace detail {
   using boost::spirit::detail::as_meta_element;
   using boost::spirit::detail::compiler;
+#if defined(_WIN32)
+  // M11 platform guard: decode_utf16 is the wchar_t==2 branch of
+  // spirit/home/support/utf8.hpp (MSVC/mingw); POSIX wchar_t is 4 bytes.
   using boost::spirit::detail::decode_utf16;
+#endif
   using boost::spirit::detail::expand_arg;
   using boost::spirit::detail::is_locals;
   using boost::spirit::detail::make_action;

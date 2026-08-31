@@ -236,12 +236,15 @@ include_dirs = [
 # (cl 模式本就有, 双端一致定义无害; 普通 msvc 链接时 _MT 对应多线程 CRT, mcpp 无 /MT 概念)。
 # _WIN32_WINNT=0x0A00: mingw 风味不默认定义, boost.winapi 的 WaitOnAddress/
 # WakeByAddress* 需 >= 0x0602 才声明 (thread_primitives.cpp 依赖); 生成器快照同值。
+# (M11 CI 修复: 移入 [target.windows.build] — POSIX 上该宏会让 asio 误入
+# Windows-App 探测分支 (config.hpp _WIN32_WINNT>=0x0603 → winapifamily.h),
+# cobalt/process 依赖扫描硬错; POSIX 的 winapi 模块面为空 (M9 守卫), 无需此宏。)
 # WIN32_LEAN_AND_MEAN (M11): asio (cobalt/log/process) 在 windows.h 先拉入
 # winsock1 时硬报 "WinSock.h has already been included" — 本宏让 windows.h 跳过
 # winsock.h, asio 自行包含 winsock2.h; 全包统一 (模块 TU 与库 TU 宏一致, M4 §2a)。
 # SECURITY_WIN32 (M11): log 的 windows TU include <security.h>, 其 sspi.h 链要求
 # SECURITY_WIN32/KERNEL/MAC 三选一 (上游 CMakeLists.txt:324 同款, 只作用私有 TU)。
-defines  = ["BOOST_ALL_NO_LIB", "_MT", "_WIN32_WINNT=0x0A00", "WIN32_LEAN_AND_MEAN", "SECURITY_WIN32"]
+defines  = ["BOOST_ALL_NO_LIB", "_MT", "WIN32_LEAN_AND_MEAN", "SECURITY_WIN32"]
 # M9: poly_collection's detail headers specialize std::is_void (the
 # is_final/is_invocable fallback hooks); clang+MSVC STL hard-errors on it for
 # plain #include consumers too, -Wno-invalid-specialization downgrades it to a
@@ -562,6 +565,9 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
 # <immintrin.h>/<tmmintrin.h> (arm64 macos CI 腿编译失败), 且其符号只在消费者
 # 自定义 BOOST_LOG_USE_AVX2/SSSE3 时被引用 (模块面宏固定, 不可用 — M4 §9 限制)。
 [target.windows.build]
+# M11 CI 修复: _WIN32_WINNT 只属于 Windows 目标 (boost.winapi WaitOnAddress
+# 需 >= 0x0602; POSIX 上见 [build].defines 处注释 — asio Windows-App 探测误触发)。
+defines = ["_WIN32_WINNT=0x0A00"]
 sources = [
     "!deps/boost/libs/thread/src/pthread/**",
     "!deps/boost/libs/log/src/posix/**",

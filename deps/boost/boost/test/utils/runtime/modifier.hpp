@@ -40,18 +40,25 @@ namespace runtime {
 // **************         environment variable modifiers       ************** //
 // ************************************************************************** //
 
-namespace {
+// M11 vendored edit (gcc C++23 modules): the keyword objects lived in an
+// anonymous namespace, which made them and their tag types TU-local; the
+// test module surface hard-errors "exposes TU-local entity" when runtime
+// templates (parameter.hpp, argument_factory.hpp, cla/parser.hpp) reference
+// them. A named namespace with inline variables + a using-directive keeps
+// the unqualified-lookup behavior. Replay after re-running import_boost
+// (see M11 doc §6.9).
+namespace runtime_detail {
 
 #ifdef BOOST_TEST_CLA_NEW_API
-auto const& description     = unit_test::static_constant<nfp::typed_keyword<cstring,struct description_t>>::value;
-auto const& help            = unit_test::static_constant<nfp::typed_keyword<cstring,struct help_t>>::value;
-auto const& env_var         = unit_test::static_constant<nfp::typed_keyword<cstring,struct env_var_t>>::value;
-auto const& end_of_params   = unit_test::static_constant<nfp::typed_keyword<cstring,struct end_of_params_t>>::value;
-auto const& negation_prefix = unit_test::static_constant<nfp::typed_keyword<cstring,struct neg_prefix_t>>::value;
-auto const& value_hint      = unit_test::static_constant<nfp::typed_keyword<cstring,struct value_hint_t>>::value;
-auto const& optional_value  = unit_test::static_constant<nfp::keyword<struct optional_value_t>>::value;
-auto const& default_value   = unit_test::static_constant<nfp::keyword<struct default_value_t>>::value;
-auto const& callback        = unit_test::static_constant<nfp::keyword<struct callback_t>>::value;
+inline auto const& description     = unit_test::static_constant<nfp::typed_keyword<cstring,struct description_t>>::value;
+inline auto const& help            = unit_test::static_constant<nfp::typed_keyword<cstring,struct help_t>>::value;
+inline auto const& env_var         = unit_test::static_constant<nfp::typed_keyword<cstring,struct env_var_t>>::value;
+inline auto const& end_of_params   = unit_test::static_constant<nfp::typed_keyword<cstring,struct end_of_params_t>>::value;
+inline auto const& negation_prefix = unit_test::static_constant<nfp::typed_keyword<cstring,struct neg_prefix_t>>::value;
+inline auto const& value_hint      = unit_test::static_constant<nfp::typed_keyword<cstring,struct value_hint_t>>::value;
+inline auto const& optional_value  = unit_test::static_constant<nfp::keyword<struct optional_value_t>>::value;
+inline auto const& default_value   = unit_test::static_constant<nfp::keyword<struct default_value_t>>::value;
+inline auto const& callback        = unit_test::static_constant<nfp::keyword<struct callback_t>>::value;
 
 template<typename EnumType>
 using enum_values = unit_test::static_constant<
@@ -60,15 +67,15 @@ using enum_values = unit_test::static_constant<
 
 #else
 
-nfp::typed_keyword<cstring,struct description_t> description;
-nfp::typed_keyword<cstring,struct help_t> help;
-nfp::typed_keyword<cstring,struct env_var_t> env_var;
-nfp::typed_keyword<cstring,struct end_of_params_t> end_of_params;
-nfp::typed_keyword<cstring,struct neg_prefix_t> negation_prefix;
-nfp::typed_keyword<cstring,struct value_hint_t> value_hint;
-nfp::keyword<struct optional_value_t> optional_value;
-nfp::keyword<struct default_value_t> default_value;
-nfp::keyword<struct callback_t> callback;
+inline nfp::typed_keyword<cstring,struct description_t> description;
+inline nfp::typed_keyword<cstring,struct help_t> help;
+inline nfp::typed_keyword<cstring,struct env_var_t> env_var;
+inline nfp::typed_keyword<cstring,struct end_of_params_t> end_of_params;
+inline nfp::typed_keyword<cstring,struct neg_prefix_t> negation_prefix;
+inline nfp::typed_keyword<cstring,struct value_hint_t> value_hint;
+inline nfp::keyword<struct optional_value_t> optional_value;
+inline nfp::keyword<struct default_value_t> default_value;
+inline nfp::keyword<struct callback_t> callback;
 
 template<typename EnumType>
 struct enum_values_list {
@@ -97,7 +104,8 @@ struct enum_values : unit_test::static_constant<
 
 #endif
 
-} // local namespace
+} // namespace runtime_detail
+using namespace runtime_detail;
 
 } // namespace runtime
 } // namespace boost
