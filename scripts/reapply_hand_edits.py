@@ -479,6 +479,23 @@ def main():
               f"  // typedefs only where long double really is 80-bit; MSVC long double is 53-bit.\n"
               f"  using boost::{name};\n"
               f"#endif")
+    # M11 CI fix (POSIX llvm legs): the statistics parallel impls exist only
+    # under BOOST_MATH_EXEC_COMPATIBLE (tools/config.hpp: requires
+    # BOOST_MATH_NO_CXX17_HDR_EXECUTION to stay undefined — libc++ provides
+    # <execution> without __cpp_lib_execution, so the macro is absent there),
+    # while the MSVC/libstdc++ snapshot faces define it. Guard the three
+    # affected using-lines with the exact upstream condition.
+    for name in ["chatterjee_correlation_par_impl",
+                 "correlation_coefficient_parallel_impl",
+                 "means_and_covariance_parallel_impl"]:
+        patch("src/gen_exports/math.inc",
+              f"  using boost::math::statistics::detail::{name};",
+              f"#if defined(BOOST_MATH_EXEC_COMPATIBLE)\n"
+              f"  // M11 CI platform guard: statistics {name} is defined only under\n"
+              f"  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /\n"
+              f"  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.\n"
+              f"  using boost::math::statistics::detail::{name};\n"
+              f"#endif")
     # M11: iostreams — codecvt_impl exists only on the libstdc++/older-dinkumware
     # workaround paths (detail/codecvt_helper.hpp); MSVC STL declares neither.
     patch("src/gen_exports/iostreams.inc",

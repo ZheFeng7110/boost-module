@@ -196,8 +196,14 @@ public:
 
 //____________________________________________________________________________//
 
+// M11 vendored edit (gcc C++23 modules): the plain template static-data-member
+// definition is emitted both by the boost.test module TU (via its CMI) and by
+// include-side consumer TUs; the copies don't dedupe and the link hard-errors
+// "duplicate symbol: boost::unit_test::basic_cstring<...>::null" (test_utf).
+// An inline-variable definition merges them. Replay after re-running
+// import_boost (see M11 doc §6.9).
 template<typename CharT>
-CharT basic_cstring<CharT>::null = 0;
+inline CharT basic_cstring<CharT>::null = 0;
 
 //____________________________________________________________________________//
 

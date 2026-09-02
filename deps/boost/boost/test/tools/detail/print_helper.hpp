@@ -68,10 +68,16 @@ namespace tt_detail {
     template <class T> struct static_const { static const T value; };
     template <class T> const T static_const<T>::value = T();
 
-    namespace {
-        static const impl::boost_test_print_type_impl& boost_test_print_type =
-            static_const<impl::boost_test_print_type_impl>::value;
-    }
+    // M11 vendored edit (gcc C++23 modules): the print helper reference lived
+    // in an anonymous namespace, making it TU-local; when the header is both
+    // included in a consumer TU and reachable through the boost.test CMI, gcc
+    // emits both copies under the same _GLOBAL__N_1 mangle and the assembler
+    // hard-errors "symbol ... already defined" (test_utf). An inline variable
+    // at namespace scope keeps the lookup spelling at the using-site below
+    // while being ODR-safe. Replay after re-running import_boost
+    // (see M11 doc §6.9).
+    inline const impl::boost_test_print_type_impl& boost_test_print_type =
+        static_const<impl::boost_test_print_type_impl>::value;
 
 
 // ************************************************************************** //

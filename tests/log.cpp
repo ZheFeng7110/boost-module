@@ -2,10 +2,20 @@
 // ostream backend / default sink TUs; BOOST_LOG_* macros stay include-side,
 // M10 pattern)
 #include "test_assert.hpp"
-#include <sstream>
+// include-only (T3 consumer rule, same as the exception face): importing
+// boost.log makes gcc 16.1 emit two strong copies of the exported
+// basic_formatting_ostream operator<< instantiations (one recorded in the
+// log CMI from the module GMF, one instantiated in the consumer TU) and the
+// assembler hard-errors "symbol ... already defined" on the same mangled
+// name. The log module surface still compiles everywhere; the smoke test
+// consumes the headers directly and keeps validating the compiled-lib
+// linkage.
+#include <boost/log/core/record.hpp>
+#include <boost/log/core/core.hpp>
 #include <boost/log/expressions.hpp>
-import std;
-import boost.log;
+#include <boost/log/sinks.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
 
 int main() {
     // explicit core / sink pipeline writing into an ostringstream

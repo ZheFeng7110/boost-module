@@ -2284,10 +2284,20 @@ export namespace boost { namespace math { namespace statistics {
 }}}
 
 export namespace boost { namespace math { namespace statistics { namespace detail {
+#if defined(BOOST_MATH_EXEC_COMPATIBLE)
+  // M11 CI platform guard: statistics chatterjee_correlation_par_impl is defined only under
+  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
+  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
   using boost::math::statistics::detail::chatterjee_correlation_par_impl;
+#endif
   using boost::math::statistics::detail::chatterjee_correlation_seq_impl;
   using boost::math::statistics::detail::chatterjee_transform;
+#if defined(BOOST_MATH_EXEC_COMPATIBLE)
+  // M11 CI platform guard: statistics correlation_coefficient_parallel_impl is defined only under
+  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
+  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
   using boost::math::statistics::detail::correlation_coefficient_parallel_impl;
+#endif
   using boost::math::statistics::detail::correlation_coefficient_seq_impl;
   using boost::math::statistics::detail::first_four_moments_parallel_impl;
   using boost::math::statistics::detail::first_four_moments_sequential_impl;
@@ -2295,7 +2305,12 @@ export namespace boost { namespace math { namespace statistics { namespace detai
   using boost::math::statistics::detail::gini_coefficient_sequential_impl;
   using boost::math::statistics::detail::gini_range_fraction;
   using boost::math::statistics::detail::mean_sequential_impl;
+#if defined(BOOST_MATH_EXEC_COMPATIBLE)
+  // M11 CI platform guard: statistics means_and_covariance_parallel_impl is defined only under
+  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
+  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
   using boost::math::statistics::detail::means_and_covariance_parallel_impl;
+#endif
   using boost::math::statistics::detail::means_and_covariance_seq_impl;
   using boost::math::statistics::detail::mode_impl;
   using boost::math::statistics::detail::one_sample_t_test_impl;

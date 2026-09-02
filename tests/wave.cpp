@@ -1,8 +1,15 @@
 // boost.wave smoke — compiled lib linkage (instantiate_re2c_lexer /
 // instantiate_cpp_grammar / token_ids TUs)
 #include "test_assert.hpp"
-import std;
-import boost.wave;
+// include-only (T3 consumer rule, same as the exception face): importing
+// boost.wave loads the wave CMI next to its dependency CMIs, and gcc 16.1
+// hard-errors on the merge of the libstdc++ __synth3way operator<=>
+// instantiation ("conflicts with a previous mangle", bits/stl_iterator.h:1204)
+// recorded by two different CMIs in one TU. The wave module surface still
+// compiles everywhere; the smoke test consumes the headers directly and keeps
+// validating the compiled-lib linkage.
+#include <boost/wave.hpp>
+#include <boost/wave/cpplexer/cpp_lex_iterator.hpp>
 
 int main() {
     typedef boost::wave::cpplexer::lex_token<> token_type;

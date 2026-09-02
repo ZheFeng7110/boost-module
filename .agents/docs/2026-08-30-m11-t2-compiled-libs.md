@@ -148,7 +148,7 @@ main 方案)/timer(cpu_timer TUs)/type_erasure(编译期面,§6.6)/wave
 7. test 模块的宏面(BOOST_TEST_*)与 T3 同理不可导出——消费者 include
    boost/test/unit_test.hpp 拿宏 + import boost.test 拿编译框架。
 8. 消费者自定义的 log/process 特性宏随构建期固定(M4 §9 同型)。
-9. 上游 vendored 头修改 4 处(重跑 import_boost 需回放):
+9. 上游 vendored 头修改 6 处(重跑 import_boost 需回放):
    - boost/archive/iterators/remove_whitespace.hpp:匿名命名空间 →
      boost::archive::iterators::detail(TU-local 暴露,serialization/iostreams
      模块 TU 在 gcc 上硬错);
@@ -157,7 +157,11 @@ main 方案)/timer(cpu_timer TUs)/type_erasure(编译期面,§6.6)/wave
      "definition of enum ... does not match");
    - boost/test/utils/runtime/modifier.hpp:匿名命名空间 → runtime_detail +
      inline 变量 + using 指令(nfp 关键词 TU-local 暴露,§6.5);
-   - boost/test/utils/iterator/token_iterator.hpp:同上(token 关键词)。
+   - boost/test/utils/iterator/token_iterator.hpp:同上(token 关键词);
+   - boost/test/tools/detail/print_helper.hpp:匿名命名空间 → tt_detail
+     inline 变量(CMI/include 两路 _GLOBAL__N_1 同 mangle 撞名,§7.4);
+   - boost/test/utils/basic_cstring/basic_cstring.hpp:模板静态数据成员
+     定义 → inline 变量定义(模块 TU 与消费者 TU 两份不去重,§7.4)。
 
 ## 7. CI 修复 — POSIX 腿(mingw 快照平台面,2026-08-31)
 
@@ -217,3 +221,62 @@ M11 首次 CI(35c25093)linux-gcc/linux-llvm/macos-llvm 全部在 Build 步骤失
   守护条件推定(epoll 分支→select_reactor 系不导出,与上游一致)。
 - 本机交叉链接受 lld(zlib) 限制,mcpp test/examples 的链接+运行交给 CI
   原生腿(M10 时已验证)。
+
+### 7.4 CI 修复 — linux-gcc Test 六连败 + llvm 腿 math(2026-09-02)
+
+M11 fix(62d1e6af)后 linux-gcc 的 Build 过了但 Test 步骤 126 个测试败 6
+(cobalt/exception/log/test_utf/wave/timer);linux-llvm/macos-llvm 仍在
+Build 步骤败于 math。全部经本地 gcc 16.1 musl 交叉逐个复现+验证(编译+
+链接面;timer 运行面经 Windows 宿主),Windows 侧 build + 126 测试 +
+example 回归通过。
+
+- **cobalt**(test TU 实例化 std 模板硬错 `must '#include <typeinfo>'
+  before using 'typeid'` / `no matching function for call to
+  'operator new(sizetype, void*)'`):boost.cobalt CMI 里可达的
+  libstdc++ 模板体(_Sp_counted_ptr_inplace 的 typeid、
+  __is_nothrow_new_constructible_impl 的 placement-new)在消费者 TU
+  实例化,而 tests/cobalt.cpp 只 include 了 <coroutine> — 模块 CMI 不
+  传递 include 状态,gcc 16.1 模板体检查要求typeid/new 声明在实例化
+  TU 可见。修复:测试 TU 显式补 <new> + <typeinfo>。
+- **exception**(CMI/GMF 合并冲突 `conflicting declaration of template
+  'std::__byte_operand'` 级联):测试 TU `import boost.throw_exception` +
+  `#include <boost/exception/all.hpp>`,<cstddef> 经 CMI 与 GMF 两路
+  合并触发 gcc 16.1 CMI merge bug。修复:测试改纯 include(T3 consumer
+  rule,与库面 M11 降级同型),去掉 import。
+- **log**(汇编期 `symbol ...lsI...E already defined` 重复强符号):
+  basic_formatting_ostream 的 operator<< 模板特化一份记录在 log CMI
+  (模块 GMF 编译期实例化)、一份在消费者 TU 实例化,gcc 16.1 未归一。
+  修复:测试改纯 include(expressions/sinks/logger/record_ostream 直
+  接取头文件),不再 import boost.log。
+- **test_utf**(两段式失败):先是汇编期
+  `boost::test_tools::tt_detail::_GLOBAL__N_1L21boost_test_print_typeE`
+  重复 — vendored print_helper.hpp 的匿名命名空间引用实体在 CMI 与
+  include 两路同 mangle 撞名,改 tt_detail 命名空间 inline 变量(§6.9
+  同款);再是链接期 `basic_cstring<char const>::null` 重复 — 模板静
+  态数据成员定义两份未去重,改 inline 变量定义。
+- **wave**(gcc 16.1 模块 mangle 冲突 `mangling of '__synth3way_t
+  operator<=>' ... conflicts with a previous mangle`,bits/stl_iterator.h:
+  1204):wave CMI 与依赖 CMI 各自记录了 libstdc++ __synth3way 运算符
+  特化,同 TU 加载两份同 mangle 实体,-fabi-version=0 无效(gcc 官方
+  提示的 workaround 对该合成运算符不生效)。修复:测试改纯 include
+  (T3 consumer rule);模块面在 Build 步骤本来就编译通过。
+- **timer**(运行期断言 `times.wall > 0` 失败,exit 134):POSIX 的
+  wall 取自 times(),粒度 _SC_CLK_TCK==100(10ms);测试忙等循环
+  10000 次不足一个 tick → elapsed().wall == 0(Windows QPC 纳秒粒度
+  无此问题,故仅 linux-gcc 腿暴露)。修复:stop 前先 sleep 50ms(≥5
+  tick)。
+- **math**(linux-llvm/macos-llvm Build 步骤):math.inc 无条件 using
+  了仅在 BOOST_MATH_EXEC_COMPATIBLE 下定义的三个并行统计
+  impl(chatterjee_correlation_par_impl /
+  correlation_coefficient_parallel_impl /
+  means_and_covariance_parallel_impl — chatterjee_correlation.hpp /
+  bivariate_statistics.hpp 的 #ifdef);libc++ 提供无
+  __cpp_lib_execution 的 <execution>,宏不定义。first_four_moments/
+  gini 的并行版只要求 BOOST_MATH_HAS_THREADS(single_pass.hpp),
+  clang 下存在,无需守护。修复:reapply_hand_edits.py 新增三行
+  `#if defined(BOOST_MATH_EXEC_COMPATIBLE)` 守卫(镜像上游条件),
+  math.inc 同步。
+- vendored 头修改新增 2 处(重跑 import_boost 需回放,§6.9):test/tools/
+  detail/print_helper.hpp、test/utils/basic_cstring/basic_cstring.hpp。
+- 测试消费方式调整记录:cobalt(仍 import,补标准头)、exception/log/
+  wave 改 include-only(T3 consumer rule),timer(仍 import,加 sleep)。

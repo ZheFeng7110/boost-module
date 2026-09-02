@@ -6,8 +6,12 @@
 // map; the error_info tag type is declared once at namespace scope so both
 // sites name the same type.
 #include "test_assert.hpp"
-import boost.throw_exception;
+// include-only (T3 consumer rule, same as the library face): importing a
+// module next to <boost/exception/all.hpp> trips the gcc 16.1 CMI merge bug
+// (std::__byte_operand / <cstddef> conflicting declarations), so the smoke
+// test consumes the headers directly.
 #include <boost/exception/all.hpp>
+#include <boost/throw_exception.hpp>
 
 struct tag_int {};
 
