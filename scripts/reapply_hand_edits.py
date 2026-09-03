@@ -701,6 +701,32 @@ def main():
         patch("src/gen_exports/graph.inc",
               f"  using boost::serialization::cpp_int_detail::{name};",
               f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int interop surface exists only under BOOST_HAS_INT128\n  // (multiprecision detail; off under the clang-msvc flavor).\n  using boost::serialization::cpp_int_detail::{name};\n#endif")
+    # M11 CI fix (macos-llvm leg): addcarry_limb / subborrow_limb live in
+    # boost/multiprecision/cpp_int/intel_intrinsics.hpp under the
+    # BOOST_MP_HAS_IMMINTRIN_H gate. On macOS arm64 (clang) the macro is unset
+    # (no __builtin_ia32_addcarryx_u64, BOOST_GCC not defined), so the symbols
+    # are not declared; the mingw-snapshot .inc (parsed on Linux x86_64 where
+    # the macro is set) still emits `using ...::addcarry_limb;` and the macOS
+    # module compile then errors "no member named 'addcarry_limb' in namespace
+    # 'boost::multiprecision::detail'". Mirror the upstream macro exactly.
+    patch("src/gen_exports/graph.inc",
+          "  using boost::multiprecision::detail::addcarry_limb;\n  using boost::multiprecision::detail::arg_type;",
+          "#if defined(BOOST_MP_HAS_IMMINTRIN_H)\n"
+          "  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares addcarry_limb\n"
+          "  // only under BOOST_MP_HAS_IMMINTRIN_H (the adc intrinsics dispatch — clang on\n"
+          "  // macOS arm64 unsets the macro because __builtin_ia32_addcarryx_u64 is a\n"
+          "  // gcc-only builtin and BOOST_GCC is not defined).\n"
+          "  using boost::multiprecision::detail::addcarry_limb;\n"
+          "#endif\n"
+          "  using boost::multiprecision::detail::arg_type;")
+    patch("src/gen_exports/graph.inc",
+          "  using boost::multiprecision::detail::subborrow_limb;\n  using boost::multiprecision::detail::subtract_immediates;",
+          "#if defined(BOOST_MP_HAS_IMMINTRIN_H)\n"
+          "  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares subborrow_limb\n"
+          "  // only under BOOST_MP_HAS_IMMINTRIN_H (see addcarry_limb guard for rationale).\n"
+          "  using boost::multiprecision::detail::subborrow_limb;\n"
+          "#endif\n"
+          "  using boost::multiprecision::detail::subtract_immediates;")
 
     # M11: charconv — the mingw snapshot exports entities the MSVC ABI never
     # declares (mirrors the M9 decimal guards):
