@@ -1284,8 +1284,8 @@ def main():
     # consumers instantiate it fine (verified gcc/clang, struct and cxx11
     # paths) — so drop the export line.
     patch("src/gen_exports/align.inc",
-          "  using std::add_lvalue_reference;\n  using std::alignment_of;\n",
-          "  using std::add_lvalue_reference;\n")
+          "  using std::add_lvalue_reference;\n  using std::alignment_of;\n  using std::false_type;\n",
+          "  using std::add_lvalue_reference;\n  using std::false_type;\n")
 
     # M9: parser — parse_int/parse_real live in an `inline namespace
     # BOOST_PARSER_NUMERIC_NS` (std_charconv | boost_charconv | spirit_parsers,

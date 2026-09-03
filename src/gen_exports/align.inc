@@ -26,7 +26,6 @@ export namespace boost { namespace alignment { namespace detail {
   using boost::alignment::detail::not_pointer;
   using boost::alignment::detail::throw_exception;
   using std::add_lvalue_reference;
-  using std::alignment_of;
   using std::false_type;
   using std::integral_constant;
   using std::remove_all_extents;
