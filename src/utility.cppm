@@ -8,9 +8,7 @@ module;
 #include <boost/utility/explicit_operator_bool.hpp>
 #include <boost/utility/in_place_factory.hpp>
 #include <boost/utility/result_of.hpp>
-// M11: string_ref.hpp curated out of the GMF — its buffer_fill enum
-// mismatches between the boost.io/boost.utility BMIs on gcc 16.1;
-// consumers include the deprecated header themselves.
+#include <boost/utility/string_ref_fwd.hpp>
 #include <boost/utility/string_view.hpp>
 #include <boost/utility/swap.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>

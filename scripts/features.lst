@@ -101,3 +101,15 @@ test
 timer
 type_erasure
 wave
+accumulators
+asio
+beast
+geometry
+gil
+hana
+interprocess
+mqtt5
+multiprecision
+numeric
+polygon
+qvm

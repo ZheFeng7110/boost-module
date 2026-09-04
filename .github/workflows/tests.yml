@@ -26,6 +26,11 @@ concurrency:
 env:
   # 与本地开发环境一致 (mcpp 2026.8.17.1) — 发布二进制, 不用编译 mcpp 自身。
   MCPP_VERSION: "2026.8.17.1"
+  # M12: 全量门禁分组 — clang 的 2^31 源位置空间装不下 117 个模块 CMI 的聚合
+  # import (ran out of source locations), 单个 --features all 聚合不可行。
+  # 按里程碑分两层, 两组各自全绿即等价覆盖全库 (见 2026-09-05 M12 设计文档 §3)。
+  BOOST_GROUP_A: "optional,variant,variant2,any,core,container_hash,mp11,static_string,scope,scope_exit,type_traits,algorithm,iterator,range,io,rational,endian,tuple,system,filesystem,regex,thread,chrono,program_options,stacktrace,json,url,align,array,assign,assert,bimap,bloom,callable_traits,circular_buffer,compat,concept_check,config,convert,crc,decimal,describe,dll,dynamic_bitset,flyweight,format,function,functional,hash2,heap,histogram,icl,integer,intrusive,leaf,lexical_cast,lockfree,logic,move,multi_array,multi_index,openmethod,outcome,parser,pfr,poly_collection,pool,property_map,property_tree,ptr_container,ratio,safe_numerics,signals2,smart_ptr,sort,statechart,stl_interfaces,throw_exception,tokenizer,type_index,unordered,utility,uuid,winapi,yap,atomic,charconv,cobalt,container,contract,date_time,graph,iostreams,log,math,nowide,process,random,serialization,test,timer,type_erasure,wave"
+  BOOST_GROUP_B: "accumulators,asio,beast,geometry,gil,hana,interprocess,mqtt5,multiprecision,numeric,polygon,qvm"
 
 jobs:
   test:
@@ -116,18 +121,26 @@ jobs:
 
       # M8: 默认集 = 18 库闭包 (mcpp.toml [features].default)。`mcpp build` 只编译
       # 激活库; test 模式 DROP 跳过 (设计文档 2026-08-15 §1.1), 故默认 `mcpp test`
-      # 编译全量 src/ 表面 — 27 库全部覆盖。--features all 单独验证全库编译路径。
+      # 编译全量 src/ 表面 — 库全部覆盖。M12 起全库验证按 A/B 两组跑 (见 env 注释)。
       - name: Test
         shell: bash
         run: mcpp test
 
-      - name: Build all libraries (--features all)
+      - name: Build all libraries (group A: M11 set)
         shell: bash
-        run: mcpp build --features all
+        run: mcpp build --features "$BOOST_GROUP_A"
 
-      - name: Test all libraries (--features all)
+      - name: Test all libraries (group A)
         shell: bash
-        run: mcpp test --features all
+        run: mcpp test --features "$BOOST_GROUP_A"
+
+      - name: Build all libraries (group B: T1b heavy set)
+        shell: bash
+        run: mcpp build --features "$BOOST_GROUP_B"
+
+      - name: Test all libraries (group B)
+        shell: bash
+        run: mcpp test --features "$BOOST_GROUP_B"
 
       - name: Build & run example (import boost;)
         shell: bash

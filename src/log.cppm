@@ -15,6 +15,7 @@ module;
 #if defined(_WIN32)
 #include <boost/log/support/regex.hpp>
 #endif
+
 #include <boost/log/support/spirit_classic.hpp>
 #include <boost/log/support/spirit_qi.hpp>
 #include <boost/log/support/std_regex.hpp>
@@ -48,6 +49,7 @@ export import boost.io;
 export import boost.iterator;
 export import boost.move;
 export import boost.mp11;
+export import boost.numeric;
 export import boost.optional;
 export import boost.property_tree;
 export import boost.range;

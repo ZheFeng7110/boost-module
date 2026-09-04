@@ -512,6 +512,8 @@ def main():
     # (asio/detail/thread.hpp checks pthreads BEFORE windows; mingw-gcc defines
     # it via boost config's BOOST_HAS_PTHREADS). The MSVC flavor uses win_thread
     # and never declares posix_thread.
+    # M12: boost.asio is a module of its own and claims all boost/asio/** files
+    # (first-wins) — posix_thread moved to asio.inc; best-effort here.
     patch("src/gen_exports/process.inc",
           "  using boost::asio::detail::posix_thread;",
           "#if defined(BOOST_ASIO_HAS_PTHREADS)\n"
@@ -519,7 +521,8 @@ def main():
           "  // under BOOST_ASIO_HAS_PTHREADS (mingw snapshot); the MSVC flavor takes\n"
           "  // win_thread.\n"
           "  using boost::asio::detail::posix_thread;\n"
-          "#endif")
+          "#endif",
+          required=False)
     # M11 CI fix (POSIX legs): the process GMF includes ten windows-only headers
     # (v1/windows.hpp, v2/windows/*, windows/* launchers) — boost/winapi
     # basic_types.hpp #errors off-Windows, same reason as the M9 winapi.cppm
@@ -576,13 +579,16 @@ def main():
     # by the windows GMF branches above. Conditions mirror upstream:
     # asio windows services under BOOST_ASIO_WINDOWS (= _WIN32), process
     # v1/v2 windows detail under BOOST_WINDOWS_API (= _WIN32).
+    # M12: win_object_handle_service is owned by boost.asio now (first-wins,
+    # asio/detail/object_handle.hpp) — best-effort here.
     patch("src/gen_exports/process.inc",
           "  using boost::asio::detail::win_object_handle_service;",
           "#if defined(_WIN32)\n"
           "  // M11 platform guard: win_object_handle_service is the asio windows\n"
           "  // branch (BOOST_ASIO_WINDOWS); POSIX asio never declares it.\n"
           "  using boost::asio::detail::win_object_handle_service;\n"
-          "#endif")
+          "#endif",
+          required=False)
     patch("src/gen_exports/process.inc",
           "export namespace boost { namespace asio { namespace windows {\n"
           "  using boost::asio::windows::basic_object_handle;\n"
@@ -601,7 +607,8 @@ def main():
           "  using boost::asio::windows::object_handle;\n"
           "  using boost::asio::windows::stream_handle;\n"
           "}}}\n"
-          "#endif")
+          "#endif",
+          required=False)
     patch("src/gen_exports/process.inc",
           "export namespace boost { namespace process { namespace v1 { namespace detail { namespace windows {\n"
           "  using boost::process::v1::detail::windows::apply_out_handles;",
@@ -688,7 +695,8 @@ def main():
     for name in ["int128_type", "uint128_type"]:
         patch("src/gen_exports/graph.inc",
               f"  using boost::multiprecision::{name};",
-              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: standalone_config.hpp declares multiprecision::{name} only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::{name};\n#endif")
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: standalone_config.hpp declares multiprecision::{name} only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::{name};\n#endif",
+              required=False)  # M12: entity owned by boost.multiprecision now
     for name in ["template_arity", "template_arity_helper", "template_arity_impl2"]:
         patch("src/gen_exports/graph.inc",
               f"  using boost::proto::detail::{name};",
@@ -696,11 +704,13 @@ def main():
     for name in ["divide_subtract", "divide_unsigned_helper"]:
         patch("src/gen_exports/graph.inc",
               f"  using boost::multiprecision::backends::{name};",
-              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int divide helpers take double_limb_type (= __int128)\n  // and are declared only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::backends::{name};\n#endif")
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int divide helpers take double_limb_type (= __int128)\n  // and are declared only under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n  using boost::multiprecision::backends::{name};\n#endif",
+              required=False)  # M12: entity owned by boost.multiprecision now
     for name in ["divide_subtract", "int128_type", "uint128_type"]:
         patch("src/gen_exports/graph.inc",
               f"  using boost::serialization::cpp_int_detail::{name};",
-              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int interop surface exists only under BOOST_HAS_INT128\n  // (multiprecision detail; off under the clang-msvc flavor).\n  using boost::serialization::cpp_int_detail::{name};\n#endif")
+              f"#if defined(BOOST_HAS_INT128)\n  // M11 platform guard: the cpp_int interop surface exists only under BOOST_HAS_INT128\n  // (multiprecision detail; off under the clang-msvc flavor).\n  using boost::serialization::cpp_int_detail::{name};\n#endif",
+              required=False)  # M12: entity owned by boost.multiprecision now
     # M11 CI fix (macos-llvm leg): addcarry_limb / subborrow_limb live in
     # boost/multiprecision/cpp_int/intel_intrinsics.hpp under the
     # BOOST_MP_HAS_IMMINTRIN_H gate. On macOS arm64 (clang) the macro is unset
@@ -718,7 +728,8 @@ def main():
           "  // gcc-only builtin and BOOST_GCC is not defined).\n"
           "  using boost::multiprecision::detail::addcarry_limb;\n"
           "#endif\n"
-          "  using boost::multiprecision::detail::arg_type;")
+          "  using boost::multiprecision::detail::arg_type;",
+          required=False)  # M12: entity owned by boost.multiprecision now
     patch("src/gen_exports/graph.inc",
           "  using boost::multiprecision::detail::subborrow_limb;\n  using boost::multiprecision::detail::subtract_immediates;",
           "#if defined(BOOST_MP_HAS_IMMINTRIN_H)\n"
@@ -726,7 +737,8 @@ def main():
           "  // only under BOOST_MP_HAS_IMMINTRIN_H (see addcarry_limb guard for rationale).\n"
           "  using boost::multiprecision::detail::subborrow_limb;\n"
           "#endif\n"
-          "  using boost::multiprecision::detail::subtract_immediates;")
+          "  using boost::multiprecision::detail::subtract_immediates;",
+          required=False)  # M12: entity owned by boost.multiprecision now
 
     # M11: charconv — the mingw snapshot exports entities the MSVC ABI never
     # declares (mirrors the M9 decimal guards):
@@ -1188,6 +1200,17 @@ def main():
         "win_thread_function",
         "winsock_init",
         "winsock_init_base",
+        "win_iocp_overlapped_op",
+        "win_object_handle_service",
+        "basic_object_handle",
+        "basic_overlapped_handle",
+        "basic_random_access_handle",
+        "basic_stream_handle",
+        "object_handle",
+        "overlapped_handle",
+        "overlapped_ptr",
+        "random_access_handle",
+        "stream_handle",
         "complete_iocp_accept",
         "complete_iocp_connect",
         "complete_iocp_recv",
@@ -1298,6 +1321,297 @@ def main():
           "  // (detail/sse2.hpp, __SSE2__); absent on arm64 (NEON branch).\n"
           "  using boost::bloom::detail::m128ix2;\n"
           "#endif")
+
+    # M12: hana — the ext::boost adapter tags (tuple_tag, fusion::*_tag,
+    # mpl::*_tag) sit in namespaces named `boost` nested inside boost::hana::ext.
+    # The generated qualified using-lines (`using boost::hana::ext::boost::...;`)
+    # resolve `boost` to the innermost shadowing namespace (hana::ext::boost) and
+    # fail with "'hana' is not a class, namespace, or enumeration". Root-qualify
+    # them with a leading `::` so the using-declaration resolves from the global
+    # scope (the injected name in hana::ext::boost is unchanged).
+    patch("src/gen_exports/hana.inc",
+          "  using boost::hana::ext::boost::tuple_tag;\n}}}}",
+          "  using ::boost::hana::ext::boost::tuple_tag;\n}}}}")
+    patch("src/gen_exports/hana.inc",
+          "  using boost::hana::ext::boost::fusion::deque_tag;\n"
+          "  using boost::hana::ext::boost::fusion::list_tag;\n"
+          "  using boost::hana::ext::boost::fusion::tuple_tag;\n"
+          "  using boost::hana::ext::boost::fusion::vector_tag;",
+          "  using ::boost::hana::ext::boost::fusion::deque_tag;\n"
+          "  using ::boost::hana::ext::boost::fusion::list_tag;\n"
+          "  using ::boost::hana::ext::boost::fusion::tuple_tag;\n"
+          "  using ::boost::hana::ext::boost::fusion::vector_tag;")
+    patch("src/gen_exports/hana.inc",
+          "  using boost::hana::ext::boost::mpl::integral_c_tag;\n"
+          "  using boost::hana::ext::boost::mpl::list_tag;\n"
+          "  using boost::hana::ext::boost::mpl::vector_tag;",
+          "  using ::boost::hana::ext::boost::mpl::integral_c_tag;\n"
+          "  using ::boost::hana::ext::boost::mpl::list_tag;\n"
+          "  using ::boost::hana::ext::boost::mpl::vector_tag;")
+    # Same shadowing from inside hana::ext::std: unqualified `boost` lookup
+    # walks out to hana::ext, which has a member namespace `boost`.
+    patch("src/gen_exports/hana.inc",
+          "  using boost::hana::ext::std::array_tag;\n"
+          "  using boost::hana::ext::std::integer_sequence_tag;\n"
+          "  using boost::hana::ext::std::integral_constant_tag;\n"
+          "  using boost::hana::ext::std::pair_tag;\n"
+          "  using boost::hana::ext::std::ratio_tag;\n"
+          "  using boost::hana::ext::std::tuple_tag;\n"
+          "  using boost::hana::ext::std::vector_tag;",
+          "  using ::boost::hana::ext::std::array_tag;\n"
+          "  using ::boost::hana::ext::std::integer_sequence_tag;\n"
+          "  using ::boost::hana::ext::std::integral_constant_tag;\n"
+          "  using ::boost::hana::ext::std::pair_tag;\n"
+          "  using ::boost::hana::ext::std::ratio_tag;\n"
+          "  using ::boost::hana::ext::std::tuple_tag;\n"
+          "  using ::boost::hana::ext::std::vector_tag;")
+
+    # M12: multiprecision — the mingw snapshot carries entities the MSVC ABI
+    # never declares (mirrors the M11 graph.inc guards):
+    #  - int128_type/uint128_type: detail/standalone_config.hpp defines them only
+    #    under BOOST_HAS_INT128 (off under the clang-msvc flavor);
+    #  - backends::divide_subtract/divide_unsigned_helper: the synthetic-
+    #    double_limb_type division branch of cpp_int/misc.hpp (taken only where
+    #    double_limb_type is __int128, i.e. BOOST_HAS_INT128);
+    #  - serialization::cpp_int_detail::divide_subtract/int128_type/uint128_type:
+    #    serialize.hpp's `using namespace boost::multiprecision(::backends)`
+    #    exposes exactly the multiprecision/backends entities above into
+    #    cpp_int_detail, so they are absent on the same condition.
+    patch("src/gen_exports/multiprecision.inc",
+          "  using boost::multiprecision::int128_type;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M12 platform guard: detail/standalone_config.hpp defines int128_type only\n"
+          "  // under BOOST_HAS_INT128 (off under the clang-msvc flavor).\n"
+          "  using boost::multiprecision::int128_type;\n"
+          "#endif")
+    patch("src/gen_exports/multiprecision.inc",
+          "  using boost::multiprecision::uint128_type;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M12 platform guard: as above (uint128_type).\n"
+          "  using boost::multiprecision::uint128_type;\n"
+          "#endif")
+    patch("src/gen_exports/multiprecision.inc",
+          "  using boost::multiprecision::backends::divide_subtract;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M12 platform guard: divide_subtract is the synthetic-double_limb_type\n"
+          "  // division branch of cpp_int/misc.hpp (BOOST_HAS_INT128 only).\n"
+          "  using boost::multiprecision::backends::divide_subtract;\n"
+          "#endif")
+    patch("src/gen_exports/multiprecision.inc",
+          "  using boost::multiprecision::backends::divide_unsigned_helper;",
+          "#if defined(BOOST_HAS_INT128)\n"
+          "  // M12 platform guard: as above (divide_unsigned_helper).\n"
+          "  using boost::multiprecision::backends::divide_unsigned_helper;\n"
+          "#endif")
+    for name in ["divide_subtract", "int128_type", "uint128_type"]:
+        patch("src/gen_exports/multiprecision.inc",
+              f"  using boost::serialization::cpp_int_detail::{name};",
+              f"#if defined(BOOST_HAS_INT128)\n"
+              f"  // M12 platform guard: serialize.hpp's `using namespace\n"
+              f"  // boost::multiprecision(::backends)` exposes the {name} entity into\n"
+              f"  // cpp_int_detail — present only under BOOST_HAS_INT128.\n"
+              f"  using boost::serialization::cpp_int_detail::{name};\n"
+              f"#endif")
+
+    # M12: qvm — vec_traits_gnuc_impl lives in vec_traits_gnuc.hpp, included
+    # (unconditionally, from lite.hpp) only for its content — the header
+    # self-guards with `#if defined(__GNUC__) && defined(__SSE2__)`; the MSVC
+    # flavor never declares the impl.
+    patch("src/gen_exports/qvm.inc",
+          "  using boost::qvm::qvm_detail::vec_traits_gnuc_impl;",
+          "#if defined(__GNUC__) && defined(__SSE2__)\n"
+          "  // M12 platform guard: vec_traits_gnuc.hpp declares vec_traits_gnuc_impl\n"
+          "  // only under __GNUC__ && __SSE2__ (gcc vector_size ext_vector_traits).\n"
+          "  using boost::qvm::qvm_detail::vec_traits_gnuc_impl;\n"
+          "#endif")
+
+    # M12: interprocess — the mingw snapshot's GMF carries Windows-only
+    # headers and faces that POSIX never declares:
+    #  - managed_windows_shared_memory.hpp #errors off-Windows (it pulls
+    #    windows_shared_memory.hpp / detail/win32_api.hpp); guard the GMF
+    #    include (M9 winapi.cppm pattern);
+    #  - the whole boost::interprocess::winapi block (win32_api.hpp) and
+    #    boost::ipwinapiext (registry/virtual-memory extensions) are
+    #    Windows-only;
+    #  - scattered windows_shared_memory/ipcdetail::winapi_* entities.
+    patch("src/interprocess.cppm",
+          "#include <boost/interprocess/managed_windows_shared_memory.hpp>\n",
+          "#if defined(_WIN32) || defined(__CYGWIN__)\n"
+          "// M12 platform guard: managed_windows_shared_memory.hpp pulls\n"
+          "// windows_shared_memory.hpp / detail/win32_api.hpp, which #error off-Windows\n"
+          "// (M9 winapi.cppm convention).\n"
+          "#include <boost/interprocess/managed_windows_shared_memory.hpp>\n"
+          "#endif\n")
+    patch("src/gen_exports/interprocess.inc",
+          "export namespace boost { namespace interprocess { namespace winapi {\n"
+          "  using boost::interprocess::winapi::NtClose_t;",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace interprocess { namespace winapi {\n"
+          "  // M12 platform guard: the interprocess::winapi surface (detail/win32_api.hpp)\n"
+          "  // is Windows-only; POSIX interprocess never declares it.\n"
+          "  using boost::interprocess::winapi::NtClose_t;")
+    patch("src/gen_exports/interprocess.inc",
+          "  using boost::interprocess::winapi::write_file;\n}}}",
+          "  using boost::interprocess::winapi::write_file;\n}}}\n#endif")
+    patch("src/gen_exports/interprocess.inc",
+          "export namespace boost { namespace ipwinapiext {\n"
+          "  using boost::ipwinapiext::CreateThread;",
+          "#if defined(_WIN32)\n"
+          "export namespace boost { namespace ipwinapiext {\n"
+          "  // M12 platform guard: registry / virtual-memory extension surface —\n"
+          "  // Windows-only (win32_api.hpp chain).\n"
+          "  using boost::ipwinapiext::CreateThread;")
+    patch("src/gen_exports/interprocess.inc",
+          "  using boost::ipwinapiext::VirtualUnlock;\n}}",
+          "  using boost::ipwinapiext::VirtualUnlock;\n}}\n#endif")
+    guard_entity_lines("src/gen_exports/interprocess.inc", "defined(_WIN32)", [
+        "basic_managed_windows_shared_memory",
+        "managed_windows_shared_memory",
+        "windows_shared_memory",
+        "wmanaged_windows_shared_memory",
+        "do_winapi_wait",
+        "winapi_mutex_functions",
+        "winapi_mutex_wrapper",
+        "winapi_semaphore_functions",
+        "winapi_semaphore_wrapper",
+        "winapi_wrapper_timed_wait_for_single_object",
+        "winapi_wrapper_try_wait_for_single_object",
+        "winapi_wrapper_wait_for_single_object",
+        "windows_bootstamp",
+        "windows_intermodule_singleton",
+        "windows_semaphore_based_map",
+        # second round (gcc/musl cross check): the mingw snapshot declares
+        # these in ipcdetail only — POSIX interprocess selects different
+        # implementations (shm/spin/windows file traits are the windows
+        # branches of the platform selectors).
+        "file_time_to_microseconds",
+        "get_bootstamp",
+        "get_temporary_wpath",
+        "intermodule_singleton_common",
+        "intermodule_singleton_impl",
+        "mapping_handle_from_shm_handle",
+        "os_file_traits",
+        "ref_count_ptr",
+        "shm_named_mutex",
+        "shm_named_semaphore",
+        "spin_condition",
+        "spin_mutex",
+        "spin_recursive_mutex",
+        "spin_semaphore",
+        "unrestricted_permissions_holder",
+        "wshmem_open_or_create",
+        "get_map_base_name",
+        "get_map_name",
+        "get_map_size",
+        "get_pid_creation_time_str",
+        "thread_safe_global_map_dependant",
+        "mutex_traits",
+    ])
+
+    guard_entity_lines("src/gen_exports/process.inc", "defined(_WIN32)", [
+        "stream_handle",
+    ])
+    # M12: asio — BOOST_ASIO_HAS_FILE-gated file surface (windows-random-
+    # access-handle / io_uring only; same guard family as the M11 cobalt.inc
+    # file guards) and the internal-linkage unmentionable placeholders
+    # (same drop as the M11 graph.inc ones).
+    guard_entity_lines("src/gen_exports/asio.inc", "defined(BOOST_ASIO_HAS_FILE)", [
+        "basic_file",
+        "basic_random_access_file",
+        "basic_stream_file",
+        "file_base",
+        "random_access_file",
+        "stream_file",
+    ])
+    # Windows-only asio detail surface in the asio module face itself — the
+    # same guard list the M11 cobalt.inc guards carry (IOCP/file backends,
+    # winsock init, APC, win_* family, and the select-reactor machinery that
+    # POSIX asio does not instantiate; null_reactor/select_reactor et al.
+    # self-guard empty on the epoll/kqueue paths).
+    guard_entity_lines("src/gen_exports/asio.inc", "defined(_WIN32)", [
+        "apc_function",
+        "calculate_hash_value",
+        "random_access_handle",
+        "stream_handle",
+        "fd_set_adapter",
+        "hash_map",
+        "null_reactor",
+        "select_reactor",
+        "null_signal_blocker",
+        "socket_select_interrupter",
+        "reactor_op_queue",
+        "win_event",
+        "win_fd_set_adapter",
+        "win_global",
+        "win_global_impl",
+        "win_iocp_file_service",
+        "win_iocp_handle_read_op",
+        "win_iocp_handle_service",
+        "win_iocp_handle_write_op",
+        "win_iocp_io_context",
+        "win_iocp_null_buffers_op",
+        "win_iocp_operation",
+        "win_iocp_overlapped_ptr",
+        "win_iocp_serial_port_service",
+        "win_iocp_socket_accept_op",
+        "win_iocp_socket_connect_op",
+        "win_iocp_socket_connect_op_base",
+        "win_iocp_socket_move_accept_op",
+        "win_iocp_socket_recv_op",
+        "win_iocp_socket_recvfrom_op",
+        "win_iocp_socket_recvmsg_op",
+        "win_iocp_socket_send_op",
+        "win_iocp_socket_service",
+        "win_iocp_socket_service_base",
+        "win_iocp_thread_info",
+        "win_iocp_wait_op",
+        "win_iocp_overlapped_op",
+        "win_object_handle_service",
+        "win_mutex",
+        "win_static_mutex",
+        "win_thread",
+        "win_thread_base",
+        "win_thread_function",
+        "winsock_init",
+        "winsock_init_base",
+        "basic_object_handle",
+        "basic_overlapped_handle",
+        "basic_random_access_handle",
+        "basic_stream_handle",
+        "object_handle",
+        "overlapped_handle",
+        "overlapped_ptr",
+        "complete_iocp_accept",
+        "complete_iocp_connect",
+        "complete_iocp_recv",
+        "complete_iocp_recvfrom",
+        "complete_iocp_recvmsg",
+        "complete_iocp_send",
+        "msghdr",
+    ])
+    for name in ["unmentionable", "unmentionable_type"]:
+        patch("src/gen_exports/multiprecision.inc",
+              f"  using boost::multiprecision::detail::{name};\n",
+              f"  // M12: {name} dropped — no external linkage (multiprecision detail\n"
+              f"  // placeholder); gcc refuses the export.\n",
+              required=False)
+
+    # M12: beast — the mingw snapshot's face carries the win32 file backend
+    # (beast::file_win32, detail::win32_* helpers, http::detail win32 overwrite
+    # operators) that POSIX beast never declares (it takes file_posix).
+    guard_entity_lines("src/gen_exports/beast.inc", "defined(_WIN32)", [
+        "file_win32",
+        "set_file_pointer_ex",
+        "win32_unicode_path",
+        "highPart",
+        "lowPart",
+        "make_win32_error",
+        "null_lambda",
+        "run_write_some_win32_op",
+        "write_some_win32_op",
+        "basic_dstream",
+        "dstream_buf",
+    ])
 
     # M9: align — detail::alignment_of is config-selected by
     # boost/align/alignment_of.hpp: `using std::alignment_of;` (cxx11 branch)

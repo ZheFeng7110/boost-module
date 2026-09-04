@@ -49,12 +49,15 @@
 
 #include <boost/parameter/keyword.hpp>
 
+// boost-module M12 vendor patch: anonymous namespace -> inline constexpr.
+// The TU-local keyword objects are referenced from module faces (e.g. BGL
+// keywords in boost.graph); when a module CMI and a consumer GMF both carry
+// the _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
+// print_helper family). An inline constexpr reference keeps the spelling and
+// merges the definitions.
 #define BOOST_PARAMETER_NAME_KEYWORD(tag_namespace, tag, name)               \
-    namespace                                                                \
-    {                                                                        \
-        ::boost::parameter::keyword<tag_namespace::tag> const& name          \
-            = ::boost::parameter::keyword<tag_namespace::tag>::instance;     \
-    }
+    inline constexpr ::boost::parameter::keyword<tag_namespace::tag> const& name \
+        = ::boost::parameter::keyword<tag_namespace::tag>::instance;
 /**/
 
 #define BOOST_PARAMETER_BASIC_NAME(tag_namespace, tag, qualifier, name)      \

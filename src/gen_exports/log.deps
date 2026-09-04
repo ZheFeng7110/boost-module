@@ -10,6 +10,7 @@ boost.io
 boost.iterator
 boost.move
 boost.mp11
+boost.numeric
 boost.optional
 boost.property_tree
 boost.range

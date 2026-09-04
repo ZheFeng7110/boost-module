@@ -29,7 +29,12 @@
 
 namespace boost { namespace numeric { namespace ublas {
 
-namespace detail { namespace /*<unnamed>*/ {
+// boost-module M12 vendor patch: unnamed -> named namespace. The trait
+// templates here (has_size_type/vector_size_type/matrix_size_type/
+// size_by_*_impl) appear in the return types of the exported function
+// templates size()/... — an anonymous namespace makes them TU-local and
+// gcc hard-errors "exposes TU-local entity" on the module face.
+namespace detail {
 
 /// Define a \c has_size_type trait class.
 BOOST_MPL_HAS_XXX_TRAIT_DEF(size_type)
@@ -272,7 +277,7 @@ struct size_by_tag_impl<TagT, CategoryT, unknown_orientation_tag>: size_by_tag_i
     // Empty
 };
 
-}} // Namespace detail::<unnamed>
+} // Namespace detail
 
 
 /**

@@ -1,7 +1,7 @@
 boost.assert
-boost.config
 boost.core
 boost.io
 boost.iterator
+boost.numeric
 boost.throw_exception
 boost.type_traits

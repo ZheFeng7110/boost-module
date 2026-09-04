@@ -1,13 +1,10 @@
 boost.assert
 boost.config
-boost.container
 boost.core
-boost.intrusive
-boost.move
+boost.interprocess
 boost.mp11
 boost.multi_index
 boost.smart_ptr
 boost.throw_exception
 boost.type_traits
 boost.unordered
-boost.winapi

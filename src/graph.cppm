@@ -99,9 +99,9 @@ export import boost.assert;
 export import boost.bimap;
 export import boost.concept_check;
 export import boost.config;
-export import boost.container;
 export import boost.core;
 export import boost.function;
+export import boost.geometry;
 export import boost.integer;
 export import boost.iterator;
 export import boost.lexical_cast;
@@ -109,21 +109,19 @@ export import boost.math;
 export import boost.move;
 export import boost.mp11;
 export import boost.multi_index;
+export import boost.numeric;
 export import boost.optional;
 export import boost.property_map;
 export import boost.property_tree;
 export import boost.random;
 export import boost.range;
-export import boost.rational;
 export import boost.serialization;
 export import boost.smart_ptr;
 export import boost.throw_exception;
-export import boost.tokenizer;
 export import boost.tuple;
 export import boost.type_traits;
 export import boost.unordered;
 export import boost.utility;
-export import boost.variant;
 
 #include "gen_exports/graph.inc"
 

@@ -76,7 +76,22 @@ LIBS_T2 = [
     "graph", "iostreams", "log", "math", "nowide", "process",
     "random", "serialization", "test", "timer", "type_erasure", "wave",
 ]
-TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2
+# M12 T1b (boost-mcpp-all-libs-features-plan.md §2/§4): heavy-template
+# header-only opt-in libraries. All twelve ship no src/ TU (verified:
+# header-only upstream too), so their features are module-interface-only.
+# opt-in: NOT in DEFAULT_CANDIDATES (plan §5.2 keeps the lean 18-lib core).
+# asio lands here as a module of its own (its detail surface was already
+# reachable through cobalt/process since M11, guarded by WIN32_LEAN_AND_MEAN
+# in CLANG_ARGS). compute/mysql/redis moved to T4 (user decision 2026-09-03):
+# their core surfaces hard-require external SDK headers (OpenCL / OpenSSL)
+# that are absent from the vendored tree — same boundary as M13's
+# external-dependency libraries.
+LIBS_T1B = [
+    "accumulators", "asio", "beast", "geometry", "gil",
+    "hana", "interprocess", "mqtt5", "multiprecision", "numeric",
+    "polygon", "qvm",
+]
+TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2 + LIBS_T1B
 
 # M10 T3 (boost-mcpp-all-libs-features-plan.md §2): macro-driven include-only
 # libraries — no module, no feature, no build work (user decision §5.3). Their
@@ -89,6 +104,16 @@ LIBS_T3 = [
     "preprocessor", "mpl", "fusion", "proto", "spirit", "xpressive",
     "lambda", "lambda2", "bind", "typeof", "vmd", "phoenix", "parameter",
     "metaparse", "function_types", "tti", "local_function", "msm", "foreach",
+]
+# M13 T4 (boost-mcpp-all-libs-features-plan.md §2/§4): external-dependency /
+# asm libraries — no module without the external SDK (M13 milestone).
+# M12 addition (user decision 2026-09-03): compute (every real header includes
+# CL/cl.h — OpenCL SDK), mysql + redis (boost/mysql.hpp / boost/redis.hpp and
+# the connection core hard-require OpenSSL) — moved out of the T1b batch.
+LIBS_T4 = [
+    "mpi", "python", "parameter_python", "graph_parallel", "locale",
+    "context", "fiber", "coroutine",
+    "compute", "mysql", "redis",
 ]
 # M9 downgrades to include-only (plan §2 note + 2026-08-17 M9 doc §1): pure
 # macro libs (predef: .h only; static_assert: module name is a keyword) and

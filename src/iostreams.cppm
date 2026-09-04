@@ -6,10 +6,8 @@ module;
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/iostreams/filter/counter.hpp>
-#include <boost/iostreams/filter/grep.hpp>
+#include <boost/iostreams/filter/line.hpp>
 #include <boost/iostreams/filter/newline.hpp>
-// M11: filter/regex.hpp curated out of the GMF — the cpp_regex_traits
-// abi-tag streaming bug (gcc 16.1); consumers include it themselves.
 #include <boost/iostreams/filter/stdio.hpp>
 #include <boost/iostreams/filter/symmetric.hpp>
 #include <boost/iostreams/filter/test.hpp>
@@ -26,10 +24,7 @@ export module boost.iostreams;
 export import boost.assert;
 export import boost.config;
 export import boost.core;
-export import boost.function;
 export import boost.random;
-// M11: stale boost.regex import removed with filter/{regex,grep}.hpp
-// curation (gcc 16.1 cpp_regex_traits abi-tag streaming bug).
 export import boost.smart_ptr;
 export import boost.throw_exception;
 export import boost.type_traits;

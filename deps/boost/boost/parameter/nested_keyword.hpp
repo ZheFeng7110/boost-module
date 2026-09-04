@@ -51,11 +51,11 @@
             >::instance;                                                     \
         typedef BOOST_PP_CAT(name, _)<> name;                                \
     }                                                                        \
-    namespace                                                                \
-    {                                                                        \
-        ::boost::parameter::keyword<tag_namespace::name> const& name         \
+    /* boost-module M12 vendor patch: anonymous namespace -> inline constexpr */ \
+    /* (gcc same-mangled symbol collision, M11 doc 7.4 family; named inline) */ \
+    /* merges the definitions; spelling and semantics are unchanged.          */ \
+        inline constexpr ::boost::parameter::keyword<tag_namespace::name> const& name         \
             = ::boost::parameter::keyword<tag_namespace::name>::instance;    \
-    }
 /**/
 #else   // !defined(BOOST_PARAMETER_CAN_USE_MP11)
 #define BOOST_PARAMETER_NESTED_KEYWORD_AUX(tag_namespace, q, name, alias)    \
@@ -88,11 +88,11 @@
             >::instance;                                                     \
         typedef BOOST_PP_CAT(name, _)<> name;                                \
     }                                                                        \
-    namespace                                                                \
-    {                                                                        \
-        ::boost::parameter::keyword<tag_namespace::name> const& name         \
+    /* boost-module M12 vendor patch: anonymous namespace -> inline constexpr */ \
+    /* (gcc same-mangled symbol collision, M11 doc 7.4 family; named inline) */ \
+    /* merges the definitions; spelling and semantics are unchanged.          */ \
+        inline constexpr ::boost::parameter::keyword<tag_namespace::name> const& name         \
             = ::boost::parameter::keyword<tag_namespace::name>::instance;    \
-    }
 /**/
 #endif  // BOOST_PARAMETER_CAN_USE_MP11
 

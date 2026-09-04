@@ -6,6 +6,7 @@ module;
 export module boost.yap;
 
 export import boost.assert;
+export import boost.hana;
 export import boost.type_index;
 
 #include "gen_exports/yap.inc"

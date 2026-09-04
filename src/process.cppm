@@ -37,6 +37,7 @@ module;
 
 export module boost.process;
 
+export import boost.asio;
 export import boost.assert;
 export import boost.config;
 export import boost.core;

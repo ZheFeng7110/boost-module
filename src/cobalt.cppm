@@ -22,7 +22,7 @@ module;
 
 export module boost.cobalt;
 
-export import boost.align;
+export import boost.asio;
 export import boost.assert;
 export import boost.callable_traits;
 export import boost.config;
@@ -31,7 +31,6 @@ export import boost.intrusive;
 export import boost.mp11;
 export import boost.smart_ptr;
 export import boost.system;
-export import boost.throw_exception;
 export import boost.variant2;
 
 #include "gen_exports/cobalt.inc"

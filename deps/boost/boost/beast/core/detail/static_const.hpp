@@ -35,12 +35,14 @@ struct static_const
 template<typename T>
 constexpr T static_const<T>::value;
 
+// boost-module M12 vendor patch: anonymous namespace -> inline constexpr.
+// The TU-local variable is referenced from the module face; when a beast CMI
+// and a consumer GMF (mqtt5 etc.) both carry the _GLOBAL__N_1 copy, gcc emits
+// the same-mangled symbol twice (M11 §7.4 print_helper family). An inline
+// constexpr variable keeps the spelling and merges the definitions.
 #define BOOST_BEAST_INLINE_VARIABLE(name, type) \
-    namespace \
-    { \
-        constexpr auto& name = \
-            ::boost::beast::detail::static_const<type>::value; \
-    }
+    inline constexpr auto& name = \
+        ::boost::beast::detail::static_const<type>::value;
 
 } // detail
 } // beast

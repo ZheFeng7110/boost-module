@@ -13,17 +13,14 @@ export module boost.flyweight;
 
 export import boost.assert;
 export import boost.config;
-export import boost.container;
 export import boost.core;
-export import boost.intrusive;
-export import boost.move;
+export import boost.interprocess;
 export import boost.mp11;
 export import boost.multi_index;
 export import boost.smart_ptr;
 export import boost.throw_exception;
 export import boost.type_traits;
 export import boost.unordered;
-export import boost.winapi;
 
 #include "gen_exports/flyweight.inc"
 

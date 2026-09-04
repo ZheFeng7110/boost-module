@@ -5,7 +5,8 @@
 > 本次范围: 全部 155 个库的接入方案 + mcpp features 选择性构建; 用户决策记录于 §5
 > 进度: **M8 done (2026-08-15)** — features 基建落地, 27 库全部迁入 feature, build.mcpp 动态汇总
 > 后续: M9 done (2026-08-17, T1a 58 库) · M10 done (2026-08-30, T3 边界确认) ·
-> M11 done (2026-08-30, T2 18 库模块 + exception 降级 include-only) — 详见各设计文档
+> M11 done (2026-08-30, T2 18 库模块 + exception 降级 include-only) ·
+> M12 done (2026-09-05, T1b 12 库模块; compute/mysql/redis 移交 M13) — 详见各设计文档
 
 ## 0. 目标
 
@@ -195,9 +196,24 @@ boost.boost = { path = "..", features = ["all"] }
   test.m.o (上游 nfp 匿名命名空间 TU-local 暴露, 已知限制 §6.5)
 - 设计文档: `.agents/docs/2026-08-30-m11-t2-compiled-libs.md`
 
-### M12 — 重型模板库 (T1b, ~15 库, opt-in)
-- 巨型 GFM (asio/hana/geometry/gil 等) 编译时/内存门禁; 裁剪与拆分策略 (M2 §11 自动裁剪可能不够 → curated GFM 拆分)
-- 验证: 单库 gate 通过 + smoke; 若某库模块化不可行 (编译 10 分钟级/内存爆炸), 降级为 include-only 并记录
+### M12 — 重型模板库 (T1b, ~15 库, opt-in) ✅ 已完成 (2026-09-05)
+- ✅ 12 库接入为模块 (accumulators/asio/beast/geometry/gil/hana/interprocess/
+  mqtt5/multiprecision/numeric/polygon/qvm),共 115 模块;全部 header-only,
+  feature 面 = 模块接口;12 库 smoke 全 import
+- ✅ compute/mysql/redis 移交 M13 (核心面硬性要求 OpenCL/OpenSSL SDK 头,
+  用户决策;T4 名单 8→11 库)
+- ✅ clang 2^31 源位置上限:117 个 CMI 聚合 (`--features all`) 爆
+  "ran out of source locations" — CI 全量门禁改 A/B 两组 (M11 集 / T1b 集);
+  `features=["all"]` 语义保留并记录限制
+- ✅ 默认闭包 34→36 (numeric::conversion 实体归属 boost.numeric,
+  date_time.deps +numeric);boost.asio/boost.multiprecision first-wins 自立,
+  process/cobalt/graph 对应收割行回收
+- ✅ Vendored 修补 5 族 9 文件 (匿名命名空间撞名/TU-local 导出:ublas size、
+  asio prefer/query/require/require_concept、beast INLINE_VARIABLE 宏、
+  mqtt5 async_traits lambda、parameter keyword 对象 — 详见设计文档 §6)
+- ✅ 验证: llvm/msvc 默认 build + 138/138 测试 + A/B 双组 build/test +
+  examples 全绿;gcc 16.1 musl 交叉默认 + A/B 双组 build 全绿
+- 设计文档: `.agents/docs/2026-09-05-m12-t1b-heavy-template-libs.md`
 
 ### M13 — 外部依赖/asm 库 (T4, 8 库)
 - context/fiber/coroutine: 评估 per-platform `.S` + build.mcpp os-gated 注入 (M8 的 build.mcpp 基建复用)

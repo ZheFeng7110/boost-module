@@ -61,7 +61,13 @@ tracking_executor(const Handler& handler, const DfltExecutor& ex) {
 
 // tls handshake
 
-constexpr auto handshake_handler_t = [](error_code) {};
+// boost-module M12 vendor patch: lambda closure types are TU-local, so the
+// exported *_sig detection aliases "expose TU-local entity" on gcc. Named
+// struct tags keep the detection role (decltype(X) == the tag type) with
+// external linkage.
+struct handshake_handler_t {
+  void operator()(error_code) const {}
+};
 
 template <typename T>
 using tls_handshake_t = typename T::handshake_type;
@@ -77,7 +83,7 @@ using async_tls_handshake_sig = decltype(
 template <typename T>
 constexpr bool has_tls_handshake = boost::is_detected<
     async_tls_handshake_sig, T, tls_handshake_type_of<T>,
-    decltype(handshake_handler_t)
+    handshake_handler_t
 >::value;
 
 // websocket handshake
@@ -91,7 +97,7 @@ template <typename T>
 constexpr bool has_ws_handshake = boost::is_detected<
     async_ws_handshake_sig, T,
     std::string_view, std::string_view,
-    decltype(handshake_handler_t)
+    handshake_handler_t
 >::value;
 
 // next layer
@@ -205,11 +211,13 @@ using async_write_sig = decltype(
     std::declval<T&>().async_write(std::declval<Ts>()...)
 );
 
-constexpr auto write_handler_t = [](error_code, size_t) {};
+struct write_handler_t {
+  void operator()(error_code, std::size_t) const {}
+};
 
 template <typename T, typename B>
 constexpr bool has_async_write = boost::is_detected<
-    async_write_sig, T, B, decltype(write_handler_t)
+    async_write_sig, T, B, write_handler_t
 >::value;
 
 template <

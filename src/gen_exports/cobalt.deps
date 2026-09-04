@@ -1,4 +1,4 @@
-boost.align
+boost.asio
 boost.assert
 boost.callable_traits
 boost.config
@@ -7,5 +7,4 @@ boost.intrusive
 boost.mp11
 boost.smart_ptr
 boost.system
-boost.throw_exception
 boost.variant2

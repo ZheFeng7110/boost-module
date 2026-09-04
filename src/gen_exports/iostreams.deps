@@ -1,8 +1,7 @@
 boost.assert
 boost.config
 boost.core
-boost.function
-boost.random
+boost.random
 boost.smart_ptr
 boost.throw_exception
 boost.type_traits
