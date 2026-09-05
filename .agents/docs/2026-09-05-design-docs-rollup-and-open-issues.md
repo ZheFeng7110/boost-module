@@ -98,7 +98,7 @@
 | 3 | gcc 消费者自定义异常 clone_impl thunk (§3.1#2) 在 CI 覆盖路径之外 | 记录在案, 未解 | M6 §5 |
 | 4 | linux-gnu (glibc) 腿未本地验证 (以 musl 交叉代表 POSIX 面); macOS arm64 的 epoll→select_reactor 守卫为条件推定 | 依赖 CI 原生腿 | M11 §7.3 |
 | 5 | 真 MSVC (cl) 从未验证 — CI windows 腿是 clang-msvc 风味 | M0 起一直如此, 双编译器 CI 兜底 | M0 风险, M2 §2 |
-| 6 | mcpp macOS build.mcpp host-link dyld `__ZdaPv` 缺陷 (上游 hostflags.cppm macOS 分支漏 lld) | 2026-08-16 分析后, 现 mcpp 2026.8.29.1 下 macOS 腿持续绿, **但仓库内无解除方式的记录** (上游修复? 版本规避?) — 建议补记, 避免降级 mcpp 时复发 | 2026-08-16 分析文档 §7 |
+| 6 | mcpp macOS build.mcpp host-link dyld `__ZdaPv` 缺陷 (上游 hostflags.cppm macOS 分支漏 lld) | **已解 (2026-09-05 用户确认): mcpp 上游已修复, 修复版本号未记录, 但大于 CI 当前 pinned 的 2026.8.29.1** —— 即 pinned 版本只要 ≥ 修复版即不受影响; 2026-08-16 分析文档保留作根因存档 | 2026-08-16 分析文档 §7 |
 
 ### 3.6 范围边界 (按决策排除, 非缺陷)
 
@@ -136,8 +136,9 @@
 
 1. **高**: §3.7#1 vendored 修补回放脚本化 —— 这是唯一会因一条常规命令
    (`import_boost.py`) 静默丢失正确性修复的项。
-2. **高**: §3.5#6 补记 macOS build.mcpp 缺陷的解除方式 (对照 mcpp 上游 changelog),
-   避免未来 pinned 版本回退时复发。
+2. ~~§3.5#6 补记 macOS build.mcpp 缺陷的解除方式~~ — 已补记 (2026-09-05): 上游
+   mcpp 已修复, 修复版本 > CI pinned 2026.8.29.1。后续仅当考虑把 pinned 版本
+   **降级**时需先确认修复版号; 维持现状无动作。
 3. **中**: §3.1#4 exception 重新接入 —— 每逢 gcc 版本升级 (CI linux-gcc 腿) 时
    用 tests/exception.cpp 试探 pendings bug 是否已修。
 4. **中**: §3.2#1 gcc 侧 `--features all` 聚合实测 (M12 记录"未测"), 若 gcc 无
