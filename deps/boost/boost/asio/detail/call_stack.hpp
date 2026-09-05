@@ -116,7 +116,7 @@ private:
 };
 
 template <typename Key, typename Value>
-tss_ptr<typename call_stack<Key, Value>::context>
+inline tss_ptr<typename call_stack<Key, Value>::context>
 call_stack<Key, Value>::top_;
 
 } // namespace detail

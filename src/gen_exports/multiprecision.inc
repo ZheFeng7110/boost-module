@@ -703,7 +703,13 @@ export namespace boost { namespace multiprecision { namespace detail {
   using boost::multiprecision::detail::abs;
   using boost::multiprecision::detail::abs_funct;
   using boost::multiprecision::detail::add_immediates;
+#if defined(BOOST_MP_HAS_IMMINTRIN_H)
+  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares addcarry_limb
+  // only under BOOST_MP_HAS_IMMINTRIN_H (the adc intrinsics dispatch — clang on
+  // macOS arm64 unsets the macro because __builtin_ia32_addcarryx_u64 is a
+  // gcc-only builtin and BOOST_GCC is not defined).
   using boost::multiprecision::detail::addcarry_limb;
+#endif
   using boost::multiprecision::detail::arg_type;
   using boost::multiprecision::detail::assign_bits;
   using boost::multiprecision::detail::backend_type;
@@ -895,7 +901,11 @@ export namespace boost { namespace multiprecision { namespace detail {
   using boost::multiprecision::detail::scoped_target_precision;
   using boost::multiprecision::detail::shift_left;
   using boost::multiprecision::detail::shift_right;
+#if defined(BOOST_MP_HAS_IMMINTRIN_H)
+  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares subborrow_limb
+  // only under BOOST_MP_HAS_IMMINTRIN_H (see addcarry_limb guard for rationale).
   using boost::multiprecision::detail::subborrow_limb;
+#endif
   using boost::multiprecision::detail::subtract_immediates;
   using boost::multiprecision::detail::terminal;
   using boost::multiprecision::detail::transcendental_reduction_type;
