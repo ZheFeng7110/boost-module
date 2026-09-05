@@ -18,8 +18,8 @@ is green by default, and `--features all` / per-group runs remain additive).
 .agents/docs/2026-08-15-m8-mcpp-features-infra.md §1.1/§2.
 
 Usage:
-    uv run python scripts/gen_features.py          # splice mcpp.toml + features.lst
-    uv run python scripts/gen_features.py --check  # verify committed output is current
+    uv run scripts/gen_features.py          # splice mcpp.toml + features.lst
+    uv run scripts/gen_features.py --check  # verify committed output is current
 """
 
 import json
@@ -35,7 +35,7 @@ FEATURES_LST = ROOT / "scripts" / "features.lst"
 
 # The full module-library list — derived from boost_common.TARGET_LIBS (which
 # knows the tier tables). boost_common has no hard dependency on libclang at
-# import time, so plain `uv run python scripts/gen_features.py` works.
+# import time, so plain `uv run scripts/gen_features.py` works.
 sys.path.insert(0, str(ROOT / "scripts"))
 try:
     import boost_common as bc

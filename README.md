@@ -108,10 +108,11 @@ pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libc
 uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs.json
 uv run scripts/gen_exports.py                        # 生成全部 85 库的导出列表
 uv run scripts/gen_exports.py --libs optional system --emit-cppm
-uv run scripts/reapply_hand_edits.py                 # 重生成后重放 M3/M4/M9 手编 (.cppm 偏离 + .inc 平台守卫)
+uv run scripts/reapply_hand_edits.py                 # 重生成后重放手编 (.cppm 偏离 + .inc 平台守卫 + deps/boost vendored 修补)
 uv run scripts/gen_features.py                       # 重新生成 mcpp.toml 的 [features] 块 + scripts/features.lst
 uv run scripts/gen_audit.py                          # static-inline / 内部链接审计
 uv run scripts/import_boost.py                       # 重新导入官方 boost tarball
+uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 修补, 重跑本脚本回放 (必须!)
 ```
 
 > 不用 uv 时照常 `python scripts/xxx.py` 运行即可（shebang 保持普通 `#!/usr/bin/env python3`，
@@ -133,6 +134,9 @@ uv run scripts/import_boost.py                       # 重新导入官方 boost 
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
   （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
+  同时回放 `deps/boost/` 下的 vendored 头修补（M5 B' / M9 / M11 / M12，
+  共 22 个修补文件 + 1 个新增文件）—— `import_boost.py` 重新 vendoring 会把
+  这些文件还原成上游原貌，重导入后必须重跑本脚本（rollup 文档 §3.7#1）。
 
 ## 分支与 Tag 命名
 

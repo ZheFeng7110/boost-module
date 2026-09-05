@@ -112,7 +112,7 @@
 
 | # | 问题 | 现状 | 建议 | 出处 |
 |---|---|---|---|---|
-| 1 | **vendored 头修补无自动回放**: M5 B' (regex 2 文件 + system extras)、M11 §6.9 (6 处)、M11 §7.4 (+2 处)、M12 §6 (5 族 9 文件) 直接改 `deps/boost/boost/**`; 重跑 `import_boost.py` 会全部还原上游原貌, 而 `reapply_hand_edits.py` **只覆盖 .inc/.cppm, 不回放 vendored 修补** (已核实脚本无此逻辑) | 仅 git 历史保护 | 把 vendored 修补纳入 reapply (或 import_boost 后置钩子), 并在 README 重生成流程中显式标注 | M5 §6, M11 §6.9, M12 §6 |
+| 1 | ~~**vendored 头修补无自动回放**~~ — **已解 (2026-09-05)**: `reapply_hand_edits.py` 新增 `reapply_vendored_patches()` (含 `ensure_file()` 助手), 幂等回放 `deps/boost/` 全部 vendored 修补 (M5 B' 4 文件、M9 1、M11 7、M12 9、M11 CI fix 2, 共 22 个修补文件 + log mc.exe 桩 1 个新增文件); 锚点经仿真验证: 从 import 提交 (abef08a6) 原貌重放可逐字节复现 HEAD 提交态。README 重生成流程已标注 "`import_boost.py` 后必须重跑 reapply"。**遗留: 新增 vendored 修补时需手工向该函数登记锚点** | 已纳入 reapply_hand_edits.py (main() 首步) | M5 §6, M11 §6.9, M12 §6 |
 | 2 | .inc 平台守卫 / .cppm 手编在重生成后丢失 | reapply_hand_edits.py 已可一键重放 (幂等), 但每轮接入都新增锚点, required 锚点漂移需人工维护 (M12 已出现 required→best-effort 降级) | 保持现状 + 每次重生成后 `gen_features.py --check` | M3 §8, M4 §10, M12 §4 |
 | 3 | mcpp 工具链不发 GNU depfile: 编辑 .inc 等 purview 内 include 文件后不重建 | 必须 `mcpp clean --bmi-cache` (纪律性约束, 忘记则静默用陈旧 BMI) | 上游修 depfile 前无解, 持续遵守 | M6 §3.1/§5 |
 | 4 | `[build].sources` 不可清空 (mcpp `src/**` 推断使 test 模式分组失效) | base 保留全部 per-lib glob, feature 声明 gating | 遵守现状约定 (mcpp.toml 注释已标) | M8 §1.1/§6 |
@@ -134,8 +134,9 @@
 
 ## 4. 复核建议 (销账优先级)
 
-1. **高**: §3.7#1 vendored 修补回放脚本化 —— 这是唯一会因一条常规命令
-   (`import_boost.py`) 静默丢失正确性修复的项。
+1. ~~**高**: §3.7#1 vendored 修补回放脚本化~~ — 已解 (2026-09-05): `reapply_hand_edits.py`
+   新增 `reapply_vendored_patches()`, 从上游原貌幂等回放全部 23 处 vendored 改动,
+   端到端验证与 HEAD 逐字节一致 (见 §3.7#1 现状列)。
 2. ~~§3.5#6 补记 macOS build.mcpp 缺陷的解除方式~~ — 已补记 (2026-09-05): 上游
    mcpp 已修复, 修复版本 > CI pinned 2026.8.29.1。后续仅当考虑把 pinned 版本
    **降级**时需先确认修复版号; 维持现状无动作。
