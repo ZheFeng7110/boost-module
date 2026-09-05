@@ -126,7 +126,7 @@ jobs:
         shell: bash
         run: mcpp test
 
-      - name: Build all libraries (group A: M11 set)
+      - name: "Build all libraries (group A: M11 set)"
         shell: bash
         run: mcpp build --features "$BOOST_GROUP_A"
 
@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: mcpp test --features "$BOOST_GROUP_A"
 
-      - name: Build all libraries (group B: T1b heavy set)
+      - name: "Build all libraries (group B: T1b heavy set)"
         shell: bash
         run: mcpp build --features "$BOOST_GROUP_B"
 
@@ -147,4 +147,3 @@ jobs:
         run: |
           cd examples
           mcpp run
- 
