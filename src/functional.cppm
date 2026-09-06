@@ -19,7 +19,6 @@ export import boost.assert;
 export import boost.config;
 export import boost.container_hash;
 export import boost.core;
-export import boost.function;
 export import boost.type_traits;
 export import boost.utility;
 

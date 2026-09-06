@@ -1,15 +1,12 @@
-// boost.openmethod smoke — open methods (macros are include-only; mixing
-// include + import is standard-compliant, but gcc 16 ODR-conflicts on it —
-// see describe.cpp — so the import is skipped on gcc)
+// boost.openmethod smoke — pure include (C1 downgrade, 2026-09-06: the module
+// is gone; the public API is the BOOST_OPENMETHOD* macro family — M10 rule —
+// and gcc 16 ODR-conflicts on include+import mixing, see describe.cpp / the
+// C1 plan §1.1). initialize()/finalize() live in a separate header the old
+// module GMF included; include it explicitly here.
 #include "test_assert.hpp"
 #include <cassert>
 #include <string>
-#if !defined(__GNUC__) || defined(__clang__)
-import boost.openmethod;
-#endif
 #include <boost/openmethod.hpp>
-// gcc: the import is skipped above (include+import ODR conflict), and
-// initialize()/finalize() live in a separate header the module GMF includes.
 #include <boost/openmethod/initialize.hpp>
 
 struct A {

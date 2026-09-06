@@ -30,9 +30,13 @@ AUDIT_DIR = ROOT / "target" / "gen" / "audit"
 
 # M3 header-only libraries, then M4 compiled libraries (plan order), then the
 # M9 T1a batch (regular header-only libs, no src/ TU, no public macro surface).
+# C1 downgrade (2026-09-06): scope_exit is include-only now — its public API
+# is the BOOST_SCOPE_EXIT_* macro family (macros never cross module
+# boundaries, M10 rule), and gcc 16.1 ODR-conflicts on include+import mixing
+# (describe.cpp precedent), so consumers #include <boost/scope_exit.hpp>.
 LIBS_M3 = [
     "optional", "variant", "variant2", "any", "core", "container_hash",
-    "mp11", "static_string", "scope", "scope_exit", "type_traits",
+    "mp11", "static_string", "scope", "type_traits",
     "algorithm", "iterator", "range", "io", "rational", "endian",
     "tuple", "system",
 ]
@@ -51,14 +55,19 @@ LIBS_M4 = [
 # boost::units::si::meter etc. — which a module cannot export via using-
 # declarations; include-only, recorded in the M9 doc), plus the T1b
 # heavy-template opt-in batch (M12) and the T2 compiled batch (M11).
+# C1 downgrade (2026-09-06): describe + openmethod moved to
+# LIBS_INCLUDE_ONLY_C1 — macro-body APIs (BOOST_DESCRIBE_* /
+# BOOST_OPENMETHOD_*, M10 boundary: macros never cross module boundaries);
+# gcc 16.1 ODR-conflicts on include+import mixing in the same TU, so the
+# module face forced consumers to pick one and the macro face won.
 LIBS_T1A = [
     "align", "array", "assert", "assign", "bimap", "bloom",
     "callable_traits", "circular_buffer", "compat", "concept_check",
-    "config", "convert", "crc", "decimal", "describe",
+    "config", "convert", "crc", "decimal",
     "dll", "dynamic_bitset", "flyweight", "format", "function",
     "functional", "hash2", "heap", "histogram", "icl",
     "integer", "intrusive", "leaf", "lexical_cast", "lockfree",
-    "logic", "move", "multi_array", "multi_index", "openmethod",
+    "logic", "move", "multi_array", "multi_index",
     "outcome", "parser", "pfr", "poly_collection", "pool",
     "property_map", "property_tree", "ptr_container", "ratio",
     "safe_numerics", "signals2", "smart_ptr", "sort", "statechart",
@@ -71,10 +80,11 @@ LIBS_T1A = [
 # the per-lib TU table: exclusions for external-library backends, per-OS dirs
 # and upstream CMake deviations). math has src/tr1 only (deprecated std::tr1
 # wrappers; upstream CMake is INTERFACE) — its feature ships no TU.
+# C1 downgrade (2026-09-06): log + test moved to LIBS_COMPILED_INCLUDE_ONLY.
 LIBS_T2 = [
     "atomic", "charconv", "cobalt", "container", "contract", "date_time",
-    "graph", "iostreams", "log", "math", "nowide", "process",
-    "random", "serialization", "test", "timer", "type_erasure", "wave",
+    "graph", "iostreams", "math", "nowide", "process",
+    "random", "serialization", "timer", "type_erasure", "wave",
 ]
 # M12 T1b (boost-mcpp-all-libs-features-plan.md §2/§4): heavy-template
 # header-only opt-in libraries. All twelve ship no src/ TU (verified:
@@ -127,6 +137,29 @@ LIBS_INCLUDE_ONLY_M9 = ["predef", "static_assert", "hof", "units"]
 # consumer. Explicit instantiations in the module TU do not dodge it. The API
 # is header-only, so consumers #include <boost/exception/all.hpp> (T3 rule).
 LIBS_INCLUDE_ONLY_M11 = ["exception"]
+# C1 downgrade to include-only (2026-09-06 usage-reclassification plan §1):
+# compiled libraries that keep a feature (their libs/<lib>/src TU globs still
+# ship and link) but lose the module interface — a new form: "compiled
+# include-only (feature without module)":
+#  - log: the gcc consumer face has long been unusable (M11 §7.4 — the
+#    exported basic_formatting_ostream operator<< instantiations collide with
+#    the consumer's own; the CMI/GMF name-family collisions of rollup §3.1#5
+#    are not fixed at the root), so tests already consumed it pure-include.
+#    Downgrading removes the three-compiler consumption mismatch.
+#  - test: macro-body API (BOOST_TEST_*) with the official compiled Unit Test
+#    Framework → dual-form consumption: with the `unit_test_framework` feature
+#    active the framework TUs link and the consumer owns main + the runner
+#    (BOOST_TEST_NO_MAIN + impl/unit_test_main.ipp); without it the library is
+#    the official header-only configuration (<boost/test/included/**>
+#    aggregate,自带 main). The two forms must never link together (the
+#    included aggregate and the framework TUs double-define the framework
+#    symbols, M11 §3) — tests/test_utf.cpp vs tests/test_included.cpp are
+#    gated on MCPP_FEATURE_UNIT_TEST_FRAMEWORK.
+# The feature names live in gen_features.py (test is renamed
+# `unit_test_framework` there, aligned with the upstream CMake target
+# boost_unit_test_framework); the internal keys here stay `log` / `test`
+# (COMPILED_TU_GLOBS keys, tests/test_utf.cpp naming).
+LIBS_COMPILED_INCLUDE_ONLY = ["log", "test"]
 
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at

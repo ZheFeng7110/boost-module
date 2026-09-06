@@ -7,15 +7,36 @@ the library's module import edges (read from src/gen_exports/<lib>.deps). The
 generator also keeps `[build].sources` (the union of every feature's globs) in
 sync — both are spliced between markers, so they cannot drift.
 
+C1 (2026-09-06, usage-reclassification plan §1.2/§2): compiled include-only
+libraries (boost_common.LIBS_COMPILED_INCLUDE_ONLY — log, test) keep a feature
+with their library TU globs but have NO `.cppm` (no module interface, no CMI
+to export). test's feature is renamed `unit_test_framework` (FEATURE_NAME_
+OVERRIDE, aligned with the upstream CMake target boost_unit_test_framework);
+the internal lib keys stay `log` / `test`. build.mcpp skips those features
+when generating the `import boost;` aggregate (no `export import` edge exists
+for a module-less feature).
+
 Why base keeps every per-lib glob: `mcpp test` (includeDevDeps) skips the DROP
 (only ADD runs), so the base `[build].sources` is what test mode compiles. If
 per-lib globs lived ONLY in features, the default `mcpp test` would not build
 the opt-in libraries and their tests would fail (plan §1.8 describes exactly
-this feature-only shape; M8 keeps the base globs so the full 27-lib test suite
-is green by default, and `--features all` / per-group runs remain additive).
+this feature-only shape; M8 keeps the base globs so the full test suite is
+green by default, and `--features all` / per-group runs remain additive).
 `mcpp build` (build mode) runs the DROP, so only active features' globs compile
 — that is where the default-features selection actually takes effect. See
 .agents/docs/2026-08-15-m8-mcpp-features-infra.md §1.1/§2.
+
+Exception — FEATURE_ONLY_SOURCES: the unit_test_framework TU globs are
+deliberately NOT put into the base set. In test mode the base compiles
+unconditionally and every TU links into every test program (no archive
+pull-on-demand), so the framework TUs and the official header-only aggregate
+(<boost/test/included/**>, tests/test_included.cpp) would double-define the
+framework symbols in one program (M11 §3 constraint: the two consumption
+forms must never link together). Feature-only sources compile only when the
+feature is active — in build AND test mode (M8 §1.1) — which makes the two
+test forms mutually exclusive exactly as the plan requires: default `mcpp
+test` runs the header-only form, `mcpp test --features unit_test_framework`
+runs the compiled form.
 
 Usage:
     uv run scripts/gen_features.py          # splice mcpp.toml + features.lst
@@ -35,20 +56,40 @@ FEATURES_LST = ROOT / "scripts" / "features.lst"
 
 # The full module-library list — derived from boost_common.TARGET_LIBS (which
 # knows the tier tables). boost_common has no hard dependency on libclang at
-# import time, so plain `uv run scripts/gen_features.py` works.
+# import time, so plain `uv run scripts/gen_features.py` works. The compiled
+# include-only libs (log, test — C1) are re-inserted at their former T2 slots
+# so the generated feature block stays diff-stable.
 sys.path.insert(0, str(ROOT / "scripts"))
 try:
     import boost_common as bc
-    LIBS = list(bc.TARGET_LIBS)
+    _T2_REINSERT = {"iostreams": "log", "serialization": "test"}
+    LIBS = []
+    for _lib in bc.TARGET_LIBS:
+        LIBS.append(_lib)
+        if _lib in _T2_REINSERT:
+            LIBS.append(_T2_REINSERT[_lib])
+    COMPILED_INCLUDE_ONLY = list(bc.LIBS_COMPILED_INCLUDE_ONLY)
 except Exception:
     LIBS = [
         "optional", "variant", "variant2", "any", "core", "container_hash",
-        "mp11", "static_string", "scope", "scope_exit", "type_traits",
+        "mp11", "static_string", "scope", "type_traits",
         "algorithm", "iterator", "range", "io", "rational", "endian",
         "tuple", "system",
         "filesystem", "regex", "thread", "chrono", "program_options",
         "stacktrace", "json", "url",
     ]
+    COMPILED_INCLUDE_ONLY = []
+
+# C1: feature-name overrides — the [features] table key (and features.lst
+# line) differs from the internal lib key. Internal keys (COMPILED_TU_GLOBS,
+# tests/test_utf.cpp naming) are unchanged; only the feature spelling follows
+# the upstream CMake target boost_unit_test_framework. There is no
+# `import boost.test` — the module is gone (compiled include-only).
+FEATURE_NAME_OVERRIDE = {"test": "unit_test_framework"}
+
+
+def feature_name(lib):
+    return FEATURE_NAME_OVERRIDE.get(lib, lib)
 
 # Default feature set = 18-lib closure (plan §3.2). The closure is computed from
 # .deps below and asserted to be closed before writing; this is the candidate list.
@@ -158,8 +199,10 @@ COMPILED_TU_GLOBS = {
     # links every TU into each test program, so they collide there (no archive
     # pull-on-demand in that mode). Consumers own main + the unit_test_main
     # runner (the runner comes from #including impl/unit_test_main.ipp with
-    # BOOST_TEST_NO_MAIN, cf. tests/test.cpp); all framework services are
-    # linked from the remaining TUs.
+    # BOOST_TEST_NO_MAIN, cf. tests/test_utf.cpp); all framework services are
+    # linked from the remaining TUs. C1: these TUs ship under the module-less
+    # unit_test_framework feature (FEATURE_ONLY_SOURCES — kept out of the
+    # base set so the included/* aggregate test can link without them).
     "test":             ["deps/boost/libs/test/src/compiler_log_formatter.cpp",
                          "deps/boost/libs/test/src/debug.cpp",
                          "deps/boost/libs/test/src/decorator.cpp",
@@ -188,9 +231,33 @@ COMPILED_TU_GLOBS = {
 # parser: its GMF includes boost/charconv.hpp only where std::from_chars is
 # unavailable (linux-llvm CI leg) — the mingw-generated .deps lacks the edge,
 # but the consumer-side link dependency is unconditional on that branch.
+# C1: log / test have no module, hence no .deps file — their implies are
+# hand-pinned to the module import edges their module TUs carried before the
+# downgrade (src/gen_exports/{log,test}.deps, deleted). The library TUs still
+# need these features' TU globs at link time (e.g. log → filesystem/thread/
+# chrono), so `--features log` / `--features unit_test_framework` must pull
+# them in build mode.
 EXTRA_IMPLIES = {
     "parser": ["charconv"],
+    "log": ["assert", "atomic", "config", "core", "date_time", "filesystem",
+            "integer", "intrusive", "io", "iterator", "move", "mp11",
+            "numeric", "optional", "property_tree", "range", "regex",
+            "smart_ptr", "system", "thread", "throw_exception", "type_index",
+            "type_traits", "utility", "variant", "winapi"],
+    "test": ["algorithm", "assert", "config", "core", "function", "iterator",
+             "smart_ptr", "type_traits", "utility"],
 }
+
+# C1: features whose TU globs are feature-ONLY — deliberately excluded from
+# the base [build].sources union. In test mode the base compiles
+# unconditionally and every TU links into every test program, so the
+# unit_test_framework TUs and the official header-only aggregate
+# (<boost/test/included/**>, consumed by tests/test_included.cpp) would
+# double-define the framework symbols when both land in one program (M11 §3).
+# Feature-only sources compile only when the feature is active (M8 §1.1),
+# making the two test consumption forms mutually exclusive. log's TUs stay in
+# the base: its consumers only #include headers, no aggregate conflict.
+FEATURE_ONLY_SOURCES = ["unit_test_framework"]
 
 # Per-lib private compile flags (feature `flags` = private per-TU, never
 # propagated to consumers — plan §3.1; was [build].flags in M4).
@@ -240,16 +307,26 @@ def deps_of(lib):
 
 
 def feature_sources(lib):
-    srcs = ["src/{}.cppm".format(lib)]
+    """Feature sources for a lib. Compiled include-only libs (log, test — C1)
+    ship their library TU globs but no `.cppm`: the module interface (and the
+    CMI it would produce) is gone."""
+    srcs = []
+    if lib not in COMPILED_INCLUDE_ONLY:
+        srcs.append("src/{}.cppm".format(lib))
     srcs.extend(COMPILED_TU_GLOBS.get(lib, ()))
     srcs.extend(EXTRAS.get(lib, ()))
     return srcs
 
 
 def all_sources():
-    """Union of every feature's sources = [build].sources."""
+    """Union of every feature's sources = [build].sources, minus the
+    FEATURE_ONLY_SOURCES exclusions (C1: unit_test_framework's framework TUs
+    must not compile unconditionally in test mode — see the docstring)."""
+    skip = {feature_name(lib) for lib in FEATURE_ONLY_SOURCES}
     seen, out = set(), []
     for lib in LIBS:
+        if feature_name(lib) in skip:
+            continue
         for g in feature_sources(lib):
             if g not in seen:
                 seen.add(g)
@@ -302,11 +379,12 @@ def render_toml_block():
 
     lines = [GEN_START]
     lines.append("[features]")
-    lines.append("default = [{}]".format(", ".join('"{}"'.format(l) for l in closure)))
+    lines.append("default = [{}]".format(
+        ", ".join('"{}"'.format(feature_name(l)) for l in closure)))
     lines.append("all = {{ implies = [{}] }}".format(
-        ", ".join('"{}"'.format(l) for l in LIBS)))
+        ", ".join('"{}"'.format(feature_name(l)) for l in LIBS)))
     for lib in LIBS:
-        lines.append("[features.{}]".format(lib))
+        lines.append("[features.{}]".format(feature_name(lib)))
         lines.append("  sources = [{}]".format(
             ", ".join('"{}"'.format(s) for s in feature_sources(lib))))
         if lib in FEATURE_FLAGS:
@@ -344,7 +422,11 @@ def write_committed():
                   render_sources_block())
     text = splice(text, GEN_START, GEN_END, render_toml_block())
     MCPP_TOML.write_text(text, encoding="utf-8", newline="\n")
-    FEATURES_LST.write_text("\n".join(LIBS) + "\n", encoding="utf-8", newline="\n")
+    # features.lst lists FEATURE names (build.mcpp consumes it; the module-less
+    # entries log/unit_test_framework are skipped there — no CMI to export).
+    feature_names = [feature_name(l) for l in LIBS]
+    FEATURES_LST.write_text("\n".join(feature_names) + "\n",
+                            encoding="utf-8", newline="\n")
     closure = default_closure(DEFAULT_CANDIDATES)
     print("wrote {}{} with {} features; default={} opt-in={}".format(
         MCPP_TOML, "" , len(LIBS), ",".join(closure),
@@ -373,7 +455,7 @@ def check_committed():
             print("DRIFT in {} block: run scripts/gen_features.py".format(name))
             ok = False
     lst = FEATURES_LST.read_text(encoding="utf-8").splitlines() if FEATURES_LST.exists() else []
-    if lst != LIBS:
+    if lst != [feature_name(l) for l in LIBS]:
         print("DRIFT in features.lst")
         ok = False
     return ok

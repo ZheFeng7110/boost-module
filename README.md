@@ -38,14 +38,17 @@
 ## 按库选择性构建 (M8 mcpp features + M9 全量接入)
 
 每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
-当前共 **85 个模块**（T0 27 + M9 T1a 58），hof/units/static_assert/predef 等
-宏/constexpr-对象 API 库保持 include-only（详见 M9 设计文档）。
+当前共 **112 个 feature** —— 110 个模块 feature（T0 26 + T1a 56 + T2 16 +
+T1b 12）+ 2 个**无模块 feature**（log、unit_test_framework，见下节）。
+describe / openmethod / scope_exit / log / test 已降级 include-only
+（C1, 2026-09-06），hof/units/static_assert/predef 等宏/constexpr-对象 API 库
+保持 include-only（详见 M9/C1 设计文档）。
 
-- **默认集** = 31 库闭包（`[features].default`，随模块 import 边自动增长）：
+- **默认集** = 37 库闭包（`[features].default`，随模块 import 边自动增长）：
   `mcpp build` / `mcpp test` 覆盖核心面（18 个原核心库 + config/assert/
   utility/move 等基建库）。
-- **opt-in 库**：其余 54 库需显式激活：`mcpp build --features <库,...>`。
-- **全量**：`mcpp build --features all`（85 模块全部编译）。
+- **opt-in 库**：其余 feature 需显式激活：`mcpp build --features <库,...>`。
+- **全量**：`mcpp build --features all`（全部 112 个 feature 编译）。
 
 消费者侧（path dep 用法）：
 
@@ -65,9 +68,9 @@ boost.boost = { path = "..", features = ["all"] }
 零激活时是合法空壳。详见
 [`.agents/docs/2026-08-15-m8-mcpp-features-infra.md`](.agents/docs/2026-08-15-m8-mcpp-features-infra.md)。
 
-## 宏驱动库 (include-only, M10)
+## include-only 库 (M10 / M11 / C1)
 
-**23 个库保持 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
+**27 个库保持纯 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
 
 - **T3 宏驱动 (19)**: preprocessor / mpl / fusion / proto / spirit / xpressive /
   lambda / lambda2 / bind / typeof / vmd / phoenix / parameter / metaparse /
@@ -76,8 +79,48 @@ boost.boost = { path = "..", features = ["all"] }
   named modules 永远无法导出),名单由 `gen_audit.py --macros` 宏面统计核实。
 - **M9 降级 (4)**: predef (纯 .h 检测宏)、static_assert (模块名含关键字)、
   hof / units (公共 API 为内部链接 constexpr 对象)。
+- **M11 降级 (1)**: exception (gcc 16.1 模块 CMI pendings 缺陷)。
+- **C1 降级 (3, 2026-09-06)**: describe / openmethod / scope_exit —— 公共 API
+  以 BOOST_DESCRIBE_* / BOOST_OPENMETHOD* / BOOST_SCOPE_EXIT_* **宏为主体**
+  (M10 边界: 宏永不跨模块边界),模块面与宏面割裂;gcc 16.1 对同库 include+import
+  混用报 ODR 重定义,降级后统一纯 include。
 
-用法 (与模块 import 同 TU 混用,标准允许):
+**2 个编译库 include-only (有 feature 无模块, C1)**——库 TU 照常随 feature
+编译链接,但不再有 `export module boost.<lib>;` 模块接口:
+
+- **log**: gcc 消费面早已不可用 (M11 §7.4),降级消除三编译器消费方式不一致。
+  用法: `--features log` + `#include <boost/log/...>` + 链接库 TU。
+- **test** (`unit_test_framework` feature, 与上游 CMake 目标
+  boost_unit_test_framework 对齐): **双形态消费**,两形态不可同链接
+  (框架 TU 与 included 聚合实现符号冲突,二选一):
+
+| 形态 | feature | include | 链接 |
+|---|---|---|---|
+| 编译框架 (官方推荐) | `--features unit_test_framework` | `<boost/test/unit_test.hpp>` (+ `BOOST_TEST_NO_MAIN` + `<boost/test/impl/unit_test_main.ipp>` 取 runner,或自持 main) | 包内框架 TU |
+| 纯头文件库 (官方可选) | 不启用 | `<boost/test/included/unit_test.hpp>` (聚合头,自带 main) | 无 |
+
+```cpp
+// 编译形态 (features = ["unit_test_framework"]):
+#define BOOST_TEST_MODULE my_suite
+#define BOOST_TEST_NO_MAIN
+#include <boost/test/unit_test.hpp>
+#include <boost/test/impl/unit_test_main.ipp>
+
+BOOST_AUTO_TEST_CASE(t) { BOOST_TEST(1 + 1 == 2); }
+
+int main(int argc, char* argv[]) {
+    return boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
+}
+```
+
+```cpp
+// 纯头形态 (不启用 feature):
+#define BOOST_TEST_MODULE my_suite
+#include <boost/test/included/unit_test.hpp>   // 自带 main
+BOOST_AUTO_TEST_CASE(t) { BOOST_TEST(1 + 1 == 2); }
+```
+
+用法 (纯 include-only 库可与模块 import 同 TU 混用,标准允许):
 
 ```cpp
 #include <boost/preprocessor/cat.hpp>   // 宏 API: 只能 include (宏不跨模块边界)
@@ -90,7 +133,8 @@ BOOST_FOREACH (int x, vec) { /* ... */ }
 
 `include/boost-module/macros.hpp` 旁路头仅承载包级版本宏 (BOOST_VERSION),
 不逐库扩展宏面 —— T3 宏 API 一律 include 上游头获取。
-详见 [`.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`](.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md)。
+详见 [`.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`](.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md)
+与 [`.agents/plan/2026-09-06-usage-reclassification-and-include-only-adjustment-plan.md`](.agents/plan/2026-09-06-usage-reclassification-and-include-only-adjustment-plan.md)。
 
 ## 辅助脚本
 
@@ -106,7 +150,7 @@ pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libc
 
 ```bash
 uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs.json
-uv run scripts/gen_exports.py                        # 生成全部 85 库的导出列表
+uv run scripts/gen_exports.py                        # 生成全部目标库的导出列表
 uv run scripts/gen_exports.py --libs optional system --emit-cppm
 uv run scripts/reapply_hand_edits.py                 # 重生成后重放手编 (.cppm 偏离 + .inc 平台守卫 + deps/boost vendored 修补)
 uv run scripts/gen_features.py                       # 重新生成 mcpp.toml 的 [features] 块 + scripts/features.lst
@@ -128,8 +172,9 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
   （`export import` 提示）、`src/<lib>.cppm` 草稿。
 - `scripts/gen_features.py` — 由 `libs.json` + `src/gen_exports/*.deps` 生成
   `mcpp.toml` 的 `[features]` 块（每库一个 feature，`sources` = 该库 `.cppm` + 编译库
-  TU globs，`implies` = 模块 import 边）与 `scripts/features.lst`（build.mcpp 消费）。
-  默认集 = 18 库闭包，其余 9 库 opt-in（`--features <库>` 显式激活）。
+  TU globs；log/unit_test_framework 为无模块 feature，仅库 TU，C1）与
+  `scripts/features.lst`（build.mcpp 消费）。
+  默认集 = 37 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单；
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编

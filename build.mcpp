@@ -59,7 +59,22 @@ int main()
 #if defined(__GNUC__) && !defined(__clang__)
     static const char* const kGccAggregateSkip[] = {"sort"};
 #endif
+    // C1 (2026-09-06): module-less features — compiled include-only libraries
+    // (boost_common.LIBS_COMPILED_INCLUDE_ONLY). They ship library TUs under
+    // their feature but have no `export module boost.<name>;` interface, so
+    // there is no CMI to re-export; emitting `export import boost.log;` would
+    // fail to build. Consumers #include the upstream headers instead.
+    static const char* const kModuleLessFeatures[] = {"log",
+                                                      "unit_test_framework"};
     for (auto const& lib : libs) {
+        bool module_less = false;
+        for (char const* s : kModuleLessFeatures) {
+            if (lib == s) {
+                module_less = true;
+                break;
+            }
+        }
+        if (module_less) continue;
         if (mcpp::has_feature(lib.c_str())) {
 #if defined(__GNUC__) && !defined(__clang__)
             bool skip = false;

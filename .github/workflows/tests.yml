@@ -29,7 +29,12 @@ env:
   # M12: 全量门禁分组 — clang 的 2^31 源位置空间装不下 117 个模块 CMI 的聚合
   # import (ran out of source locations), 单个 --features all 聚合不可行。
   # 按里程碑分两层, 两组各自全绿即等价覆盖全库 (见 2026-09-05 M12 设计文档 §3)。
-  BOOST_GROUP_A: "optional,variant,variant2,any,core,container_hash,mp11,static_string,scope,scope_exit,type_traits,algorithm,iterator,range,io,rational,endian,tuple,system,filesystem,regex,thread,chrono,program_options,stacktrace,json,url,align,array,assign,assert,bimap,bloom,callable_traits,circular_buffer,compat,concept_check,config,convert,crc,decimal,describe,dll,dynamic_bitset,flyweight,format,function,functional,hash2,heap,histogram,icl,integer,intrusive,leaf,lexical_cast,lockfree,logic,move,multi_array,multi_index,openmethod,outcome,parser,pfr,poly_collection,pool,property_map,property_tree,ptr_container,ratio,safe_numerics,signals2,smart_ptr,sort,statechart,stl_interfaces,throw_exception,tokenizer,type_index,unordered,utility,uuid,winapi,yap,atomic,charconv,cobalt,container,contract,date_time,graph,iostreams,log,math,nowide,process,random,serialization,test,timer,type_erasure,wave"
+  # C1 (2026-09-06): describe/openmethod/scope_exit/log/test 除名 (98 模块) —
+  # log 与 unit_test_framework (test 改名, 无模块 feature) 以 feature 名保留在
+  # 列表尾部, 让库 TU 在组 A 腿上照常编译链接; test 双形态由两条腿分别覆盖:
+  # 组 A (feature 开) 跑 test_utf 编译形态, 默认集 (feature 关) 跑 test_included
+  # 纯头形态 — 两形态不可同链接 (M11 §3)。
+  BOOST_GROUP_A: "optional,variant,variant2,any,core,container_hash,mp11,static_string,scope,type_traits,algorithm,iterator,range,io,rational,endian,tuple,system,filesystem,regex,thread,chrono,program_options,stacktrace,json,url,align,array,assign,assert,bimap,bloom,callable_traits,circular_buffer,compat,concept_check,config,convert,crc,decimal,dll,dynamic_bitset,flyweight,format,function,functional,hash2,heap,histogram,icl,integer,intrusive,leaf,lexical_cast,lockfree,logic,move,multi_array,multi_index,outcome,parser,pfr,poly_collection,pool,property_map,property_tree,ptr_container,ratio,safe_numerics,signals2,smart_ptr,sort,statechart,stl_interfaces,throw_exception,tokenizer,type_index,unordered,utility,uuid,winapi,yap,atomic,charconv,cobalt,container,contract,date_time,graph,iostreams,math,nowide,process,random,serialization,timer,type_erasure,wave,log,unit_test_framework"
   BOOST_GROUP_B: "accumulators,asio,beast,geometry,gil,hana,interprocess,mqtt5,multiprecision,numeric,polygon,qvm"
 
 jobs:

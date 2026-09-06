@@ -1,5 +1,4 @@
 boost.assert
 boost.config
 boost.container_hash
-boost.describe
 boost.mp11

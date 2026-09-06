@@ -19,7 +19,6 @@ export module boost.hash2;
 export import boost.assert;
 export import boost.config;
 export import boost.container_hash;
-export import boost.describe;
 export import boost.mp11;
 
 #include "gen_exports/hash2.inc"

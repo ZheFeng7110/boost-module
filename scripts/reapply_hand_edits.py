@@ -49,49 +49,6 @@ def restore_from_git(rel):
         print(f"  git checkout failed for {rel}: {r.stderr[:200]}", file=sys.stderr)
 
 
-def strip_log_version_namespace(rel):
-    """Rewrite log.inc to be inline-namespace-agnostic (M11 CI fix, POSIX legs).
-
-    The mingw snapshot qualifies every log entity with the version inline
-    namespace `v2s_mt_nt62` (boost/log/detail/config.hpp picks the name by
-    platform: v2s_mt_nt62 on Windows, v2s_mt_posix on POSIX). Inline namespaces
-    are transparent for qualified lookup from the enclosing namespace, so:
-
-      - `export namespace ... { namespace log { namespace v2s_mt_nt62 { ... }`
-        openers drop the `namespace v2s_mt_nt62 {` segment (and its matching
-        `}` — the last brace of the block's closing line);
-      - `using boost::log::v2s_mt_nt62::X;` lines re-qualify as
-        `using boost::log::X;` (resolves through whichever inline namespace is
-        active on the compiling platform).
-
-    Idempotent: no-op when `v2s_mt_nt62` is absent.
-    """
-    p = ROOT / rel
-    s = p.read_text(encoding="utf-8")
-    if "v2s_mt_nt62" not in s:
-        print(f"  skip   {rel} (no v2s_mt_nt62)")
-        return False
-    OPEN = " namespace log { namespace v2s_mt_nt62 {"
-    out = []
-    pending = 0  # dropped openers awaiting one `}` removal at their closer
-    for line in s.splitlines(keepends=True):
-        stripped = line.rstrip("\n")
-        if OPEN in stripped:
-            stripped = stripped.replace(OPEN, " namespace log {")
-            pending += 1
-            out.append(stripped + "\n")
-            continue
-        body = stripped.rstrip()
-        if pending and body and set(body) == {"}"}:
-            stripped = body[:-1] + stripped[len(body):]
-            pending -= 1
-        stripped = stripped.replace("boost::log::v2s_mt_nt62::", "boost::log::")
-        out.append(stripped + "\n")
-    p.write_text("".join(out), encoding="utf-8", newline="\n")
-    print(f"  stripped {rel} (version inline namespace, {pending} unclosed)")
-    return True
-
-
 def guard_entity_lines(rel, cond, names):
     """Wrap each `  using boost::...;` line whose entity appears in `names`
     (as a ::-delimited segment) in `#if cond` / `#endif`. Idempotent — a line
@@ -2082,30 +2039,13 @@ def main():
               f"  // M11: {name} dropped — declared only via filter/regex.hpp (curated\n"
               f"  // out of the module GMF; gcc 16.1 abi-tag streaming bug).\n",
               required=False)
-    # M11: test — boost/test/data/test_case.hpp is curated out of the module
-    # GMF: its transitive chain (dataset → monomorphic/generators → random.hpp)
-    # exposes anonymous-namespace keyword objects (TU-local) that hard-error on
-    # gcc 16.1. Drop the GMF include and the data::* export blocks.
-    patch("src/test.cppm",
-          "#include <boost/test/data/test_case.hpp>\n",
-          "// M11: data/test_case.hpp curated out of the GMF — random.hpp exposes\n"
-          "// anonymous-namespace keywords (TU-local), hard-erroring on gcc 16.1.\n"
-          "// Consumers include it themselves for BOOST_DATA_TEST_CASE.\n",
-          required=False)
-    patch("src/gen_exports/test.inc",
-          "export namespace boost { namespace unit_test { namespace data {\n"
-          "  using boost::unit_test::data::for_each_sample;",
-          "  // M11: boost::unit_test::data::* blocks dropped — declared only via\n"
-          "  // data/test_case.hpp's chain (curated out of the module GMF; gcc 16.1\n"
-          "  // TU-local exposure in random.hpp).\n"
-          "#if 0\n"
-          "export namespace boost { namespace unit_test { namespace data {\n"
-          "  using boost::unit_test::data::for_each_sample;",
-          required=False)
-    patch("src/gen_exports/test.inc",
-          "  using boost::unit_test::data::result_of::make;\n}}}}",
-          "  using boost::unit_test::data::result_of::make;\n}}}}\n#endif",
-          required=False)
+    # C1 (2026-09-06): test.cppm / gen_exports/test.inc are gone (boost.test
+    # downgraded to compiled include-only, feature renamed
+    # unit_test_framework) — the M11 test-module curation anchors above the
+    # data/test_case.hpp patch were removed with them. The vendored test
+    # header patches (print_helper / basic_cstring / modifier /
+    # token_iterator) stay: they benefit BOTH consumption forms (compiled
+    # framework TUs and the included/* aggregate).
     # M11: io — boost/io/ostream_put.hpp is curated out of the io module GMF:
     # its function-local unnamed enum (buffer_fill) streamed from two module
     # CMIs (boost.io + boost.utility via string_view) mismatches on gcc 16.1.
@@ -2157,79 +2097,9 @@ def main():
           "  using boost::detail::string_ref_traits_eq;\n",
           "  // M11: string_ref_traits_eq dropped — string_ref.hpp curated out of the GMF.\n",
           required=False)
-    # M11: test — boost/test/data/monomorphic/generators/random.hpp + keywords.hpp
-    # curated out of the GMF: random.hpp's templates expose keywords.hpp's
-    # anonymous-namespace keyword objects (TU-local), hard-erroring on gcc 16.1.
-    # M11: test — boost/test/minimal.hpp is the minimal-mode single-header
-    # (it includes impl/execution_monitor.ipp + impl/debug.ipp and DEFINES
-    # ::main); with it out of the libs.json entry (M11 curation), drop its
-    # include from the module GMF, include the real public headers that were
-    # only reachable through it, and drop the minimal_test / impl-only exports
-    # from the .inc. Best-effort anchors: a future regen from the curated
-    # libs.json produces neither the minimal.hpp include nor those lines.
-    patch("src/test.cppm",
-          "#include <boost/test/minimal.hpp>\n",
-          "// M11: boost/test/minimal.hpp removed — the minimal-mode single-header defines\n"
-          "// ::main via impl/execution_monitor.ipp + impl/debug.ipp, which collided with\n"
-          "// every test program's main at link time. Curated out of libs.json.\n"
-          "// The boost::debug / boost::detail::execution_monitor declarations were only\n"
-          "// reachable through minimal.hpp; include the real public headers explicitly.\n"
-          "#include <boost/test/debug.hpp>\n"
-          "#include <boost/test/execution_monitor.hpp>\n",
-          required=False)
-    patch("src/test.cppm",
-          "// every test program's main at link time. Curated out of libs.json.\n",
-          "// every test program's main at link time. Curated out of libs.json.\n"
-          "// The boost::debug / boost::detail::execution_monitor declarations were only\n"
-          "// reachable through minimal.hpp; include the real public headers explicitly.\n"
-          "#include <boost/test/debug.hpp>\n"
-          "#include <boost/test/execution_monitor.hpp>\n",
-          required=False)
-    patch("src/gen_exports/test.inc",
-          "  using boost::minimal_test::caller;\n"
-          "  using boost::minimal_test::const_string;\n"
-          "  using boost::minimal_test::errors_counter;\n"
-          "  using boost::minimal_test::report_critical_error;\n"
-          "  using boost::minimal_test::report_error;\n",
-          "  // M11: boost::minimal_test::* dropped — declared only via minimal.hpp (curated\n"
-          "  // out of the module GMF; it defines ::main and the minimal framework inline).\n",
-          required=False)
-    patch("src/gen_exports/test.inc",
-          "  using boost::debug::safe_handle_helper;\n",
-          "  // M11: boost::debug::safe_handle_helper dropped — declared only in\n"
-          "  // impl/debug.ipp (windows impl), unreachable without minimal.hpp.\n",
-          required=False)
-    patch("src/test.cppm",
-          "#include <boost/test/utils/timer.hpp>\n",
-          "// M11: boost/test/utils/timer.hpp removed — it defines get_tick_freq without\n"
-          "// inline, so the module TU collided with framework.o (framework.ipp).\n"
-          "// Curated out of libs.json; nothing from it appears in test.inc.\n",
-          required=False)
-    patch("src/gen_exports/test.inc",
-          "export namespace boost { namespace unit_test { namespace timer {\n"
-          "  using boost::unit_test::timer::elapsed_time;\n"
-          "  using boost::unit_test::timer::microsecond_wall_time;\n"
-          "  using boost::unit_test::timer::second_wall_time;\n"
-          "  using boost::unit_test::timer::timer;\n"
-          "}}}\n"
-          "\n"
-          "export namespace boost { namespace unit_test { namespace timer { namespace details {\n"
-          "  using boost::unit_test::timer::details::get_tick_freq;\n"
-          "}}}}\n",
-          "  // M11: boost::unit_test::timer::* dropped — declared only in utils/timer.hpp\n"
-          "  // (curated out of the module GMF; its get_tick_freq definition is non-inline\n"
-          "  // and collided with framework.o).\n",
-          required=False)
-    # boost::detail::{do_invoke,extract,forward,fpe_except_guard,
-    # system_signal_exception,typeid_name} are declared in
-    # impl/execution_monitor.ipp only — with minimal.hpp out of the GMF they are
-    # unreachable on every platform; consumers include the public headers.
-    for name in ["do_invoke", "extract", "forward", "fpe_except_guard",
-                 "system_signal_exception", "typeid_name"]:
-        patch("src/gen_exports/test.inc",
-              f"  using boost::detail::{name};\n",
-              f"  // M11: boost::detail::{name} dropped — declared only in impl/execution_monitor.ipp.\n",
-              required=False)
+    # C1 (2026-09-06): the remaining M11 test-module anchors (minimal.hpp /
+    # utils/timer.hpp / boost::detail::execution_monitor family) were removed
+    # together with src/test.cppm — see the note above.
 
     # M11: atomic — the mingw snapshot exports boost::is_integral/is_signed/
     # make_signed/make_unsigned (atomic/detail/type_traits/*.hpp use the
@@ -2348,52 +2218,12 @@ def main():
           "  // stat.hpp; POSIX exposes ::stat via a using-declaration instead.\n"
           "  using boost::nowide::detail::stat;\n"
           "#endif")
-    # M11 CI fix (POSIX legs): log — the mingw snapshot bakes the Windows
-    # version inline namespace (v2s_mt_nt62) into every qualified name; POSIX
-    # uses v2s_mt_posix. Inline namespaces are lookup-transparent, so drop the
-    # segment (see strip_log_version_namespace).
-    strip_log_version_namespace("src/gen_exports/log.inc")
-    # M11 CI fix (POSIX legs), follow-ups for log:
-    #  - phoenix function machinery (function_eval family) was reached on the
-    #    mingw snapshot only through the windows-only is_debugger_present
-    #    predicate header; include the cross-platform umbrella explicitly.
-    patch("src/log.cppm",
-          "#include <boost/log/support/exception.hpp>\n"
-          "#include <boost/log/support/regex.hpp>",
-          "#include <boost/log/support/exception.hpp>\n"
-          "// M11 platform guard (POSIX): phoenix function machinery was reached\n"
-          "// only via the windows-only is_debugger_present predicate header in the\n"
-          "// mingw snapshot; include the cross-platform umbrella explicitly so the\n"
-          "// shared-surface `using` lines resolve.\n"
-          "#include <boost/phoenix/function.hpp>\n"
-          "#if defined(_WIN32)\n"
-          "#include <boost/log/support/regex.hpp>\n"
-          "#endif\n",
-          required=False)
-    # Bridge for the intermediate state the 2/2 fix below had first applied
-    # (phoenix include without the regex-support #if guard yet).
-    patch("src/log.cppm",
-          "#include <boost/phoenix/function.hpp>\n#include <boost/log/support/regex.hpp>",
-          "#include <boost/phoenix/function.hpp>\n"
-          "#if defined(_WIN32)\n"
-          "#include <boost/log/support/regex.hpp>\n"
-          "#endif",
-          required=False)
-    # M11 CI fix (POSIX legs) 2/2: gcc modules merge the regex decls seen via
-    # the imported boost.regex / boost.range CMIs (recorded with the __cxx11
-    # abi tag) with the GMF's own textual re-parse of cpp_regex_traits.hpp
-    # (recorded without tags) and hard-error "mismatching abi tags" on
-    # cpp_regex_traits<char>::get_catalog_name_inst. Keep the boost.regex
-    # support header to the Windows face only (clang/msvc merge fine) and drop
-    # the one export line that needs it; POSIX consumers include
-    # <boost/log/support/regex.hpp> directly (T3 rule).
-    patch("src/gen_exports/log.inc",
-          "  using boost::log::aux::boost_regex_expression_tag;",
-          "#if defined(_WIN32)\n"
-          "  // M11 platform guard: needs support/regex.hpp, excluded from the\n"
-          "  // POSIX GMF (gcc abi-tag merge bug, see log.cppm).\n"
-          "  using boost::log::aux::boost_regex_expression_tag;\n"
-          "#endif")
+    # C1 (2026-09-06): the log module anchors (strip_log_version_namespace,
+    # src/log.cppm POSIX GMF guards, src/gen_exports/log.inc platform guards)
+    # are gone with src/log.cppm — boost.log is compiled include-only now
+    # (LIBS_COMPILED_INCLUDE_ONLY), consumers #include <boost/log/...> and
+    # link the feature's library TUs. The simple_event_log.h vendored stub
+    # below stays: the windows log TUs still need it.
     # M11 CI fix (POSIX legs): cobalt — the mingw snapshot's GMF reached the
     # asio reactor / hash_map detail headers only through windows-flavored
     # chains (cobalt on POSIX selects epoll, so select_reactor.hpp et al. were
@@ -2496,56 +2326,10 @@ def main():
         "complete_iocp_send",
         "msghdr",
     ])
-    #  - windows-only surface: is_debugger_present (BOOST_WINDOWS branch of
-    #    expressions/predicates/is_debugger_present.hpp), the event-log /
-    #    debug-output keywords and sinks (sinks/event_log_backend.hpp etc.),
-    #    and spirit's decode_utf16 (wchar_t==2 branch of spirit utf8.hpp).
-    guard_entity_lines("src/gen_exports/log.inc", "defined(_WIN32)", [
-        "log_name",
-        "log_source",
-        "message_file",
-        "registration",
-        "basic_debug_output_backend",
-        "basic_event_log_backend",
-        "basic_simple_event_log_backend",
-        "debug_output_backend",
-        "event_log_backend",
-        "simple_event_log_backend",
-        "wdebug_output_backend",
-        "wevent_log_backend",
-        "wsimple_event_log_backend",
-    ])
-    patch("src/gen_exports/log.inc",
-          "  using boost::log::expressions::is_debugger_present;",
-          "#if defined(_WIN32)\n"
-          "  // M11 platform guard: is_debugger_present is the BOOST_WINDOWS branch\n"
-          "  // of expressions/predicates/is_debugger_present.hpp.\n"
-          "  using boost::log::expressions::is_debugger_present;\n"
-          "#endif")
-    patch("src/gen_exports/log.inc",
-          "  using boost::log::expressions::aux::is_debugger_present;",
-          "#if defined(_WIN32)\n"
-          "  // M11 platform guard: aux::is_debugger_present — as above.\n"
-          "  using boost::log::expressions::aux::is_debugger_present;\n"
-          "#endif")
-    patch("src/gen_exports/log.inc",
-          "export namespace boost { namespace log { namespace sinks { namespace event_log {\n"
-          "  using boost::log::sinks::event_log::basic_event_composer;",
-          "#if defined(_WIN32)\n"
-          "export namespace boost { namespace log { namespace sinks { namespace event_log {\n"
-          "  // M11 platform guard: event_log sink mapping/composer types are\n"
-          "  // Windows-only (sinks/event_log_backend.hpp).\n"
-          "  using boost::log::sinks::event_log::basic_event_composer;")
-    patch("src/gen_exports/log.inc",
-          "  using boost::log::sinks::event_log::wevent_composer;\n}}}}\n",
-          "  using boost::log::sinks::event_log::wevent_composer;\n}}}}\n#endif\n")
-    patch("src/gen_exports/log.inc",
-          "  using boost::spirit::detail::decode_utf16;",
-          "#if defined(_WIN32)\n"
-          "  // M11 platform guard: decode_utf16 is the wchar_t==2 branch of\n"
-          "  // spirit/home/support/utf8.hpp (MSVC/mingw); POSIX wchar_t is 4 bytes.\n"
-          "  using boost::spirit::detail::decode_utf16;\n"
-          "#endif")
+    # C1 (2026-09-06): the log.inc _WIN32 guard blocks (is_debugger_present,
+    # event-log sinks, spirit decode_utf16) are gone with gen_exports/log.inc —
+    # see the note above.
+
     guard_entity_lines("src/gen_exports/uuid.inc", "defined(BOOST_UUID_USE_SSE2)", [
         "compare",
         "countr_zero_nz",
@@ -3068,9 +2852,10 @@ def main():
 
     # ---- M3 libs whose .cppm are unchanged (regen only rewrites the header
     # comment): keep the M3 "final form" convention. Their .inc/.deps ARE
-    # regenerated (entity ownership may shift between runs). ----
+    # regenerated (entity ownership may shift between runs). scope_exit left
+    # the list in C1 (2026-09-06): boost.scope_exit is include-only now. ----
     for rel in ["any", "container_hash", "core", "endian", "io", "iterator",
-                "mp11", "optional", "range", "rational", "scope", "scope_exit",
+                "mp11", "optional", "range", "rational", "scope",
                 "static_string", "tuple", "type_traits", "variant", "variant2"]:
         restore_from_git(f"src/{rel}.cppm")
 

@@ -1,16 +1,11 @@
-// boost.scope_exit smoke — the library is macro-driven (BOOST_SCOPE_EXIT etc.),
-// macros cannot cross module boundaries, so this test exercises the sanctioned
-// hybrid mode: #include the macro header + import the module (M0 §5, M3 bypass
-// pattern — macros.hpp covers version macros; scope_exit's own macros are used
-// directly here as they are the library's public API).
+// boost.scope_exit smoke — pure include (C1 downgrade, 2026-09-06: the module
+// is gone; the library is macro-driven — BOOST_SCOPE_EXIT etc. are the public
+// API and macros never cross module boundaries, M10 rule; gcc 16 also
+// ODR-conflicts on include+import mixing, see describe.cpp / C1 plan §1.1).
+// boost.core has no include counterpart for these names, so its import stays
+// (ignore_unused / BOOST_VERSION).
 #include "test_assert.hpp"
 #include <boost/scope_exit.hpp>
-// gcc 16: import + include of the same lib ODR-conflicts (see describe.cpp);
-// the module import is skipped on gcc. boost.core has no include counterpart
-// here, so its import stays (ignore_unused / BOOST_VERSION).
-#if !defined(__GNUC__) || defined(__clang__)
-import boost.scope_exit;
-#endif
 import boost.core;
 
 int main() {

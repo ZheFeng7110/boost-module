@@ -1,9 +1,0 @@
-boost.algorithm
-boost.assert
-boost.config
-boost.core
-boost.function
-boost.iterator
-boost.smart_ptr
-boost.type_traits
-boost.utility
