@@ -8,12 +8,12 @@
 // include), and the macro face is covered in tests/units_include.cpp.
 #include "test_assert.hpp"
 #include <cassert>
-#if !defined(__GNUC__) || defined(__clang__)
+//#if !defined(__GNUC__) || defined(__clang__)
 import boost.units;
-#else
-#include <boost/units/systems/si.hpp>
-#include <boost/units/quantity.hpp>
-#endif
+//#else
+//#include <boost/units/systems/si.hpp>
+//#include <boost/units/quantity.hpp>
+//#endif  // test use module in gcc
 
 int main() {
     namespace si = boost::units::si;

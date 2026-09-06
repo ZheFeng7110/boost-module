@@ -9,11 +9,11 @@
 // tests/hof_include.cpp).
 #include "test_assert.hpp"
 #include <cassert>
-#if !defined(__GNUC__) || defined(__clang__)
+//#if !defined(__GNUC__) || defined(__clang__)
 import boost.hof;
-#else
-#include <boost/hof.hpp>
-#endif
+//#else
+//#include <boost/hof.hpp>
+//#endif  // test use module in gcc
 
 int main() {
     auto c = boost::hof::compose(boost::hof::identity, boost::hof::identity);
