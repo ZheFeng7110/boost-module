@@ -1,17 +1,26 @@
-// boost.hof — include-only smoke (M9: public API is internal-linkage
-// static constexpr objects, not module-exportable; consumers #include the
-// header — import+include mixing is standard-compliant)
+// boost.hof smoke — C2 re-modularization (2026-09-06): the M9 internal-
+// linkage blocker is gone (BOOST_HOF_DECLARE_STATIC_VAR / STATIC_CONSTEXPR
+// macros patched to `inline constexpr`, external linkage), so compose/_1 and
+// friends export through the boost.hof module face. Macro-heavy consumption
+// (BOOST_HOF_STATIC_FUNCTION user-side) stays include-side; mixing include +
+// import in one TU ODR-conflicts on gcc 16 (describe.cpp precedent), so the
+// import is skipped on gcc — macro and import usage are covered separately
+// (this file: module face; the include/macro face lives in
+// tests/hof_include.cpp).
 #include "test_assert.hpp"
 #include <cassert>
+#if !defined(__GNUC__) || defined(__clang__)
+import boost.hof;
+#else
 #include <boost/hof.hpp>
-
-int add1(int x) { return x + 1; }
-int mul2(int x) { return x * 2; }
+#endif
 
 int main() {
-    auto c = boost::hof::compose(add1, mul2);
-    assert(c(5) == 11);
-    assert(boost::hof::identity(7) == 7);
+    auto c = boost::hof::compose(boost::hof::identity, boost::hof::identity);
+    assert(c(5) == 5);
+    auto sum = boost::hof::_1 + boost::hof::_2;
+    assert(sum(2, 3) == 5);
     assert(boost::hof::always(42)(1, 2) == 42);
+    assert(boost::hof::pipable(boost::hof::identity)(7) == 7);
     return 0;
 }

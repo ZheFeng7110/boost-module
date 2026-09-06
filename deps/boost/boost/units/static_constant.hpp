@@ -31,8 +31,14 @@ namespace                                                   \
 template<bool b>                                            \
 const type name##_instance_t<b>::instance
 #else
+// boost-module C2 vendor patch: was `BOOST_STATIC_CONSTEXPR type name`
+// = `static constexpr` → const namespace-scope objects with internal
+// linkage (si::meter, the whole boost::units constant face),
+// un-exportable through a module (M9 downgrade). Inline constexpr keeps
+// spelling/semantics while giving external linkage. Replay after
+// import_boost (C2 plan §3.3).
 # define BOOST_UNITS_STATIC_CONSTANT(name, type)            \
-BOOST_STATIC_CONSTEXPR type name
+inline constexpr type name
 #endif
 
 /// A convenience macro for static constants with auto 

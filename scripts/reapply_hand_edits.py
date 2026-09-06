@@ -1304,6 +1304,55 @@ def reapply_vendored_patches():
           "} // namespace runtime\n"
           "} // namespace boost\n")
 
+    # C2 (2026-09-06 re-modularization, plan §3.3): hof / units — internal-
+    # linkage `static`/`const constexpr` object macros → `inline constexpr`
+    # (M12 anonymous-namespace→inline pattern, but at macro level so one patch
+    # fixes the whole public face). These were the M9 downgrade reason; with
+    # external linkage the entities export and both libraries re-enter the
+    # module layer (boost_common: LIBS_INCLUDE_ONLY_M9 → LIBS_T1A).
+    # hof: BOOST_HOF_STATIC_CONSTEXPR / STATIC_AUTO_REF / STATIC_CONST_VAR —
+    # every namespace-scope object (compose/flow/_1.._9/_/capture/pack/...,
+    # arg_c/if_c variable templates) expands through these three macros.
+    patch("deps/boost/boost/hof/detail/static_const_var.hpp",
+          "#if BOOST_HOF_HAS_RELAXED_CONSTEXPR || defined(_MSC_VER)\n"
+          "#define BOOST_HOF_STATIC_CONSTEXPR const constexpr\n",
+          "#if BOOST_HOF_HAS_RELAXED_CONSTEXPR || defined(_MSC_VER)\n"
+          "// boost-module C2 vendor patch: `const constexpr` namespace-scope\n"
+          "// objects are const-qualified → internal linkage, which made the whole\n"
+          "// boost::hof public object face non-exportable through a module (M9\n"
+          "// downgrade). Inline constexpr keeps spelling/semantics while giving\n"
+          "// external linkage + cross-TU dedup. Replay after import_boost.\n"
+          "#define BOOST_HOF_STATIC_CONSTEXPR inline constexpr\n")
+    patch("deps/boost/boost/hof/detail/static_const_var.hpp",
+          "#define BOOST_HOF_STATIC_AUTO_REF static constexpr auto&\n",
+          "// boost-module C2 vendor patch: was `static constexpr auto&` (internal\n"
+          "// linkage); an inline constexpr reference is ODR-safe and exportable.\n"
+          "#define BOOST_HOF_STATIC_AUTO_REF inline constexpr auto&\n")
+    patch("deps/boost/boost/hof/detail/static_const_var.hpp",
+          "#define BOOST_HOF_STATIC_CONST_VAR(name) static constexpr auto& name = boost::hof::detail::static_const_var_factory()\n",
+          "// boost-module C2 vendor patch: was `static constexpr auto&` (internal\n"
+          "// linkage) — every BOOST_HOF_DECLARE_STATIC_VAR object (compose, _1.._9,\n"
+          "// _, capture, pack, ... — the whole public face) was un-exportable\n"
+          "// through a module; an inline constexpr reference keeps the spelling\n"
+          "// and merges the definitions across TUs. All sites are namespace-scope.\n"
+          "#define BOOST_HOF_STATIC_CONST_VAR(name) inline constexpr auto& name = boost::hof::detail::static_const_var_factory()\n")
+    # units: BOOST_UNITS_STATIC_CONSTANT — the C++11 branch expands
+    # `static constexpr` (si::meter, every unit constant — 185 namespace-scope
+    # uses scanned, none in class scope; the pre-C++11 branch is inactive).
+    patch("deps/boost/boost/units/static_constant.hpp",
+          "# define BOOST_UNITS_STATIC_CONSTANT(name, type)            \\\n"
+          "BOOST_STATIC_CONSTEXPR type name\n"
+          "#endif\n",
+          "// boost-module C2 vendor patch: was `BOOST_STATIC_CONSTEXPR type name`\n"
+          "// = `static constexpr` → const namespace-scope objects with internal\n"
+          "// linkage (si::meter, the whole boost::units constant face),\n"
+          "// un-exportable through a module (M9 downgrade). Inline constexpr keeps\n"
+          "// spelling/semantics while giving external linkage. Replay after\n"
+          "// import_boost (C2 plan §3.3).\n"
+          "# define BOOST_UNITS_STATIC_CONSTANT(name, type)            \\\n"
+          "inline constexpr type name\n"
+          "#endif\n")
+
     # M11 (M11 §6.4): new vendored file (mc.exe stub), not an upstream patch
     ensure_file("deps/boost/libs/log/src/windows/simple_event_log.h",
           "/*\n"
@@ -2840,6 +2889,49 @@ def main():
           "export using ::operator new;\n\n"
           '#include "gen_exports/heap.inc"',
           required=False)
+
+    # C2: hof — MSVC-flavor guards (M9 convention: the committed .inc is a
+    # mingw-flavor snapshot; the llvm/msvc module TU must not export entities
+    # its GMF never declares). Conditions mirror the upstream headers:
+    #  - detail::bool_seq: the non-`_MSC_VER` branch of detail/and.hpp (the
+    #    MSVC branch declares struct and_ instead);
+    #  - detail::called_val / callable_args / can_be_called_impl: the
+    #    !BOOST_HOF_NO_EXPRESSION_SFINAE branch of detail/can_be_called.hpp
+    #    (config.hpp: `_MSC_VER` → NO_EXPRESSION_SFINAE = 1);
+    #  - detail::eval_helper: the !BOOST_HOF_NO_ORDERED_BRACE_INIT branch of
+    #    apply_eval.hpp (config.hpp: `_MSC_VER` → NO_ORDERED_BRACE_INIT = 1);
+    #  - operators::increment/decrement: the `#ifndef _MSC_VER` branch of
+    #    placeholders.hpp (MSVC 2017 ICE on ++/-- in constexpr).
+    patch("src/gen_exports/hof.inc",
+          "  using boost::hof::detail::bool_seq;",
+          "#if !defined(_MSC_VER)\n"
+          "  // C2 platform guard: bool_seq is the non-_MSC_VER branch of\n"
+          "  // detail/and.hpp (the MSVC branch declares struct and_ instead).\n"
+          "  using boost::hof::detail::bool_seq;\n"
+          "#endif")
+    for name in ["callable_args", "called_val", "can_be_called_impl"]:
+        patch("src/gen_exports/hof.inc",
+              f"  using boost::hof::detail::{name};",
+              f"#if !BOOST_HOF_NO_EXPRESSION_SFINAE\n"
+              f"  // C2 platform guard: {name} is the !NO_EXPRESSION_SFINAE branch\n"
+              f"  // of detail/can_be_called.hpp (config.hpp: _MSC_VER → 1).\n"
+              f"  using boost::hof::detail::{name};\n"
+              f"#endif")
+    patch("src/gen_exports/hof.inc",
+          "  using boost::hof::detail::eval_helper;",
+          "#if !BOOST_HOF_NO_ORDERED_BRACE_INIT\n"
+          "  // C2 platform guard: eval_helper is the !NO_ORDERED_BRACE_INIT branch\n"
+          "  // of apply_eval.hpp (config.hpp: _MSC_VER → 1).\n"
+          "  using boost::hof::detail::eval_helper;\n"
+          "#endif")
+    for name in ["increment", "decrement"]:
+        patch("src/gen_exports/hof.inc",
+              f"  using boost::hof::operators::{name};",
+              f"#if !defined(_MSC_VER)\n"
+              f"  // C2 platform guard: operators::{name} is the #ifndef _MSC_VER\n"
+              f"  // branch of placeholders.hpp (MSVC 2017 ICE on ++/-- constexpr).\n"
+              f"  using boost::hof::operators::{name};\n"
+              f"#endif")
 
     # ---- algorithm: M3 workaround (string.hpp GFM + *regex entity pruning) ----
     # algorithm.inc is regenerated with string_regex.hpp in the GFM; the M3

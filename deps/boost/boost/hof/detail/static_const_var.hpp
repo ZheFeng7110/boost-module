@@ -45,7 +45,12 @@ constexpr const T& static_const_var()
 }} // namespace boost::hof
 
 #if BOOST_HOF_HAS_RELAXED_CONSTEXPR || defined(_MSC_VER)
-#define BOOST_HOF_STATIC_CONSTEXPR const constexpr
+// boost-module C2 vendor patch: `const constexpr` namespace-scope
+// objects are const-qualified → internal linkage, which made the whole
+// boost::hof public object face non-exportable through a module (M9
+// downgrade). Inline constexpr keeps spelling/semantics while giving
+// external linkage + cross-TU dedup. Replay after import_boost.
+#define BOOST_HOF_STATIC_CONSTEXPR inline constexpr
 #else
 #define BOOST_HOF_STATIC_CONSTEXPR static constexpr
 #endif
@@ -53,14 +58,21 @@ constexpr const T& static_const_var()
 #if defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
 #define BOOST_HOF_STATIC_AUTO_REF extern __attribute__((weak)) constexpr auto
 #else
-#define BOOST_HOF_STATIC_AUTO_REF static constexpr auto&
+// boost-module C2 vendor patch: was `static constexpr auto&` (internal
+// linkage); an inline constexpr reference is ODR-safe and exportable.
+#define BOOST_HOF_STATIC_AUTO_REF inline constexpr auto&
 #endif
 
 // On gcc 4.6 use weak variables
 #if defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
 #define BOOST_HOF_STATIC_CONST_VAR(name) extern __attribute__((weak)) constexpr auto name
 #else
-#define BOOST_HOF_STATIC_CONST_VAR(name) static constexpr auto& name = boost::hof::detail::static_const_var_factory()
+// boost-module C2 vendor patch: was `static constexpr auto&` (internal
+// linkage) — every BOOST_HOF_DECLARE_STATIC_VAR object (compose, _1.._9,
+// _, capture, pack, ... — the whole public face) was un-exportable
+// through a module; an inline constexpr reference keeps the spelling
+// and merges the definitions across TUs. All sites are namespace-scope.
+#define BOOST_HOF_STATIC_CONST_VAR(name) inline constexpr auto& name = boost::hof::detail::static_const_var_factory()
 #endif
 
 #define BOOST_HOF_DECLARE_STATIC_VAR(name, ...) BOOST_HOF_STATIC_CONST_VAR(name) = __VA_ARGS__{}

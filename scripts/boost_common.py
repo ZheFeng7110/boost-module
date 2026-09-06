@@ -50,29 +50,32 @@ LIBS_M4 = [
 # aggregated boost/ include root), static_assert (pure macro lib with 0
 # exported entities; its module name is ALSO invalid C++ — `static_assert` is a
 # keyword, clang rejects `export module boost.static_assert;` — so it stays
-# include-only like the T3 macro libs), hof + units (their public API is
-# internal-linkage `static constexpr` objects — boost::hof::compose/_1 and
-# boost::units::si::meter etc. — which a module cannot export via using-
-# declarations; include-only, recorded in the M9 doc), plus the T1b
-# heavy-template opt-in batch (M12) and the T2 compiled batch (M11).
+# include-only like the T3 macro libs), plus the T1b heavy-template opt-in
+# batch (M12) and the T2 compiled batch (M11).
 # C1 downgrade (2026-09-06): describe + openmethod moved to
 # LIBS_INCLUDE_ONLY_C1 — macro-body APIs (BOOST_DESCRIBE_* /
 # BOOST_OPENMETHOD_*, M10 boundary: macros never cross module boundaries);
 # gcc 16.1 ODR-conflicts on include+import mixing in the same TU, so the
 # module face forced consumers to pick one and the macro face won.
+# C2 re-entry (2026-09-06): hof + units were excluded in M9 (public API is
+# internal-linkage `static`/`const constexpr` objects — boost::hof::compose/_1
+# and boost::units::si::meter etc.). The C2 vendored macro patches
+# (hof/detail/static_const_var.hpp + units/static_constant.hpp →
+# `inline constexpr`, replayed by reapply_hand_edits.py) give the objects
+# external linkage, so both libraries are target libs again.
 LIBS_T1A = [
     "align", "array", "assert", "assign", "bimap", "bloom",
     "callable_traits", "circular_buffer", "compat", "concept_check",
     "config", "convert", "crc", "decimal",
     "dll", "dynamic_bitset", "flyweight", "format", "function",
-    "functional", "hash2", "heap", "histogram", "icl",
+    "functional", "hash2", "heap", "histogram", "hof", "icl",
     "integer", "intrusive", "leaf", "lexical_cast", "lockfree",
     "logic", "move", "multi_array", "multi_index",
     "outcome", "parser", "pfr", "poly_collection", "pool",
     "property_map", "property_tree", "ptr_container", "ratio",
     "safe_numerics", "signals2", "smart_ptr", "sort", "statechart",
     "stl_interfaces", "throw_exception", "tokenizer",
-    "type_index", "unordered", "utility", "uuid", "winapi",
+    "type_index", "units", "unordered", "utility", "uuid", "winapi",
     "yap",
 ]
 # M11 T2 (boost-mcpp-all-libs-features-plan.md §2/§4): compiled libraries —
@@ -129,7 +132,9 @@ LIBS_T4 = [
 # macro libs (predef: .h only; static_assert: module name is a keyword) and
 # internal-linkage constexpr-object APIs (hof, units) — same consumer rule
 # as T3, recorded in the M9 doc.
-LIBS_INCLUDE_ONLY_M9 = ["predef", "static_assert", "hof", "units"]
+# C2 (2026-09-06): hof + units re-entered via the vendored macro patches (see
+# LIBS_T1A above) — the include-only list is back to predef/static_assert.
+LIBS_INCLUDE_ONLY_M9 = ["predef", "static_assert"]
 # M11 downgrade to include-only: exception — the clone_impl<T> member bodies
 # attached to the boost.exception CMI as lazily loaded pendings trip gcc 16.1
 # ("recursive lazy load / failed to load pendings for clone_impl") in ANY

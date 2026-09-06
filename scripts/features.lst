@@ -47,6 +47,7 @@ functional
 hash2
 heap
 histogram
+hof
 icl
 integer
 intrusive
@@ -75,6 +76,7 @@ stl_interfaces
 throw_exception
 tokenizer
 type_index
+units
 unordered
 utility
 uuid
