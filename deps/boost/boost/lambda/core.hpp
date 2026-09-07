@@ -61,18 +61,20 @@ using ::boost::tuples::null_type;
 namespace boost {
 namespace lambda {
 
-namespace {
+  // boost-module C4 vendor patch: these were TU-local (anonymous namespace)
+  // — internal linkage made _1.._3 un-exportable from a named module (the
+  // same boundary that kept hof/units out in M9). `inline constexpr` gives
+  // the placeholder objects external linkage and cross-TU definition
+  // merging; requires the constexpr lambda_functor default constructor
+  // (detail/lambda_functors.hpp). All sites are namespace scope.
+  inline constexpr boost::lambda::placeholder1_type free1 = boost::lambda::placeholder1_type();
+  inline constexpr boost::lambda::placeholder2_type free2 = boost::lambda::placeholder2_type();
+  inline constexpr boost::lambda::placeholder3_type free3 = boost::lambda::placeholder3_type();
 
-  // These are constants types and need to be initialised
-  boost::lambda::placeholder1_type free1 = boost::lambda::placeholder1_type();
-  boost::lambda::placeholder2_type free2 = boost::lambda::placeholder2_type();
-  boost::lambda::placeholder3_type free3 = boost::lambda::placeholder3_type();
-
-  boost::lambda::placeholder1_type& BOOST_ATTRIBUTE_UNUSED _1 = free1;
-  boost::lambda::placeholder2_type& BOOST_ATTRIBUTE_UNUSED _2 = free2;
-  boost::lambda::placeholder3_type& BOOST_ATTRIBUTE_UNUSED _3 = free3;
+  inline constexpr boost::lambda::placeholder1_type& _1 = free1;
+  inline constexpr boost::lambda::placeholder2_type& _2 = free2;
+  inline constexpr boost::lambda::placeholder3_type& _3 = free3;
   // _1, _2, ... naming scheme by Peter Dimov
-} // unnamed
    
 } // lambda
 } // boost

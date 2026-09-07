@@ -1353,6 +1353,61 @@ def reapply_vendored_patches():
           "inline constexpr type name\n"
           "#endif\n")
 
+    # lambda (C4 re-entry): classic lambda's public placeholders _1.._3
+    # (core.hpp) and _e (exceptions.hpp) were TU-local — anonymous-namespace
+    # objects with internal linkage, un-exportable through a named module
+    # (the M10 T3 macro-face attribution was wrong: the library has 17
+    # implementation macros and an object/template API — same boundary as
+    # hof/units in M9). The lambda_functor default constructor becomes
+    # constexpr so the objects can be `inline constexpr` (external linkage +
+    # cross-TU merging). detail's constant_null_type stays internal: it is
+    # referenced only from attached member bodies, never exported.
+    patch("deps/boost/boost/lambda/detail/lambda_functors.hpp",
+          "  lambda_functor() {}\n",
+          "// boost-module C4 vendor patch: constexpr so the placeholder\n"
+          "// objects (free1..free3/freeE, patched to `inline constexpr` in\n"
+          "// core.hpp and exceptions.hpp) are literal-type initializable —\n"
+          "// external linkage, cross-TU merged (hof/units C2 style).\n"
+          "  constexpr lambda_functor() {}\n")
+    patch("deps/boost/boost/lambda/core.hpp",
+          "namespace {\n\n"
+          "  // These are constants types and need to be initialised\n"
+          "  boost::lambda::placeholder1_type free1 = boost::lambda::placeholder1_type();\n"
+          "  boost::lambda::placeholder2_type free2 = boost::lambda::placeholder2_type();\n"
+          "  boost::lambda::placeholder3_type free3 = boost::lambda::placeholder3_type();\n"
+          "\n"
+          "  boost::lambda::placeholder1_type& BOOST_ATTRIBUTE_UNUSED _1 = free1;\n"
+          "  boost::lambda::placeholder2_type& BOOST_ATTRIBUTE_UNUSED _2 = free2;\n"
+          "  boost::lambda::placeholder3_type& BOOST_ATTRIBUTE_UNUSED _3 = free3;\n"
+          "  // _1, _2, ... naming scheme by Peter Dimov\n"
+          "} // unnamed\n",
+          "  // boost-module C4 vendor patch: these were TU-local (anonymous namespace)\n"
+          "  // — internal linkage made _1.._3 un-exportable from a named module (the\n"
+          "  // same boundary that kept hof/units out in M9). `inline constexpr` gives\n"
+          "  // the placeholder objects external linkage and cross-TU definition\n"
+          "  // merging; requires the constexpr lambda_functor default constructor\n"
+          "  // (detail/lambda_functors.hpp). All sites are namespace scope.\n"
+          "  inline constexpr boost::lambda::placeholder1_type free1 = boost::lambda::placeholder1_type();\n"
+          "  inline constexpr boost::lambda::placeholder2_type free2 = boost::lambda::placeholder2_type();\n"
+          "  inline constexpr boost::lambda::placeholder3_type free3 = boost::lambda::placeholder3_type();\n"
+          "\n"
+          "  inline constexpr boost::lambda::placeholder1_type& _1 = free1;\n"
+          "  inline constexpr boost::lambda::placeholder2_type& _2 = free2;\n"
+          "  inline constexpr boost::lambda::placeholder3_type& _3 = free3;\n"
+          "  // _1, _2, ... naming scheme by Peter Dimov\n")
+    patch("deps/boost/boost/lambda/exceptions.hpp",
+          "namespace {\n"
+          "  boost::lambda::placeholderE_type freeE;\n"
+          "  boost::lambda::placeholderE_type& _e = freeE;        \n"
+          "}\n",
+          "  // boost-module C4 vendor patch: was TU-local (anonymous namespace) —\n"
+          "  // internal linkage made _e un-exportable from a named module (same\n"
+          "  // boundary as _1.._3 in core.hpp and hof/units in M9). `inline constexpr`\n"
+          "  // gives external linkage and cross-TU definition merging; requires the\n"
+          "  // constexpr lambda_functor default constructor (lambda_functors.hpp).\n"
+          "  inline constexpr boost::lambda::placeholderE_type freeE = boost::lambda::placeholderE_type();\n"
+          "  inline constexpr const boost::lambda::placeholderE_type& _e = freeE;\n")
+
     # M11 (M11 §6.4): new vendored file (mc.exe stub), not an upstream patch
     ensure_file("deps/boost/libs/log/src/windows/simple_event_log.h",
           "/*\n"
@@ -1420,15 +1475,45 @@ def main():
     # scope.cppm: no `export import boost.core;` — gcc 16.1.0 ICEs when this
     # GMF include set (unique_fd.hpp etc.) re-exports boost.core (M3 §3.2).
     patch("src/scope.cppm",
-          "export module boost.scope;\n\nexport import boost.core;\n",
-          "export module boost.scope;\n\n"
+          "export import boost.core;\n",
           "// NB: no `export import boost.core;` — gcc 16.1.0 ICEs (Segmentation fault at\n"
           "// the export-module line) when this GMF include set (which pulls\n"
           "// unique_fd.hpp, whose entities depend on boost.core) is combined with\n"
           "// re-exporting boost.core. scope.inc carries no boost::core:: entities (they\n"
           "// are claimed by boost.core itself), so consumers import boost.core on their\n"
-          "// own. (Clang has no such issue; tracked as a gcc bug for M6 CI.)\n")
+          "// own. (Clang has no such issue; tracked as a gcc bug for M6 CI.)\n"
+          "// (C4: anchor is the bare core line — the regenerated import list may\n"
+          "// interleave other edges, e.g. assert/config, before boost.core.)\n",
+          required=False)  # scope.cppm is git-restored (M3 final form) below;
+    #                      this patch only guards a future un-restore.
 
+    # C4 (2026-09-07): bimap re-export pin — boost.iterator. bimap's GMF
+    # aggregate transitively compiles boost/iterator/iterator_adaptor.hpp (via
+    # bimap/detail/map_view_iterator.hpp), and consumers compare bimap view
+    # iterators with the free operator!= it declares (boost.iterator exports
+    # `using boost::operator!=;`). Until C4 the .deps edge was produced by a
+    # first-wins BFS accident: bimap's candidates included the lambda detail
+    # headers as "shared" (lambda was not a target lib), and the closure walked
+    # from them into the iterators family. Once lambda became a target lib the
+    # path vanished and the edge silently disappeared (bimap test: operator!=
+    # gone). A global dep_graph own-subtree recursion would restore it but also
+    # records TU-internal includes (geometry subtree -> boost/graph debug
+    # headers) that consumers can never see — and minted a geometry<->graph
+    # false cycle mcpp rejects — so the edge is pinned here instead (C1
+    # hand-pinned implies precedent).
+    patch("src/gen_exports/bimap.deps",
+          "boost.functional\n",
+          "# C4 pin: boost.iterator — view-iterator free operator!= lives in\n"
+          "# boost.iterator; see the pin comment in this file (bimap.cppm).\n"
+          "boost.functional\n"
+          "boost.iterator\n")
+    patch("src/bimap.cppm",
+          "export import boost.functional;\n",
+          "export import boost.functional;\n"
+          "// C4 pin: view-iterator free operators (operator!=) live in boost.iterator;\n"
+          "// the generated .deps lost this edge when lambda became a target lib — see\n"
+          "// the bimap.deps pin comment in reapply_hand_edits.py.\n"
+          "export import boost.iterator;\n")
     # M9: winapi.cppm — boost/winapi/* headers are Windows-only (basic_types.hpp
     # #errors "Win32 functions not available" off-Windows). The winapi module
     # is in the default closure (system/thread imply it + `export import
@@ -1676,7 +1761,17 @@ def main():
           "#if defined(__GNUC__)\n"
           "  // M9 platform guard: gcc-preprocessed mpl map headers only.\n"
           "  using boost::mpl::item_by_order_impl;\n"
-          "#endif")
+          "#endif",
+          required=False)  # C4: the entity may be claimed by type_erasure
+    patch("src/gen_exports/type_erasure.inc",
+          "  using boost::mpl::item_by_order_impl;",
+          "#if defined(__GNUC__)\n"
+          "  // M9 platform guard (C4 moved the claim here from\n"
+          "  // poly_collection): gcc-preprocessed mpl map headers only —\n"
+          "  // absent from the msvc-flavor TU, keep the export gcc-only.\n"
+          "  using boost::mpl::item_by_order_impl;\n"
+          "#endif",
+          required=False)
     # intrusive: builtin_clz_dispatch — the __GNUC__ branch of the BSR
     # intrinsic chain (intrusive/detail/math.hpp).
     patch("src/gen_exports/intrusive.inc",
@@ -2932,6 +3027,22 @@ def main():
               f"  // branch of placeholders.hpp (MSVC 2017 ICE on ++/-- constexpr).\n"
               f"  using boost::hof::operators::{name};\n"
               f"#endif")
+
+    # C4: lambda.inc flavor guard — ll::random_shuffle is the
+    # !BOOST_NO_CXX98_RANDOM_SHUFFLE branch of lambda/algorithm.hpp. The
+    # gen-time bundle gate runs libstdc++ (which never defines the defect
+    # macro, even under C++17+), but the MSVC STL (llvm-msvc leg, dinkumware
+    # config: _HAS_AUTO_PTR_ETC == 0) and libc++ (_LIBCPP_VERSION > 4000,
+    # C++17) both define it and the struct disappears — mirror the upstream
+    # condition instead of hard-coding a platform macro (M9 §3 convention).
+    patch("src/gen_exports/lambda.inc",
+          "  using boost::lambda::ll::random_shuffle;",
+          "#if !defined(BOOST_NO_CXX98_RANDOM_SHUFFLE)\n"
+          "  // C4 flavor guard: random_shuffle is the\n"
+          "  // !BOOST_NO_CXX98_RANDOM_SHUFFLE branch of algorithm.hpp\n"
+          "  // (MSVC STL/libc++ under C++17 removed std::random_shuffle).\n"
+          "  using boost::lambda::ll::random_shuffle;\n"
+          "#endif")
 
     # ---- algorithm: M3 workaround (string.hpp GFM + *regex entity pruning) ----
     # algorithm.inc is regenerated with string_regex.hpp in the GFM; the M3

@@ -26,11 +26,13 @@ export import boost.concept_check;
 export import boost.config;
 export import boost.core;
 export import boost.functional;
+// C4 pin: view-iterator free operators (operator!=) live in boost.iterator;
+// the generated .deps lost this edge when lambda became a target lib — see
+// the bimap.deps pin comment in reapply_hand_edits.py.
 export import boost.iterator;
+export import boost.lambda;
 export import boost.multi_index;
-export import boost.tuple;
 export import boost.type_traits;
-export import boost.utility;
 
 #include "gen_exports/bimap.inc"
 

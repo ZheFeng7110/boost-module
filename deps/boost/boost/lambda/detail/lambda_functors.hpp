@@ -145,7 +145,11 @@ BOOST_STATIC_CONSTANT(int, arity_bits = get_arity<T>::value);
 public:
   typedef T inherited;
 
-  lambda_functor() {}
+// boost-module C4 vendor patch: constexpr so the placeholder
+// objects (free1..free3/freeE, patched to `inline constexpr` in
+// core.hpp and exceptions.hpp) are literal-type initializable —
+// external linkage, cross-TU merged (hof/units C2 style).
+  constexpr lambda_functor() {}
   lambda_functor(const lambda_functor& l) : inherited(l) {}
 
   lambda_functor(const T& t) : inherited(t) {}

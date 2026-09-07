@@ -94,11 +94,9 @@ export module boost.units;
 
 export import boost.assert;
 export import boost.config;
-export import boost.iterator;
+export import boost.lambda;
 export import boost.math;
-export import boost.tuple;
 export import boost.type_traits;
-export import boost.utility;
 
 #include "gen_exports/units.inc"
 

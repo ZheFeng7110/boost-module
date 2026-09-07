@@ -29,6 +29,8 @@
 | M12 | 重型模板库接入 (T1b, ~15 库 opt-in) | ⏳ |
 | M13 | 外部依赖/asm 库 (T4: context/fiber/coroutine/locale 等) | ⏳ |
 | M14 | 发布 (mcpp-index 薄层 + 架构文档 + 发布流程) | ⏳ |
+| C1–C3 | 消费者使用方式重分类 (五库降级 + hof/units 重新模块化) | ✅ |
+| C4 | bind/lambda/lambda2 重新模块化 (T3 宏面误判纠正) + dep_graph 走查修复 | ✅ |
 
 > 里程碑 M7 之后见 [`boost-mcpp-all-libs-features-plan.md`](.agents/plan/boost-mcpp-all-libs-features-plan.md):
 > 全库 (155 库) 接入 + mcpp `[features]` 按库选择性构建 (`default-features = false` 自选,
@@ -38,17 +40,18 @@
 ## 按库选择性构建 (M8 mcpp features + M9 全量接入)
 
 每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
-当前共 **114 个 feature** —— 112 个模块 feature（T0 26 + T1a 58 + T2 16 +
+当前共 **117 个 feature** —— 115 个模块 feature（T0 26 + T1a 61 + T2 16 +
 T1b 12）+ 2 个**无模块 feature**（log、unit_test_framework，见下节）。
 describe/openmethod/scope_exit/log/test 已降级 include-only（C1, 2026-09-06），
-hof/units 已于 C2 宏改造后重新模块化；static_assert/predef/exception 等
+hof/units 已于 C2 宏改造后重新模块化；bind/lambda/lambda2 已于 C4 重新模块化
+（T3 宏面误判纠正, 2026-09-07）；static_assert/predef/exception 等
 保持 include-only（详见各设计文档）。
 
 - **默认集** = 36 库闭包（`[features].default`，随模块 import 边自动增长）：
   `mcpp build` / `mcpp test` 覆盖核心面（18 个原核心库 + config/assert/
   utility/move 等基建库）。
 - **opt-in 库**：其余 feature 需显式激活：`mcpp build --features <库,...>`。
-- **全量**：`mcpp build --features all`（全部 114 个 feature 编译）。
+- **全量**：`mcpp build --features all`（全部 117 个 feature 编译）。
 
 消费者侧（path dep 用法）：
 
@@ -70,13 +73,17 @@ boost.boost = { path = "..", features = ["all"] }
 
 ## include-only 库 (M10 / M11 / C1)
 
-**25 个库保持纯 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
+**22 个库保持纯 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
 
-- **T3 宏驱动 (19)**: preprocessor / mpl / fusion / proto / spirit / xpressive /
-  lambda / lambda2 / bind / typeof / vmd / phoenix / parameter / metaparse /
+- **T3 宏驱动 (16)**: preprocessor / mpl / fusion / proto / spirit / xpressive /
+  typeof / vmd / phoenix / parameter / metaparse /
   function_types / tti / local_function / msm / foreach —— 公共 API 是
   BOOST_PP_/BOOST_FOREACH/BOOST_TTI_* 等**宏族** (宏是预处理器层面的 API,
   named modules 永远无法导出),名单由 `gen_audit.py --macros` 宏面统计核实。
+  (bind / lambda / lambda2 原在此列,系宏面占比粗筛误判——它们的宏全是实现
+  细节,API 是函数模板 + 占位符对象;已于 C4 重新模块化,见下。lambda 的
+  include-only 归因同步纠正:占位符 `_1.._3/_e` 是匿名命名空间 TU-local
+  实体,hof/units 同型,非宏原因。)
 - **M9 降级 (2)**: predef (纯 .h 检测宏)、static_assert (模块名含关键字)。
   (hof / units 原同档降级,已于 C2 宏改造后重新模块化。)
 - **M11 降级 (1)**: exception (gcc 16.1 模块 CMI pendings 缺陷)。
@@ -84,6 +91,17 @@ boost.boost = { path = "..", features = ["all"] }
   以 BOOST_DESCRIBE_* / BOOST_OPENMETHOD* / BOOST_SCOPE_EXIT_* **宏为主体**
   (M10 边界: 宏永不跨模块边界),模块面与宏面割裂;gcc 16.1 对同库 include+import
   混用报 ODR 重定义,降级后统一纯 include。
+
+**C4 重新模块化 (3, 2026-09-07)**: bind / lambda / lambda2 恢复模块面
+(`import boost.bind;` / `import boost.lambda;` / `import boost.lambda2;`):
+- bind: API 是 `boost::bind` 函数模板 + `boost::arg<I>` + placeholders;
+  弃用的 `<boost/bind.hpp>` 全局 `using namespace boost::placeholders;`
+  注入模块给不了,模块消费者请自行 `using namespace boost::placeholders;`
+  (上游推荐写法)。
+- lambda: 占位符 `_1.._3/_e` 经 vendored 补丁改 `inline constexpr`
+  (外链化,hof/units C2 同法) 后导出。
+- lambda2: 全部 `inline constexpr` 对象 + 运算符模板,零补丁接入。
+  include 面消费不受影响,可与 import 同 TU 混用。
 
 **2 个编译库 include-only (有 feature 无模块, C1)**——库 TU 照常随 feature
 编译链接,但不再有 `export module boost.<lib>;` 模块接口:

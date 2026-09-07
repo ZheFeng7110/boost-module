@@ -22,10 +22,13 @@ namespace lambda {
 
 typedef lambda_functor<placeholder<EXCEPTION> > placeholderE_type;
 
-namespace {
-  boost::lambda::placeholderE_type freeE;
-  boost::lambda::placeholderE_type& _e = freeE;        
-}
+  // boost-module C4 vendor patch: was TU-local (anonymous namespace) —
+  // internal linkage made _e un-exportable from a named module (same
+  // boundary as _1.._3 in core.hpp and hof/units in M9). `inline constexpr`
+  // gives external linkage and cross-TU definition merging; requires the
+  // constexpr lambda_functor default constructor (lambda_functors.hpp).
+  inline constexpr boost::lambda::placeholderE_type freeE = boost::lambda::placeholderE_type();
+  inline constexpr const boost::lambda::placeholderE_type& _e = freeE;
 
 // -- exception related actions -------------------
 

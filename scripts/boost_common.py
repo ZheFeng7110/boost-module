@@ -63,13 +63,26 @@ LIBS_M4 = [
 # (hof/detail/static_const_var.hpp + units/static_constant.hpp →
 # `inline constexpr`, replayed by reapply_hand_edits.py) give the objects
 # external linkage, so both libraries are target libs again.
+# C4 re-entry (2026-09-07): bind + lambda + lambda2 were excluded in M10 as T3
+# "macro-driven" — a misattribution: their macro counts are tiny and every
+# macro is an implementation detail (call-convention config, X-macro helpers,
+# include guards); none appears in user code. The real APIs are function
+# templates + placeholder objects. bind (boost::arg, boost::bind,
+# boost::placeholders::_1.._9 via BOOST_INLINE_CONSTEXPR) and lambda2 (inline
+# constexpr) were already module-safe as-is. Classic lambda needed the C2
+# treatment: its _1.._3/_e placeholders were TU-local (anonymous namespace) —
+# the C4 vendored patches (replayed by reapply_hand_edits.py) convert them to
+# inline constexpr (external linkage). Caveat: the deprecated boost/bind.hpp
+# global `using namespace boost::placeholders;` cannot be reproduced by a
+# module — consumers of the module face write their own using-directive
+# (the upstream-recommended spelling anyway).
 LIBS_T1A = [
-    "align", "array", "assert", "assign", "bimap", "bloom",
+    "align", "array", "assert", "assign", "bimap", "bind", "bloom",
     "callable_traits", "circular_buffer", "compat", "concept_check",
     "config", "convert", "crc", "decimal",
     "dll", "dynamic_bitset", "flyweight", "format", "function",
     "functional", "hash2", "heap", "histogram", "hof", "icl",
-    "integer", "intrusive", "leaf", "lexical_cast", "lockfree",
+    "integer", "intrusive", "lambda", "lambda2", "leaf", "lexical_cast", "lockfree",
     "logic", "move", "multi_array", "multi_index",
     "outcome", "parser", "pfr", "poly_collection", "pool",
     "property_map", "property_tree", "ptr_container", "ratio",
@@ -113,9 +126,15 @@ TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2 + LIBS_T1B
 # stay in sync with the config-macro-driven re-configuration these headers
 # perform, so consumers #include them directly (import + include mixing is
 # standard-compliant). The boundary is verified by gen_audit.py --macros.
+# C4 reclassification (2026-09-07): bind + lambda + lambda2 moved out of T3 —
+# they entered via the M10 own-family macro-percentage screen, which proves
+# "large macro face", not "the API is a macro" (a real macro-API library
+# cannot have single-digit macro counts). lambda's include-only verdict was
+# coincidentally right but wrongly attributed: it is the internal-linkage
+# placeholder objects (hof/units class, fixed C4), not macros. 19 -> 16 libs.
 LIBS_T3 = [
     "preprocessor", "mpl", "fusion", "proto", "spirit", "xpressive",
-    "lambda", "lambda2", "bind", "typeof", "vmd", "phoenix", "parameter",
+    "typeof", "vmd", "phoenix", "parameter",
     "metaparse", "function_types", "tti", "local_function", "msm", "foreach",
 ]
 # M13 T4 (boost-mcpp-all-libs-features-plan.md §2/§4): external-dependency /
@@ -508,7 +527,6 @@ def _lib_of_include(rel: str):
 
 def dep_graph(headers_by_lib=None):
     """{lib: set(lib)} — which target libs' headers a lib's headers include.
-
     headers_by_lib overrides the header set per lib (defaults to libs.json /
     heuristic). The generator passes the clang++-gate-pruned GFM set here so
     deps reachable only through headers pruned from the module (e.g. the regex
@@ -546,6 +564,7 @@ def dep_graph(headers_by_lib=None):
             for m in _INC_RE.finditer(text):
                 rel = m.group(1)
                 dep = _lib_of_include(rel)
+                p = BOOST_ROOT.parent / rel
                 if dep:
                     if dep != lib:
                         graph[lib].add(dep)

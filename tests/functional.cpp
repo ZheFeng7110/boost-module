@@ -1,7 +1,11 @@
-// boost.functional smoke — old-style binders / negators / mem_fun / factory
+// boost.functional smoke — old-style binders / negators / mem_fun / factory.
+// C4 (2026-09-07): boost::mem_fn moved to boost.bind (first-wins — bind's
+// own mem_fn.hpp; bind now precedes functional in the claim order), so the
+// mem_fn assertion imports boost.bind as well.
 #include "test_assert.hpp"
 import std;
 import boost.functional;
+import boost.bind;
 
 int main() {
     struct less_t {

@@ -32,22 +32,28 @@
 | docs/2026-08-30-m11-t2-compiled-libs.md | M11 | 18 编译库批量接入 (TU 表逐库定稿); exception 降级 include-only (gcc CMI pendings bug); CI POSIX 腿大批守卫修复 + 测试消费方式调整 |
 | docs/2026-09-05-m12-t1b-heavy-template-libs.md | M12 | 12 重型模板库接入 (共 115 模块); clang 2^31 源位置上限 → CI A/B 分组门禁; compute/mysql/redis 移交 M13; vendored 修补 5 族 9 文件 |
 | plan/2026-09-06-usage-reclassification-...md | C1–C3 | 消费者使用方式重分类: describe/openmethod/scope_exit/log/test 降级 (log/test 为「编译库 include-only」新形态, test feature 改名 unit_test_framework 双形态消费); hof/units 宏改造重新模块化; 设计记录见 docs/2026-09-07-c1-c3-usage-reclassification-and-hof-units-reentry.md |
+| docs/2026-09-07-c4-bind-lambda-lambda2-modularization.md | C4 | bind/lambda/lambda2 重新模块化 (T3 宏面占比误判纠正); lambda 占位符 TU-local → inline constexpr (hof/units 同法); bimap 的 boost.iterator re-export 边经 first-wins 漂移丢失 → 定点钉定 (全局 dep_graph 递归两案否决, 见 C4 §4.2) |
 
 ## 2. 总体进度
 
-- 已接入模块 **112 个** (T0 26 + T1a 58 + T2 16 + T1b 12; C1 五库降级 −5, C2
-  hof/units 回归 +2); feature **114 个** (112 模块 + log/unit_test_framework
-  两个无模块 feature); include-only **27 库** = 纯 include-only 25 (T3 19 +
-  predef/static_assert/exception + describe/openmethod/scope_exit) +
-  **编译库 include-only 2** (log / unit_test_framework, 有 feature 无模块, C1
-  新形态; test 双形态消费)。
-  封装总数 139 不变。测试 141/141 (llvm/msvc)。
+- 已接入模块 **115 个** (T0 26 + T1a 61 + T2 16 + T1b 12; C1 五库降级 −5, C2
+  hof/units 回归 +2, C4 bind/lambda/lambda2 回归 +3); feature **117 个**
+  (115 模块 + log/unit_test_framework 两个无模块 feature); include-only
+  **24 库** = 纯 include-only 22 (T3 16 + predef/static_assert/exception +
+  describe/openmethod/scope_exit) + **编译库 include-only 2** (log /
+  unit_test_framework, 有 feature 无模块, C1 新形态; test 双形态消费)。
+  封装总数 139 不变。测试默认集 141/141 + opt-in 定点全绿 (llvm/msvc, C4 本地)。
   > 计数勘误 (C3): 原文 "include-only 23 库 (T3 19 + 降级 4)" 漏数 M11 降级的
-  > exception, 实为 24; C1 后 29, C2 后回落 27。
+  > exception, 实为 24; C1 后 29, C2 后回落 27, C4 后 24。
+  > C4 (2026-09-07): T3 的 bind/lambda/lambda2 归因纠正为宏面占比粗筛误判
+  > (宏全是实现细节, API 是模板 + 占位符对象), 重新模块化; lambda 的
+  > include-only 真因是占位符 TU-local (hof/units 同型), 见
+  > 2026-09-07-c4-bind-lambda-lambda2-modularization.md。
 - 默认集 = 36 库闭包 (C1: scope_exit/log/test 除名致 function 移出闭包);
   其余 opt-in (`mcpp build --features <feature>`);
-  CI 全量门禁按 A/B 两组 (M12 §3; A 组 100 模块 + log/unit_test_framework,
-  B 组 12), `features = ["all"]` 在 clang 上不可单次构建。
+  CI 全量门禁按 A/B 两组 (M12 §3; A 组 103 模块 + log/unit_test_framework
+  (C4: bind/lambda/lambda2 并入 A 组), B 组 12), `features = ["all"]` 在
+  clang 上不可单次构建。
 - CI 四腿 (windows-llvm-msvc / linux-gcc / linux-llvm / macos-llvm) 全绿;
   mcpp pinned 2026.8.29.1。
 
@@ -134,6 +140,7 @@
 | 4 | `[build].sources` 不可清空 (mcpp `src/**` 推断使 test 模式分组失效) | base 保留全部 per-lib glob, feature 声明 gating | 遵守现状约定 (mcpp.toml 注释已标) | M8 §1.1/§6 |
 | 5 | libclang 资源目录依赖: pip wheel 的 libclang 无资源目录 → 声明静默丢失 (mp11 事件先例) | README 已有 LIBCLANG_PATH 指引; uv 路径已配 PEP 723 | 保持 | M3 §4.1 |
 | 6 | M14 未开始: mcpp-index boost.lua、docs/architecture.md、发布流程均缺 (用户指定等全量接入后) | M13 跳过后 M14 前置状态需用户重新确认 | — | 主计划 M7/M14 |
+| 7 | ~~**M10 宏面统计验证标准的系统性盲点**~~ — **已解 (2026-09-07, C4)**: own-family 宏占比只能证明"宏面大",不能证明"API 是宏";bind (9 宏)/lambda2 (9)/lambda (17) 的宏全是实现细节 (include guard/调用约定配置/X-macro),API 是函数模板 + 占位符对象,曾被误判 T3 include-only。`--macros` 结论今后须与实体面审计 (linkage/导出面) 交叉验证。lambda 归因同步纠正:真因是占位符 TU-local (hof/units 同型) | C4 重新模块化并测试覆盖 | C4 §1/§9 |
 
 ### 3.8 消费者侧已记录的写法陷阱 (测试期沉淀, 文档化即可)
 

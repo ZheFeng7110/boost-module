@@ -2,9 +2,10 @@ boost.assert
 boost.concept_check
 boost.config
 boost.core
+# C4 pin: boost.iterator — view-iterator free operator!= lives in
+# boost.iterator; see the pin comment in this file (bimap.cppm).
 boost.functional
 boost.iterator
+boost.lambda
 boost.multi_index
-boost.tuple
 boost.type_traits
-boost.utility

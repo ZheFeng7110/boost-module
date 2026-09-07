@@ -9,7 +9,6 @@ module;
 export module boost.property_tree;
 
 export import boost.assert;
-export import boost.multi_index;
 export import boost.optional;
 export import boost.serialization;
 export import boost.type_traits;

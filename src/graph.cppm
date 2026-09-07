@@ -97,6 +97,7 @@ export import boost.any;
 export import boost.array;
 export import boost.assert;
 export import boost.bimap;
+export import boost.bind;
 export import boost.concept_check;
 export import boost.config;
 export import boost.core;

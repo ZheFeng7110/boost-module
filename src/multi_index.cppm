@@ -13,6 +13,7 @@ module;
 export module boost.multi_index;
 
 export import boost.assert;
+export import boost.bind;
 export import boost.config;
 export import boost.core;
 export import boost.mp11;

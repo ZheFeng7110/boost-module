@@ -4,5 +4,9 @@ module;
 
 export module boost.align;
 
+export import boost.assert;
+export import boost.config;
+export import boost.core;
+
 #include "gen_exports/align.inc"
 

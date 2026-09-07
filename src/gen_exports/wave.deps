@@ -4,7 +4,6 @@ boost.config
 boost.core
 boost.filesystem
 boost.iterator
-boost.multi_index
 boost.optional
 boost.pool
 boost.smart_ptr

@@ -3,6 +3,7 @@ boost.any
 boost.array
 boost.assert
 boost.bimap
+boost.bind
 boost.concept_check
 boost.config
 boost.core

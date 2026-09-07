@@ -169,3 +169,22 @@ feature 保留 (库 TU 照常编译链接)、无模块接口;test 的 feature �
 M9 降级档另注: hof/units 已于 C2 (2026-09-06) 宏改造后重新模块化,
 纯 include-only 名单回到 T3 19 + predef/static_assert (M9) +
 exception (M11) + 宏主体降级 3 (describe/openmethod/scope_exit)。
+
+## 9. 补记 (C4, 2026-09-07): T3 三库除名 — 宏面占比核实标准的盲点
+
+bind / lambda / lambda2 经实体面复核后从 T3 除名,重新模块化 (115 模块,
+T3 19 → 16)。§3 的 own-family 宏占比核实存在系统性盲点: 占比只证明
+"宏面大",不证明"API 是宏"。三库的宏全是实现细节 (include guard、
+BOOST_BIND_CC/ST 调用约定、BOOST_BIND_OPERATOR/BOOST_LAMBDA2_*_FN
+X-macro 助手),无一出现在用户代码;真实 API 是 `boost::bind` 函数模板 +
+`boost::arg` + 占位符对象、lambda 的 functor/运算符模板面。一个"API 就是
+宏调用"的库不可能只有个位数宏。lambda 的 include-only 结论碰巧正确但
+归因错误: `_1.._3/_e` 定义在匿名命名空间 (TU-local,不可 export),
+hof/units 同型,与宏无关。
+
+`gen_audit.py --macros` 的结论今后须与实体面审计 (linkage/导出面)
+交叉验证;宏面统计仍适用于 preprocessor/vmd 等真宏库。
+bind 的弃用头 `<boost/bind.hpp>` 全局 `using namespace
+boost::placeholders;` 是唯一模块面给不了的行为,文档要求模块消费者自持
+using。详见 `.agents/docs/2026-09-07-c4-bind-lambda-lambda2-
+modularization.md`。

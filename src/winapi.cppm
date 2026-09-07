@@ -39,6 +39,8 @@ module;
 
 export module boost.winapi;
 
+export import boost.config;
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 #include "gen_exports/winapi.inc"
 #endif

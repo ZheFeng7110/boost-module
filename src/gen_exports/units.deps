@@ -1,7 +1,5 @@
 boost.assert
 boost.config
-boost.iterator
+boost.lambda
 boost.math
-boost.tuple
 boost.type_traits
-boost.utility

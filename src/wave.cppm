@@ -19,7 +19,6 @@ export import boost.config;
 export import boost.core;
 export import boost.filesystem;
 export import boost.iterator;
-export import boost.multi_index;
 export import boost.optional;
 export import boost.pool;
 export import boost.smart_ptr;

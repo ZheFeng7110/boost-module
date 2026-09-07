@@ -29,6 +29,7 @@ array
 assert
 assign
 bimap
+bind
 bloom
 callable_traits
 circular_buffer
@@ -51,6 +52,8 @@ hof
 icl
 integer
 intrusive
+lambda
+lambda2
 leaf
 lexical_cast
 lockfree
