@@ -1,11 +1,17 @@
 # 设计文档汇总与未解问题清单 (rollup)
 
 > 日期: 2026-09-05 · 状态: 汇总快照 (基于 M0–M12 已完成时点)
-> 来源: `.agents/docs/` 全部 11 篇设计文档 + `.agents/plan/` 3 篇计划/报告 + README.md
+> 来源: `.agents/docs/` 全部设计文档 + `.agents/plan/` 计划/报告 + README.md
 > 范围说明: **M13 (外部依赖/asm 库, 11 库) 按用户决策暂跳过不做** —— 本文仅将其
 > 记录为边界 (§3.6), 不展开方案; M14 (发布) 亦未开始。
 > 用途: (1) 一页看懂各里程碑设计; (2) 集中登记所有文档中"边界与已知限制"
 > 小节的未解问题, 供后续里程碑 (M13/M14 及维护期) 逐项销账。
+>
+> **C1–C3 更新 (2026-09-06/07, 消费者使用方式重分类)**: 五库降级 include-only
+> (describe/openmethod/scope_exit/log/test, 其中 log/test 为「编译库 include-only」
+> 新形态)、hof/units 宏改造后重新模块化 —— 计数与相关条目已按
+> `.agents/docs/2026-09-07-c1-c3-usage-reclassification-and-hof-units-reentry.md`
+> 同步 (标 "C1"/"C2")。
 
 ## 1. 设计文档一览 (逐篇摘要)
 
@@ -25,13 +31,23 @@
 | docs/2026-08-30-m10-t3-macro-driven-libs.md | M10 | T3 19 宏驱动库边界确认 (gen_audit --macros 宏面统计核实, own-family 主导); include-only 用法文档化; 旁路头确认不逐库扩展 |
 | docs/2026-08-30-m11-t2-compiled-libs.md | M11 | 18 编译库批量接入 (TU 表逐库定稿); exception 降级 include-only (gcc CMI pendings bug); CI POSIX 腿大批守卫修复 + 测试消费方式调整 |
 | docs/2026-09-05-m12-t1b-heavy-template-libs.md | M12 | 12 重型模板库接入 (共 115 模块); clang 2^31 源位置上限 → CI A/B 分组门禁; compute/mysql/redis 移交 M13; vendored 修补 5 族 9 文件 |
+| plan/2026-09-06-usage-reclassification-...md | C1–C3 | 消费者使用方式重分类: describe/openmethod/scope_exit/log/test 降级 (log/test 为「编译库 include-only」新形态, test feature 改名 unit_test_framework 双形态消费); hof/units 宏改造重新模块化; 设计记录见 docs/2026-09-07-c1-c3-usage-reclassification-and-hof-units-reentry.md |
 
 ## 2. 总体进度
 
-- 已接入模块 **115 个** (T0 27 + T1a 58 + T2 18 + T1b 12); include-only **23 库**
-  (T3 19 + 降级 4); M13 边界外 11 库 (T4 原 8 + M12 移交 3)。测试 138/138 (llvm/msvc)。
-- 默认集 = 36 库闭包; 其余 opt-in (`mcpp build --features <lib>`);
-  CI 全量门禁按 A/B 两组 (M12 §3), `features = ["all"]` 在 clang 上不可单次构建。
+- 已接入模块 **112 个** (T0 26 + T1a 58 + T2 16 + T1b 12; C1 五库降级 −5, C2
+  hof/units 回归 +2); feature **114 个** (112 模块 + log/unit_test_framework
+  两个无模块 feature); include-only **27 库** = 纯 include-only 25 (T3 19 +
+  predef/static_assert/exception + describe/openmethod/scope_exit) +
+  **编译库 include-only 2** (log / unit_test_framework, 有 feature 无模块, C1
+  新形态; test 双形态消费)。
+  封装总数 139 不变。测试 141/141 (llvm/msvc)。
+  > 计数勘误 (C3): 原文 "include-only 23 库 (T3 19 + 降级 4)" 漏数 M11 降级的
+  > exception, 实为 24; C1 后 29, C2 后回落 27。
+- 默认集 = 36 库闭包 (C1: scope_exit/log/test 除名致 function 移出闭包);
+  其余 opt-in (`mcpp build --features <feature>`);
+  CI 全量门禁按 A/B 两组 (M12 §3; A 组 100 模块 + log/unit_test_framework,
+  B 组 12), `features = ["all"]` 在 clang 上不可单次构建。
 - CI 四腿 (windows-llvm-msvc / linux-gcc / linux-llvm / macos-llvm) 全绿;
   mcpp pinned 2026.8.29.1。
 
@@ -45,7 +61,7 @@
 | 2 | `clone_impl<T>` (虚拟基) 消费者 TU 发射无 thunk 的 vtable | 库内三特化已修 (extras 显式实例化 + extern template); **消费者自定义异常类型仍缺 thunk** — extern template 无法枚举用户类型 | M6 §3.3/§3.4, M6 §5 |
 | 3 | variant `apply_visitor` 自由函数重载消费者侧 ICE (has_result_type.hpp) | 测试改用成员版本 `v.apply_visitor()` 绕过; 编译器 bug 未解, 其他触发形态仍可能复现 | M6 §3.3, M3 §8 |
 | 4 | exception 模块 CMI lazily-loaded pendings 递归加载失败 ("recursive lazy load") | **库降级 include-only** (唯一相对计划的删减); 任何真实消费者 TU 均失败, 模块 TU 内显式实例化无效; 等 gcc 修复后可重新接入 | M11 §1, §6.1 |
-| 5 | CMI/GMF 合并冲突 (`std::__byte_operand` 等, `<cstddef>` 双路进入) | 测试侧改纯 include 绕过 (T3 consumer rule); 机制仍在 | M11 §7.4 |
+| 5 | CMI/GMF 合并冲突 (`std::__byte_operand` 等, `<cstddef>` 双路进入) | log 模块已降级 include-only (C1) —— 三编译器消费方式不一致随之消除; 机制对其余库仍在, 测试侧按 T3 consumer rule 绕过 | M11 §7.4, C1 §1.1 |
 | 6 | `__synth3way_t operator<=>` mangle 冲突 (wave CMI 与依赖 CMI 各记一份) | 测试改纯 include; `-fabi-version=0` 对合成运算符无效 | M11 §7.4 |
 | 7 | Boost.Test nfp 关键字匿名命名空间 TU-local 暴露 | vendored 修复 (命名命名空间 + inline 变量), 已解 — 列作匿名命名空间撞名族的工作范式 | M11 §6.5/§7.4 |
 
@@ -67,11 +83,11 @@
 
 | # | 问题 | 消费者替代拼写 | 出处 |
 |---|---|---|---|
-| 1 | 内部链接 constexpr 对象不可导出: hof/units 整库降级 include-only | include 上游头 | M9 §1, §6 |
+| 1 | ~~内部链接 constexpr 对象不可导出: hof/units 整库降级 include-only~~ — **已解 (C2, 2026-09-06)**: vendored 宏改造 (hof `BOOST_HOF_STATIC_CONSTEXPR`/`STATIC_AUTO_REF`/`STATIC_CONST_VAR`、units `BOOST_UNITS_STATIC_CONSTANT` → `inline constexpr`) 使对象获外链, 两库重新模块化 (units 1355 / hof 353 实体导出); 宏补丁由 reapply_hand_edits.py 幂等回放 | hof/units 照常 import (gcc 16.1 CI 腿已验证无混用 ODR) | M9 §1/§6, C2 §3.2–3.3 |
 | 2 | 同型: accumulators `extract::count/mean/...`、mqtt5 `prop::*` 命名常量、hana 字面量变量模板 | `extract_result<>` 函数模板 / `integral_constant` / 类模板 | M12 §7.1 |
 | 3 | 匿名命名空间 forwarder 不导出: range pipe 语法 (`vec | reversed` 不可用)、multi_array `boost::extents` | 函数形式 reverse/filter/transform; 容器式构造 | M3 §8, M9 §6 |
 | 4 | `numeric::interval<double>` 模块面不可实例化 (默认 policies 依赖 CMI 无法携带的显式特化) | include `<boost/numeric/interval/interval.hpp>` | M12 §7.2 |
-| 5 | 宏永远不跨模块边界: T3 19 库 + test 的 BOOST_TEST_* + 包级版本宏 | include 上游头 / macros.hpp 旁路头 (仅 BOOST_VERSION) | M10 §4, M11 §6.7 |
+| 5 | 宏永远不跨模块边界: T3 19 库 + 宏主体 API 降级库的 BOOST_DESCRIBE_*/BOOST_OPENMETHOD*/BOOST_SCOPE_EXIT_* (C1) + BOOST_TEST_* (unit_test_framework, C1) | include 上游头 / macros.hpp 旁路头 (仅 BOOST_VERSION) | M10 §4, M11 §6.7, C1 §1 |
 | 6 | 同一 TU 内宏面与 re-homed 拼写互斥 (`boost::BOOST_VERSION` vs 宏展开) | 二选一 | M3 §6 |
 
 ### 3.4 构建期固定 / 库内功能裁剪 (设计决策, 消费者不可调整)
@@ -105,7 +121,7 @@
 | # | 内容 | 出处 |
 |---|---|---|
 | 1 | **M13 暂跳过 (用户决策 2026-09-05)**: T4 11 库不接入 —— context/fiber/coroutine (asm)、locale (ICU)、mpi、python、graph_parallel、parameter_python + M12 移交的 compute (OpenCL) / mysql / redis (OpenSSL) | M12 §1, all-libs-plan §4 |
-| 2 | T3 19 宏驱动库 + 4 降级库保持 include-only (宏是预处理器 API, 原理上不可模块化) | M10 §1 |
+| 2 | ~~T3 19 宏驱动库 + 4 降级库保持 include-only~~ (C1/C2 更新): 纯 include-only 25 库 = T3 19 + predef/static_assert (M9) + exception (M11) + describe/openmethod/scope_exit (C1); 另有编译库 include-only 2 (log / unit_test_framework, 有 feature 无模块; test 双形态) | M10 §1, C1 §1 |
 | 3 | conversion (无头 stub)、coroutine2 (依赖 context)、property_map_parallel (无汇总根头) 等非库/依赖边界外 | M9 §1 |
 
 ### 3.7 工程流程风险 (本项目可改进项)

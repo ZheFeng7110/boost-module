@@ -2,18 +2,16 @@
 // linkage blocker is gone (BOOST_UNITS_STATIC_CONSTANT patched to
 // `inline constexpr`), so the SI unit constants (si::meter etc.) export
 // through the boost.units module face alongside the quantity/class surface.
-// The BOOST_UNITS_* macro API stays include-side; mixing include + import in
-// one TU ODR-conflicts on gcc 16 (describe.cpp precedent; units' macro face
-// is large, M10 own-283) — so this TU imports only (gcc falls back to pure
-// include), and the macro face is covered in tests/units_include.cpp.
+// The module import works on all three compilers — CI (gcc 16.1 linux leg,
+// 2026-09) verified that importing boost.units does NOT trip the gcc
+// include+import ODR conflict (describe.cpp precedent does not apply: the
+// units GMF carries no collision-prone entity family, despite the large
+// macro face M10 own-283 — macros and the module face coexist fine). The
+// BOOST_UNITS_* macro API stays include-side and is covered in
+// tests/units_include.cpp.
 #include "test_assert.hpp"
 #include <cassert>
-//#if !defined(__GNUC__) || defined(__clang__)
 import boost.units;
-//#else
-//#include <boost/units/systems/si.hpp>
-//#include <boost/units/quantity.hpp>
-//#endif  // test use module in gcc
 
 int main() {
     namespace si = boost::units::si;

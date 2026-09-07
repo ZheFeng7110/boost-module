@@ -280,3 +280,32 @@ example 回归通过。
   detail/print_helper.hpp、test/utils/basic_cstring/basic_cstring.hpp。
 - 测试消费方式调整记录:cobalt(仍 import,补标准头)、exception/log/
   wave 改 include-only(T3 consumer rule),timer(仍 import,加 sleep)。
+
+## 8. 补记 (C1, 2026-09-06): log / test 模块除名
+
+C1 (usage-reclassification 计划阶段 1) 将 T2 中两库降级为
+**编译库 include-only** (有 feature 无模块,新形态),本文 §2 的 TU 表相应
+变化 (T2 模块 18 → 16):
+
+- **log**: 模块接口删除,feature `log` 保留全部库 TU globs (§2 表不变,
+  仅失去 .cppm/.inc/.deps)。§7.4 的 gcc 消费面缺陷 (basic_formatting_ostream
+  operator<< 双强符号、CMI/GMF 撞名族) 随模块面消失而消除 —— 三编译器
+  消费方式统一为 include + 链接包内库 TU。`[features.log].implies` 改为
+  手工钉定 (原 .deps 边,gen_features.py EXTRA_IMPLIES),保证
+  `--features log` 在 build 模式拉齐链接依赖 (filesystem/thread/chrono 等)。
+- **test**: 模块接口删除,feature 改名 **`unit_test_framework`** (与上游
+  CMake 目标 boost_unit_test_framework 对齐),TU 集 = §2 表的 18 TU 不变,
+  但列为 FEATURE_ONLY_SOURCES —— 不进 base `[build].sources` (test 模式
+  全量编译会让框架 TU 与 included 聚合头双重定义,§3 约束)。双形态消费:
+  feature 开 = 编译框架 (BOOST_TEST_NO_MAIN + impl/unit_test_main.ipp +
+  自持 main,tests/test_utf.cpp);feature 关 = `<boost/test/included/
+  unit_test.hpp>` 聚合头自带 main (tests/test_included.cpp)。两文件用
+  `MCPP_FEATURE_UNIT_TEST_FRAMEWORK` 宏互斥门控。
+- **vendored 修补保留** (§6.9 家族 + §7 收尾项): print_helper /
+  basic_cstring / runtime modifier / token_iterator 四处对两种消费形态
+  同样受益,与模块无关;`reapply_hand_edits.py` 的 test 模块锚点
+  (test.cppm/test.inc) 与 log 模块锚点 (log.cppm/log.inc 及
+  strip_log_version_namespace) 随模块删除一并移除。
+- CI: A 组含 log,unit_test_framework (feature 名);组 A (feature 开) 跑
+  test_utf 编译形态,默认集 (feature 关) 跑 test_included 纯头形态。
+  详见 `.agents/docs/2026-09-07-c1-c3-usage-reclassification-and-hof-units-reentry.md`。

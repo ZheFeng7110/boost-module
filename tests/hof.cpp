@@ -1,19 +1,16 @@
 // boost.hof smoke — C2 re-modularization (2026-09-06): the M9 internal-
 // linkage blocker is gone (BOOST_HOF_DECLARE_STATIC_VAR / STATIC_CONSTEXPR
 // macros patched to `inline constexpr`, external linkage), so compose/_1 and
-// friends export through the boost.hof module face. Macro-heavy consumption
-// (BOOST_HOF_STATIC_FUNCTION user-side) stays include-side; mixing include +
-// import in one TU ODR-conflicts on gcc 16 (describe.cpp precedent), so the
-// import is skipped on gcc — macro and import usage are covered separately
-// (this file: module face; the include/macro face lives in
-// tests/hof_include.cpp).
+// friends export through the boost.hof module face. The module import works
+// on all three compilers — CI (gcc 16.1 linux leg, 2026-09) verified that
+// importing boost.hof does NOT trip the gcc include+import ODR conflict
+// (describe.cpp precedent does not apply here: hof's GMF carries no
+// make_void/mp_list-style collision family) — so no __GNUC__ guard is
+// needed. Macro-heavy consumption (BOOST_HOF_STATIC_FUNCTION user-side)
+// stays include-side and is covered in tests/hof_include.cpp.
 #include "test_assert.hpp"
 #include <cassert>
-//#if !defined(__GNUC__) || defined(__clang__)
 import boost.hof;
-//#else
-//#include <boost/hof.hpp>
-//#endif  // test use module in gcc
 
 int main() {
     auto c = boost::hof::compose(boost::hof::identity, boost::hof::identity);

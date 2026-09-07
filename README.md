@@ -38,17 +38,17 @@
 ## 按库选择性构建 (M8 mcpp features + M9 全量接入)
 
 每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
-当前共 **112 个 feature** —— 110 个模块 feature（T0 26 + T1a 56 + T2 16 +
+当前共 **114 个 feature** —— 112 个模块 feature（T0 26 + T1a 58 + T2 16 +
 T1b 12）+ 2 个**无模块 feature**（log、unit_test_framework，见下节）。
-describe / openmethod / scope_exit / log / test 已降级 include-only
-（C1, 2026-09-06），hof/units/static_assert/predef 等宏/constexpr-对象 API 库
-保持 include-only（详见 M9/C1 设计文档）。
+describe/openmethod/scope_exit/log/test 已降级 include-only（C1, 2026-09-06），
+hof/units 已于 C2 宏改造后重新模块化；static_assert/predef/exception 等
+保持 include-only（详见各设计文档）。
 
-- **默认集** = 37 库闭包（`[features].default`，随模块 import 边自动增长）：
+- **默认集** = 36 库闭包（`[features].default`，随模块 import 边自动增长）：
   `mcpp build` / `mcpp test` 覆盖核心面（18 个原核心库 + config/assert/
   utility/move 等基建库）。
 - **opt-in 库**：其余 feature 需显式激活：`mcpp build --features <库,...>`。
-- **全量**：`mcpp build --features all`（全部 112 个 feature 编译）。
+- **全量**：`mcpp build --features all`（全部 114 个 feature 编译）。
 
 消费者侧（path dep 用法）：
 
@@ -70,15 +70,15 @@ boost.boost = { path = "..", features = ["all"] }
 
 ## include-only 库 (M10 / M11 / C1)
 
-**27 个库保持纯 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
+**25 个库保持纯 include-only**——无模块、无 feature、消费者直接 `#include` 上游头：
 
 - **T3 宏驱动 (19)**: preprocessor / mpl / fusion / proto / spirit / xpressive /
   lambda / lambda2 / bind / typeof / vmd / phoenix / parameter / metaparse /
   function_types / tti / local_function / msm / foreach —— 公共 API 是
   BOOST_PP_/BOOST_FOREACH/BOOST_TTI_* 等**宏族** (宏是预处理器层面的 API,
   named modules 永远无法导出),名单由 `gen_audit.py --macros` 宏面统计核实。
-- **M9 降级 (4)**: predef (纯 .h 检测宏)、static_assert (模块名含关键字)、
-  hof / units (公共 API 为内部链接 constexpr 对象)。
+- **M9 降级 (2)**: predef (纯 .h 检测宏)、static_assert (模块名含关键字)。
+  (hof / units 原同档降级,已于 C2 宏改造后重新模块化。)
 - **M11 降级 (1)**: exception (gcc 16.1 模块 CMI pendings 缺陷)。
 - **C1 降级 (3, 2026-09-06)**: describe / openmethod / scope_exit —— 公共 API
   以 BOOST_DESCRIBE_* / BOOST_OPENMETHOD* / BOOST_SCOPE_EXIT_* **宏为主体**
@@ -174,7 +174,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
   `mcpp.toml` 的 `[features]` 块（每库一个 feature，`sources` = 该库 `.cppm` + 编译库
   TU globs；log/unit_test_framework 为无模块 feature，仅库 TU，C1）与
   `scripts/features.lst`（build.mcpp 消费）。
-  默认集 = 37 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
+  默认集 = 36 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单；
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编

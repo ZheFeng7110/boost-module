@@ -149,3 +149,23 @@ import boost.config;        // 最小默认集模块 (GMF 仅 boost/config.hpp)
   front-end 形态 —— 按计划只做最小冒烟
 - T1b/T2/T4 移交 M12–M13;T3 集合从此冻结,后续新库按宏面统计 (gen_audit
   --macros) 进 include-only 名单时同步记录
+
+## 8. 补记 (C1, 2026-09-06): 「宏主体 API 降级」档
+
+T3 名单维持冻结。C1 (usage-reclassification 计划阶段 1) 新增一个与 T3
+**分列**的降级档 —— **宏主体 API 降级 (4 库)**: describe / openmethod /
+scope_exit / test。与 T3 的区别: 这些库的公共 API 不止宏,还有类型/函数面
+(原本可模块化),但 gcc 16.1 对同库 include+import 混用 ODR 重定义
+(describe.cpp 先例) 事实上迫使消费者二选一,而宏面 (BOOST_DESCRIBE_* /
+BOOST_OPENMETHOD* / BOOST_SCOPE_EXIT_* / BOOST_TEST_*) 永远只能 include
+(M10 §1 边界) —— 统一降级为纯 include,消除割裂。日期 2026-09-06;详细
+决策与实施见 `.agents/docs/2026-09-07-c1-c3-usage-reclassification-and-
+hof-units-reentry.md`。
+
+其中 test 与 log (gcc 缺陷族降级) 落入「编译库 include-only」新形态:
+feature 保留 (库 TU 照常编译链接)、无模块接口;test 的 feature 改名
+`unit_test_framework` 并双形态消费 (feature 开 = 编译框架 TU,关 =
+`<boost/test/included/**>` 纯头聚合;两形态不可同链接)。
+M9 降级档另注: hof/units 已于 C2 (2026-09-06) 宏改造后重新模块化,
+纯 include-only 名单回到 T3 19 + predef/static_assert (M9) +
+exception (M11) + 宏主体降级 3 (describe/openmethod/scope_exit)。

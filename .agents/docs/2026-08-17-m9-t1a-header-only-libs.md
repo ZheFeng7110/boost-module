@@ -134,10 +134,49 @@ STL 连纯 include 消费者都会硬报错, 该标志只降级此诊断。
 
 - **变量模板不收集**: libclang 不暴露 variable template cursor
   (pfr::tuple_size_v 等缺失), 已用类模板替代; M12 如需可走 curated
-- **hof/units 降级 include-only**: internal-linkage API 对象无法导出, 标准
-  层面的硬限制; 消费者 include + import 混用 (标准允许)
+- **hof/units 降级 include-only**: ~~internal-linkage API 对象无法导出, 标准
+  层面的硬限制~~ → **C2 已解除 (2026-09-06, 见 §7)**; 消费者 include + import
+  混用 (标准允许)
 - **multi_array 的 boost::extents**: 匿名命名空间对象, 不可导出; 消费者用
   容器式构造 (`boost::array` dims)
 - **T1b/T2/T3/T4** 移交 M10–M13
 - POSIX 腿 (linux/mac CI) 的守卫正确性由 CI 验证 — 本轮 .inc 守卫均镜像
   上游头条件, 与本机 mingw 快照同源
+
+## 7. 补记 (C2, 2026-09-06): hof/units 重新模块化
+
+M9 降级 hof/units 的唯一原因是公共 API 为内部链接 constexpr 对象
+(BOOST_HOF_DECLARE_STATIC_VAR / BOOST_HOF_STATIC_CONSTEXPR 族生成
+`static`/`const constexpr` 命名空间作用域对象; BOOST_UNITS_STATIC_CONSTANT
+生成 `static constexpr`)。C2 (usage-reclassification 计划阶段 2) 在
+**vendored 宏定义层**改造 (M12 匿名命名空间→inline 同型修法, 一处修改全局
+生效):
+
+- `boost/hof/detail/static_const_var.hpp`:
+  `BOOST_HOF_STATIC_CONSTEXPR` = `const constexpr` → **`inline constexpr`**;
+  `BOOST_HOF_STATIC_AUTO_REF` / `BOOST_HOF_STATIC_CONST_VAR(name)` =
+  `static constexpr auto&` → **`inline constexpr auto&`**。
+  覆盖 hof 全部公共对象面 (compose/flow/_1.._9/_/capture/pack/... 约 40 个
+  单件 + arg_c/if_c 变量模板); gcc-4.6 weak 分支保持原样; 全部展开点已核实
+  为命名空间作用域。
+- `boost/units/static_constant.hpp`: C++11 分支
+  `BOOST_STATIC_CONSTEXPR type name` (即 `static constexpr`) →
+  **`inline constexpr type name`** (si::meter 等全部单位常量, 185 处展开点
+  全在命名空间作用域; C++11 前分支不被 C++23 编译激活)。
+
+结果: 两库重新走生成器管线接入 (LIBS_INCLUDE_ONLY_M9 收缩回
+predef/static_assert, TARGET_LIBS 110 → 112)。units 导出 1355 实体
+(implies: assert/config/iterator/math/tuple/type_traits/utility),
+hof 导出 353 实体 (自含, 无 .deps)。hof.inc 按 M9 §3 惯例新增 MSVC
+风味守卫 7 实体 (bool_seq / called_val / callable_args /
+can_be_called_impl / eval_helper / operators::increment / decrement —
+镜像上游 `_MSC_VER`/`BOOST_HOF_NO_EXPRESSION_SFINAE`/
+`BOOST_HOF_NO_ORDERED_BRACE_INIT` 条件)。宏补丁锚点已登记
+reapply_vendored_patches() 幂等回放。
+
+**gcc 混用面 (原计划 §3.3.6 风险)**: CI linux-gcc 腿验证 —
+`import boost.hof;` / `import boost.units;` 在 gcc 16.1 直接可用,
+**不触发** describe.cpp 式 include+import ODR 冲突 (tests/hof.cpp /
+tests/units.cpp 无 __GNUC__ 守卫, 2026-09 用户确认)。宏面与模块面共存;
+用户侧宏用法 (BOOST_HOF_STATIC_FUNCTION 自定义对象等) 仍走 include
+(tests/hof_include.cpp / tests/units_include.cpp)。
