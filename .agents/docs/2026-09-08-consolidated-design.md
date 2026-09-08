@@ -36,7 +36,7 @@ boost-module/
 ├── deps/boost/               # vendored 1.91.0 (import_boost.py 导入; boost/boost/ 为唯一 include 根)
 ├── scripts/                  # import_boost / gen_exports / gen_audit / gen_features /
 │                             # reapply_hand_edits + patchs/*.patch (52 个) + curated/*.txt + libs.json
-├── tests/  examples/         # 每库 smoke (141 个默认集) + import boost; 消费者示例
+├── tests/  examples/         # 每库 smoke (141 个 .cpp + 1 个 .hpp) + import boost; 消费者示例
 └── .github/workflows/tests.yml   # CI 四腿
 ```
 
@@ -45,24 +45,36 @@ boost-module/
 include 根, 库↔头映射经 `libs/<lib>/meta/libraries.json` 或同名目录推断
 (`scripts/libs.json` 固化)。
 
-### 2.2 库分类与计数收口 (155 库, C4 后)
+### 2.2 库分类与计数收口 (2026-09-08 全量复算)
 
-| 分类 | 数量 | 内容 |
-|---|---|---|
-| 模块 (feature 有模块) | **115** | T0 26 (M0–M6, C1 除 scope_exit) + T1a 61 (M9 58 + C2 hof/units + C4 三库) + T2 16 (M11 18 − C1 log/test) + T1b 12 (M12) |
-| 纯 include-only | **22** | T3 宏驱动 16 (preprocessor/mpl/fusion/proto/spirit/xpressive/typeof/vmd/phoenix/parameter/metaparse/function_types/tti/local_function/msm/foreach) + predef/static_assert (M9) + exception (M11) + describe/openmethod/scope_exit (C1) |
-| 编译库 include-only (有 feature 无模块) | **2** | log / unit_test_framework (C1; test 双形态消费) |
-| 封装总数 | **139** | 115 模块 + 24 include-only |
-| M13 暂缓 (用户决策) | 11 | context/fiber/coroutine (asm)、locale (ICU)、mpi、python、parameter_python、graph_parallel、compute (OpenCL)、mysql/redis (OpenSSL) |
-| 非库/边界外 | 若干 | conversion (无头 stub)、coroutine2 (依赖 context)、property_map_parallel (无汇总根头)、detail/headers 目录 |
+实地清点 (仓库 `src/*.cppm` = 115、`scripts/features.lst` = 117、`scripts/libs.json` = 116、
+`tests/*.cpp` = 141、`tests/*.hpp` = 1; `[features].default` = 36):
 
-- feature **117** = 115 模块 feature + log / unit_test_framework 两个无模块 feature
-  (`gen_features.py` 生成, 勿手改)。
-- **默认集 = 36 库闭包** (`[features].default`, 随模块 import 边自动增长);
-  其余 opt-in (`mcpp build --features <库,...>`); 全量 `--features all`。
-- 测试: 默认集 **141/141** (llvm/msvc 本地) + opt-in 定点全绿; CI 全量门禁
-  按 **A/B 两组** (A = default + T1a + T2 共 103 模块 + log/unit_test_framework;
-  B = T1b 12), 因 clang 聚合源位置上限不可单次 `--features all` (§7.2#1)。
+| 分类 | 数量 | 计入 | 内容 |
+|---|---|---|---|
+| 模块接口 (`.cppm` + feature) | **115** | 115 模块 / 115 feature | `src/*.cppm` 115 个, 与 `features.lst` 模块部分一一对应; T0 26 (M0–M6, C1 除 scope_exit) + T1a 61 (M9 58 + C2 hof/units + C4 三库) + T2 16 (M11 18 − C1 log/test) + T1b 12 (M12) |
+| 编译库 include-only (有 feature 无 cppm) | **2** | 2 feature | log (C1 gcc 消费面降级)、unit_test_framework (C1 test 双形态; libs.json 中仍记 `test` → feature `unit_test_framework` 改名映射) |
+| 纯 include-only (无模块无 feature) | **20** | — | T3 宏驱动 16 (preprocessor / mpl / fusion / proto / spirit / xpressive / typeof / vmd / phoenix / parameter / metaparse / function_types / tti / local_function / msm / foreach; 宏是预处理器 API 永不跨模块边界, M10) + C1/M11 降级 4 (exception (M11)、describe / openmethod / scope_exit (C1)) |
+| **封装可消费总数** | **137** | 115+2+20 | = 115 模块 + 2 编译库 include-only + 20 纯 include-only |
+| **feature 总数** | **117** | — | = 115 模块 feature + log + unit_test_framework; `gen_features.py` 由 libs.json + .deps 生成, 勿手改 |
+| **libs.json 库集** | **116** | — | = 115 模块 + test 占位 (feature 中改名 `unit_test_framework`); `scripts/libs.json` |
+| M13 暂缓 (用户决策) | 11 | — | context / fiber / coroutine (asm)、locale (ICU)、mpi、python、parameter_python、graph_parallel、compute (OpenCL)、mysql / redis (OpenSSL) |
+| 非库/边界外 | 若干 | — | conversion (无头 stub)、coroutine2 (依赖 context)、property_map_parallel (无汇总根头)、detail/headers 目录 |
+
+- 默认集 **36 库闭包** (`[features].default`, 全为模块 feature; 闭包 0 跨入 log/utf,
+  命名 `default` 序列为权威): 其余 opt-in (`mcpp build --features <库,...>`);
+  全量 `--features all`。
+- **CI A/B 分组** (因 clang 2^31 源位置上限, §7.2#1): A = default + T1a + T2
+  共 **105 feature** (= 103 模块 + log + unit_test_framework); B = T1b
+  **12 feature** (accumulators / asio / beast / geometry / gil / graph / hana /
+  interprocess / mqtt5 / multiprecision / polygon / qvm)。
+- **测试** (`tests/` 下 `*.cpp` = **141** + `*.hpp` = **1**, 共 142 文件):
+  - **141 个 `.cpp`** = 36 默认集 smoke + 80 opt-in feature smoke + 20 纯
+    include-only smoke + 5 辅助 (`test_included.cpp` included 形态、`test_utf.cpp`
+    utf 编译形态、`hof_include.cpp`/`units_include.cpp` 包含形态对照、`macros.cpp`
+    旁路头);
+  - `test_assert.hpp` 1 个共享头, 非独立测试。
+  - 本地 llvm/msvc 默认集 **141/141** 通过; opt-in 定点全绿; CI A/B 全量门禁。
 - CI 四腿全绿: windows-llvm-msvc / linux-gcc / linux-llvm / macos-llvm。
 
 ### 2.3 mcpp features 机制 (实测结论)
@@ -181,7 +193,7 @@ implies 手工钉定 (原 .deps 边, 保证 `--features log` 拉齐链接依赖)
 1. **模块 import** (115 库): `import boost.<lib>;` / `import boost;`
    (恰好 re-export 激活库)。API 拼写与上游一致; 自由运算符已显式导出;
    friend 运算符经 ADL。
-2. **纯 include-only** (22 库): 无 feature 无模块, 直接 `#include` 上游头;
+2. **纯 include-only** (20 库, §2.2): 无 feature 无模块, 直接 `#include` 上游头;
    可与模块 import 同 TU 混用 (标准允许)。宏 API (BOOST_PP_/BOOST_FOREACH/
    BOOST_DESCRIBE_*/BOOST_OPENMETHOD*/BOOST_SCOPE_EXIT_*/BOOST_TEST_* 等)
    永远只能来自 include —— 宏是预处理器层面 API, 不跨模块边界 (M10 边界)。
@@ -376,9 +388,14 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    确为 mcpp 上游已修复, CI pinned 2026.8.29.1 不受影响; 只要不**降级** pinned
    就不会再遇到该缺陷, 修复进入的具体版本号无需追查 (rollup §3.5#6 原文
    "修复版本大于 pinned"系表述错误, rollup 已删)。行动: 无。
-2. ~~**rollup §3.6#2 计数陈旧**~~ — **处理中 (用户决策 2026-09-08)**: 将重新
-   全量计数 (模块/feature/include-only/闭包/测试), 稍后执行; 重计结果出来前
-   仍以 C4 §8 / 本文 §2.2 计数为准。
+2. ~~**rollup §3.6#2 计数陈旧**~~ — **已澄清 (2026-09-08 全量复算)**:
+    实地计数: 模块 cppm 115 / feature 117 (115 模块 + log + utf) / libs.json
+    116 / 纯 include-only 20 (16 T3 + describe/exception/openmethod/scope_exit) /
+    编译库 include-only 2 (log/utf) / 默认集 36 闭包 / 测试 141 cpp + 1 hpp /
+    CI A 组 105 feature + B 组 12 feature; 全部覆写于 §2.2。**注**: 原 §2.2
+    "纯 include-only 22 / 封装总数 139" 系 C4 后从未实地复算的旧估 (T3 16 + 误
+    列 predef/static_assert + exception + describe/openmethod/scope_exit = 22,
+    predef/static_assert 实际从未进入 libs.json), 现已修正。
 3. **历史勘误 (已记录, 无需行动)**: M4 文档 "gcc/mingw 28/28 全绿" 与 M5
    修订 (实为 5 项失败) 矛盾; M10 文档 include-only "23 库" 漏数 exception
    (实 24, C1 前) —— 均为过程文档记录不实, 已由后继文档勘误。
