@@ -1369,6 +1369,36 @@ def reapply_vendored_patches():
           "// core.hpp and exceptions.hpp) are literal-type initializable —\n"
           "// external linkage, cross-TU merged (hof/units C2 style).\n"
           "  constexpr lambda_functor() {}\n")
+    # lambda (C4.1, CI fix): detail's constant_null_type was `static const`
+    # in an anonymous namespace — internal linkage, so gcc 16 re-emits the
+    # definition once per imported CMI whose GMF included this header in the
+    # same consuming TU ("symbol is already defined" at assembly; bimap/graph
+    # smoke tests failed on CI). `inline constexpr` gives external linkage +
+    # cross-TU merging (C2 hof/units and C4 placeholder style); null_type is
+    # an empty aggregate, so constexpr initialization is trivial. It is still
+    # referenced only from attached member bodies, never exported — the
+    # module face is unchanged.
+    patch("deps/boost/boost/lambda/detail/lambda_functors.hpp",
+          "namespace detail {\n"
+          "namespace {\n"
+          "\n"
+          "  static const null_type constant_null_type = null_type();\n"
+          "\n"
+          "} // unnamed\n"
+          "} // detail\n",
+          "namespace detail {\n"
+          "\n"
+          "// boost-module C4.1 vendor patch: was `static const` in an anonymous\n"
+          "// namespace — internal-linkage objects are streamed into every module CMI\n"
+          "// that includes this header, and gcc 16 re-emits the definition once per\n"
+          "// imported CMI in the same consuming TU (\"symbol is already defined\" at\n"
+          "// assembly; bimap/graph smoke tests). `inline constexpr` gives external\n"
+          "// linkage + cross-TU definition merging (C2 hof/units and C4 placeholder\n"
+          "// style); null_type is an empty aggregate, so constexpr initialization\n"
+          "// is trivial.\n"
+          "  inline constexpr null_type constant_null_type = null_type();\n"
+          "\n"
+          "} // detail\n")
     patch("deps/boost/boost/lambda/core.hpp",
           "namespace {\n\n"
           "  // These are constants types and need to be initialised\n"

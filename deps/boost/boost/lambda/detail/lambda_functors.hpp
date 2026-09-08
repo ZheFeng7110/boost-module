@@ -47,11 +47,17 @@ namespace lambda {
 //inline const null_type const_null_type() { return null_type(); }
 
 namespace detail {
-namespace {
 
-  static const null_type constant_null_type = null_type();
+// boost-module C4.1 vendor patch: was `static const` in an anonymous
+// namespace — internal-linkage objects are streamed into every module CMI
+// that includes this header, and gcc 16 re-emits the definition once per
+// imported CMI in the same consuming TU ("symbol is already defined" at
+// assembly; bimap/graph smoke tests). `inline constexpr` gives external
+// linkage + cross-TU definition merging (C2 hof/units and C4 placeholder
+// style); null_type is an empty aggregate, so constexpr initialization
+// is trivial.
+  inline constexpr null_type constant_null_type = null_type();
 
-} // unnamed
 } // detail
 
 class unused {};
