@@ -41,7 +41,8 @@ module 注入消费者 TU。这正是上游已弃用行为,推荐写法本就是
    上游源在 `_e = freeE;` 后有 8 个尾随空格,补丁锚点按 pristine 文本精确
    匹配。
 
-`detail::constant_null_type` 保持内部:仅被导出类的成员体引用,从不导出。
+`detail::constant_null_type` 保持内部:仅被导出类的成员体引用,从不导出
+——该决定后被 C4.1 推翻,见 §10。
 
 ## 3. 名单迁移
 
@@ -153,3 +154,32 @@ hof/units), opt-in 面由定点单跑覆盖。
   过大否决,若未来 .deps 再次漂移,同法补钉。
 - first-wins 错位实体 (reference_wrapper 家族在 bind 而非 core) 属
   既有现象,C4 顺带如实记录,不另行重排。
+
+## 10. C4.1 — gcc 16 重复符号 CI 修复 (2026-09-08 补记)
+
+C4 push 后 linux-gcc 腿失败 (windows/llvm-macos 三腿绿): `mcpp test`
+默认集 141 项中 bimap/graph 两测试在**汇编期**报
+`symbol _ZN5boost6lambda6detail12_GLOBAL__N_1L18constant_null_typeE
+is already defined` (139 passed; 2 failed)。
+
+根因: §2 把 `constant_null_type` 留作匿名命名空间 `static const`
+(内部链接)。模块 CMI 会把被 odr-use 的内部链接变量**流式**进 CMI;
+gcc 16 对每个被 import 的 CMI 在同一消费 TU 里**重复发射**该定义
+(clang/MSVC 无此行为)。`boost/bimap/support/lambda.hpp` include
+`<boost/lambda/lambda.hpp>`,故 boost.bimap 的 GMF 与 boost.lambda
+CMI 各持一份,bimap/graph 测试 TU 同时 import 两者 → 同一汇编文件
+两份定义。lambda 测试自身只 import 单个 CMI,不触发。
+
+修法 (同 C2/C4 模式,改内部链接本身):
+
+- `lambda/detail/lambda_functors.hpp`: 匿名命名空间 `static const`
+  → `inline constexpr null_type constant_null_type` (外链 + 跨 TU
+  comdat 去重;`null_type` 为空聚合,constexpr 初始化平凡)。仍不被
+  导出,模块面不变。
+- `scripts/reapply_hand_edits.py` C4 块追加同款补丁,随重生成管线
+  回放,幂等。
+
+验证: llvm 本地 `mcpp test` 141/141 全绿;裸 g++ 16.1.0 (mingw,
+x86_64-windows-gnu) 双模块 GMF include 复现脚本编译干净、无
+TU-local 暴露警告。本地 mingw-gcc 包管线另有 asio win_thread 冲突,
+属既有问题且 CI 未测 Windows-gcc,不在本修复范围。
