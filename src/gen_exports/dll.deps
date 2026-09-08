@@ -1,4 +1,5 @@
 boost.assert
 boost.core
 boost.filesystem
+boost.type_index
 boost.winapi

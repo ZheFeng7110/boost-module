@@ -5,7 +5,9 @@ module;
 export module boost.bloom;
 
 export import boost.assert;
+export import boost.container_hash;
 export import boost.core;
+export import boost.type_traits;
 
 #include "gen_exports/bloom.inc"
 

@@ -1,7 +1,9 @@
 boost.assert
 boost.core
+boost.function
 boost.iterator
 boost.mp11
 boost.optional
 boost.smart_ptr
 boost.type_traits
+boost.variant

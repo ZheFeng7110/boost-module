@@ -1,24 +1,3 @@
-diff --git a/src/core.cppm b/src/core.cppm
-index 4059650..8b230d8 100644
---- a/src/core.cppm
-+++ b/src/core.cppm
-@@ -39,5 +39,16 @@ module;
- 
- export module boost.core;
- 
-+// 对象宏 re-homing (M3): 宏无法跨模块导出。上游 <boost/version.hpp> 的对象宏
-+// 以 boost:: 命名空间 constexpr 重置于此 (拼写保持): 消费者 import 后可用
-+// boost::BOOST_VERSION。值须与 deps/boost/boost/version.hpp 一致 — tests/macros.cpp
-+// 在旁路头 (include/boost-module/macros.hpp) 参与下交叉校验。
-+// 注意: 同一 TU 中若定义了同名宏 (include <boost-module/macros.hpp>), 宏展开会
-+// 吞掉 boost::BOOST_VERSION 拼写 (→ boost::109100), 两种拼写互斥, 二选一。
-+export namespace boost {
-+  constexpr int BOOST_VERSION = 109100;
-+  constexpr const char* BOOST_LIB_VERSION = "1_91";
-+}
-+
- #include "gen_exports/core.inc"
- 
 diff --git a/src/gen_exports/core.inc b/src/gen_exports/core.inc
 index e8e2d79..8f30e11 100644
 --- a/src/gen_exports/core.inc

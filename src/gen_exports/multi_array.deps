@@ -1,5 +1,8 @@
 boost.array
 boost.assert
+boost.concept_check
 boost.config
 boost.core
+boost.functional
+boost.iterator
 boost.type_traits

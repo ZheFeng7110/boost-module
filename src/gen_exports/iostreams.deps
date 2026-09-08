@@ -1,7 +1,9 @@
 boost.assert
 boost.config
 boost.core
+boost.iterator
 boost.random
+boost.range
 boost.smart_ptr
 boost.throw_exception
 boost.type_traits

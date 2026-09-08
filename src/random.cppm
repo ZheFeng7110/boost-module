@@ -12,6 +12,8 @@ export import boost.assert;
 export import boost.config;
 export import boost.core;
 export import boost.dynamic_bitset;
+export import boost.integer;
+export import boost.io;
 export import boost.system;
 export import boost.type_traits;
 

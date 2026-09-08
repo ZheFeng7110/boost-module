@@ -1,4 +1,5 @@
 boost.assert
 boost.concept_check
 boost.config
+boost.throw_exception
 boost.type_traits

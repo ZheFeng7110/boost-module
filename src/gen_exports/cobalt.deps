@@ -1,10 +1,13 @@
 boost.asio
 boost.assert
 boost.callable_traits
+boost.circular_buffer
 boost.config
 boost.core
+boost.endian
 boost.intrusive
 boost.mp11
 boost.smart_ptr
+boost.static_string
 boost.system
 boost.variant2

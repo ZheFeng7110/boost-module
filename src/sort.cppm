@@ -12,6 +12,7 @@ module;
 
 export module boost.sort;
 
+export import boost.core;
 export import boost.type_traits;
 
 #include "gen_exports/sort.inc"

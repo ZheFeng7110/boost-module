@@ -8,6 +8,7 @@ export import boost.assert;
 export import boost.core;
 export import boost.optional;
 export import boost.system;
+export import boost.type_traits;
 export import boost.variant2;
 
 #include "gen_exports/url.inc"

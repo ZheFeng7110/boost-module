@@ -1,2 +1,3 @@
 boost.core
+boost.tuple
 boost.type_traits

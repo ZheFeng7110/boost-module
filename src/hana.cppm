@@ -12,6 +12,7 @@ module;
 export module boost.hana;
 
 export import boost.core;
+export import boost.tuple;
 export import boost.type_traits;
 
 #include "gen_exports/hana.inc"

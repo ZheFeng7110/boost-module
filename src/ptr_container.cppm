@@ -10,6 +10,7 @@ export module boost.ptr_container;
 
 export import boost.array;
 export import boost.assert;
+export import boost.circular_buffer;
 export import boost.config;
 export import boost.core;
 export import boost.iterator;

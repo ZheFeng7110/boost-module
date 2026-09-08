@@ -1,2 +1,5 @@
 boost.assert
 boost.config
+boost.optional
+boost.smart_ptr
+boost.utility

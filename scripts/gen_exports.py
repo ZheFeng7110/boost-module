@@ -18,6 +18,17 @@ Cross-module dedup: libraries are processed dependencies-first (include-based
 topological order); the first library to claim an entity's USR owns it, later
 libraries omit it and record `export import boost.<home>;` hints in <lib>.deps.
 
+Two-pass .deps completion (2026-09-08, fixes the C4 §4.2 structural defect):
+pass 1 (above) is left untouched — first-wins ownership is frozen, so .inc
+output is bit-identical to the pre-fix generator. Pass 2 then walks the
+BODIES of every exported entity (signatures alone under-approximate: view
+iterators reach boost.iterator entities only through bodies/base specs, and
+the include-graph extra_deps walk stops at target-owned roots — together
+these lost bimap's boost.iterator edge when lambda became a target lib, C4
+§4.1). Each boost:: entity referenced from an exported body contributes a
+candidate edge to its home lib; edges that are already transitive or would
+close a cycle are dropped, the rest are unioned into <lib>.deps.
+
 Usage:
     python scripts/gen_exports.py --scan            # regenerate scripts/libs.json
     python scripts/gen_exports.py                   # all 27 target libs
@@ -837,6 +848,183 @@ def emit_cppm(lib, out_dir, gfm_headers=None):
     (out_dir / "src" / (lib + ".cppm")).write_text("\n".join(lines), encoding="utf-8")
 
 
+# ---------------------------------------------------------------------------
+# pass 2: body-reference edge completion (C4 §4.2 structural-defect fix)
+# ---------------------------------------------------------------------------
+
+# Cursor kinds that carry a reference to a declaration. Referenced decls are
+# resolved through clang_getCursorReferenced (null when the reference stays
+# unresolved — e.g. dependent names in uninstantiated templates resolve only
+# partially; those are best-effort).
+_REF_KIND_NAMES = (
+    "DECL_REF_EXPR", "MEMBER_REF_EXPR", "MEMBER_REF", "TYPE_REF",
+    "TEMPLATE_REF", "NAMESPACE_REF", "UNRESOLVED_LOOKUP_EXPR",
+    "UNRESOLVED_MEMBER", "OVERLOADED_DECL_REF",
+)
+
+
+def _template_of_instantiation(cursor):
+    """The class/function template behind an implicit instantiation (None
+    otherwise). An instantiation cursor's location can be the instantiation
+    point, so its file is useless for home resolution — the template's own
+    definition file is the entity's true home."""
+    try:
+        ci = bc.get_ci()
+        r = ci.conf.lib.clang_getSpecializedCursorTemplate(cursor)
+        if r is not None and r.kind != ci.CursorKind.INVALID:
+            return r
+    except Exception:
+        pass
+    return None
+
+
+def collect_body_edges(lib, records, claimed, usr_index):
+    """Pass-2 collection: {home: set(usr)} — other target libraries whose
+    entities are referenced from the BODIES of this library's exported
+    entities (own + first-wins pulls, exactly the emit_inc export set).
+
+    closure_from walks declarations only, so entities reachable solely
+    through bodies / base-specifier instantiations never enter the records
+    and their homes produce no dep edge (the C4 bimap → boost.iterator loss).
+    The include-graph extra_deps walk cannot recover them either: dep_graph()
+    stops at target-owned roots, so the edge is invisible whenever the
+    reference is reached through another target lib's headers (C4 §4.1).
+
+    Emitted `export import boost.<home>;` edges are also *sufficient*: the
+    home module always exports its own entities (emit_inc `own` has no
+    claimed filter), so pointing at the definition's home is sound even when
+    the entity was first-claimed elsewhere.
+
+    Entities already pulled (unclaimed, hence exported here) are walked too:
+    their bodies' cross-home references are needed by consumers importing
+    only this module — except references resolving to an entity that is
+    itself on this module's face (own or pulled): those ride along with the
+    export and must not produce a redundant edge (keeps restored final-form
+    .cppm files, which hand-sync their import block, free of stray edges).
+    """
+    edges = {}               # home -> set(usr)
+    _seen_pairs = set()
+
+    def resolve(ref):
+        try:
+            r = ref.referenced
+        except Exception:
+            return
+        if r is None:
+            return
+        t = _template_of_instantiation(r)
+        if t is not None:
+            r = t
+        r = _promote(r)
+        if not bc.qualified_name(r).startswith("boost::"):
+            return
+        usr = bc.usr_of(r)
+        if not usr:
+            return
+        # The entity may already ride on this module's own face: entities
+        # first-claimed HERE (own + unclaimed pulls) are exported by this
+        # module, so consumers reach them without an import edge. Only
+        # entities claimed elsewhere (or seen solely through bodies) need
+        # the edge.
+        rec = records.get(usr)
+        if rec is not None and (rec["home"] == lib or usr not in claimed):
+            return
+        f = bc.cursor_file(r)
+        home = bc.home_lib_of_file(f, _FILE_TO_LIB) if f else "shared"
+        if home == lib or home == "shared" or home not in bc.TARGET_LIBS:
+            return
+        if (usr, home) in _seen_pairs:
+            return
+        _seen_pairs.add((usr, home))
+        edges.setdefault(home, set()).add(usr)
+
+    def walk(cursor):
+        stack = [cursor]
+        while stack:
+            cur = stack.pop()
+            if _kind_name(cur) in _REF_KIND_NAMES:
+                resolve(cur)
+            try:
+                stack.extend(cur.get_children())
+            except Exception:
+                pass
+
+    for rec in records.values():
+        if rec["home"] != lib and rec["usr"] in claimed:
+            continue                      # claimed elsewhere: not exported here
+        if rec["usr"].startswith("inject:"):
+            continue                      # using-injections carry no body
+        cur = usr_index.get(rec["usr"])
+        if cur is None:
+            continue
+        walk(cur)
+        try:
+            d = cur.get_definition()
+        except Exception:
+            d = None
+        if d is not None and d != cur:    # out-of-line bodies, class defs
+            walk(d)
+    return edges
+
+
+def merge_body_edges(out_dir, order, body_edges):
+    """Union pass-2 candidate edges into src/gen_exports/<lib>.deps.
+
+    Filters, in processing (topological) order:
+      - already a direct edge → skip;
+      - already transitive (home reachable through the current dep graph) →
+        skip (keeps the edge set minimal and avoids topo churn);
+      - would close a cycle → skip with a warning (mcpp rejects import
+        cycles; a genuinely cyclic consumer need cannot be fixed by edges).
+
+    Returns {lib: {home: ref_count}} for the edges actually added.
+    """
+    deps_dir = out_dir / "src" / "gen_exports"
+    graph = {}
+    for p in sorted(deps_dir.glob("*.deps")):
+        edges = set()
+        for line in p.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line.startswith("boost."):
+                edges.add(line[len("boost."):])
+        graph[p.stem] = edges
+
+    def reachable(src, dst):
+        stack, seen = [src], set()
+        while stack:
+            x = stack.pop()
+            if x == dst:
+                return True
+            if x in seen:
+                continue
+            seen.add(x)
+            stack.extend(graph.get(x, ()))
+        return False
+
+    added = {}
+    for lib in order:
+        for home in sorted(body_edges.get(lib, ())):
+            if home == lib or home in graph.get(lib, ()):
+                continue
+            if reachable(lib, home):
+                continue
+            if reachable(home, lib):
+                print("  body-dep {} -> {} skipped (would close a cycle)"
+                      .format(lib, home))
+                continue
+            graph.setdefault(lib, set()).add(home)
+            added.setdefault(lib, {})[home] = len(body_edges[lib][home])
+    for lib, homes in added.items():
+        p = deps_dir / (lib + ".deps")
+        lines = sorted("boost." + h for h in graph[lib])
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print("  body-dep {}: +{} ({})".format(
+            lib, len(homes), ", ".join(
+                "boost.{} ({} refs)".format(h, n)
+                for h, n in sorted(homes.items()))))
+    return added
+
+
 def main() -> int:
     global ci, _FILE_TO_LIB
     ap = argparse.ArgumentParser(description=__doc__,
@@ -851,6 +1039,8 @@ def main() -> int:
                     help="emit the complete closure per module (no cross-module dedup)")
     ap.add_argument("--emit-cppm", action="store_true",
                     help="also draft src/<lib>.cppm (M3 owns final form)")
+    ap.add_argument("--no-body-deps", action="store_true",
+                    help="disable the pass-2 body-reference .deps completion")
     args = ap.parse_args()
 
     if args.scan:
@@ -877,6 +1067,8 @@ def main() -> int:
     claimed = {}
     claimed_inject = {}
     summary = {}
+    body_all = {}            # lib -> {home: set(usr)} pass-2 candidates
+    gfm_by_lib = {}          # lib -> gate-pruned GFM (for post-merge emit_cppm)
     for lib in order:
         if lib not in libs:
             continue
@@ -900,21 +1092,48 @@ def main() -> int:
         exports, deps = emit_inc(lib, records, args.out, args.full_closure,
                                  claimed, extra_deps=bc.dep_graph(
                                      {lib: gfm_final})[lib])
+        # Pass 2 collection: bodies of exactly the emit_inc export set
+        # (own + unclaimed pulls) — must run while `claimed` still holds the
+        # pre-emit state emit_inc saw.
+        body_deps = {} if (args.full_closure or args.no_body_deps) else \
+            collect_body_edges(lib, records, claimed, usr_index)
+        if body_deps:
+            body_all[lib] = body_deps
+        gfm_by_lib[lib] = gfm_final
         for rec in records.values():
             claimed.setdefault(rec["usr"], lib)
         summary[lib] = {"candidates": len(cands),
                         "closure": len(records),
                         "exported": exports,
                         "deps": sorted(deps)}
-        if args.emit_cppm:
-            emit_cppm(lib, args.out, gfm_final)
-        print("  candidates={} closure={} exported={} deps={}"
-              .format(len(cands), len(records), exports, sorted(deps) or "-"))
+        if body_deps:
+            summary[lib]["body_deps"] = {h: sorted(v)
+                                         for h, v in body_deps.items()}
+        print("  candidates={} closure={} exported={} deps={} body-deps={}"
+              .format(len(cands), len(records), exports, sorted(deps) or "-",
+                      ", ".join(sorted(body_deps)) or "-"))
+
+    if not (args.full_closure or args.no_body_deps):
+        print("pass 2: body-reference .deps completion...")
+        added = merge_body_edges(args.out, order, body_all)
+        if not added:
+            print("  no edges to add")
+    else:
+        added = {}
+
+    # .cppm drafts are emitted after the pass-2 merge so their export-import
+    # block reflects the completed .deps (emit_cppm reads the .deps file).
+    if args.emit_cppm:
+        for lib in order:
+            if lib in gfm_by_lib:
+                emit_cppm(lib, args.out, gfm_by_lib[lib])
 
     out = args.out / "target" / "gen" / "gen_report.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(summary, indent=1, sort_keys=True), encoding="utf-8")
-    print("report -> {}".format(out))
+    out.write_text(json.dumps(summary, indent=1, sort_keys=True) + "\n",
+                   encoding="utf-8")
+    print("report -> {} ({} pass-2 edges added across {} libs)".format(
+        out, sum(len(v) for v in added.values()), len(added)))
     return 0
 
 

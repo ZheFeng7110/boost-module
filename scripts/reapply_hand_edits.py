@@ -33,6 +33,8 @@ PATCH_DIR = ROOT / "scripts" / "patchs"
 # first). json/core/io are "tolerant": their anchors may legitimately be
 # absent in the committed state (json's explanatory comment never got
 # committed; core.cppm/io.cppm are git-restored right after patching).
+# The former bimap entry (C4 boost.iterator pin) is gone: gen_exports pass 2
+# (body-reference .deps completion) emits the edge naturally since 2026-09-08.
 TOLERANT = {"json", "core", "io"}
 
 VENDORED_PATCHES = [
@@ -41,14 +43,23 @@ VENDORED_PATCHES = [
 ]
 
 SRC_PATCHES = [
-    "align", "atomic", "bimap", "bloom", "charconv", "cobalt", "config",
-    "container", "core", "decimal", "dll", "functional", "graph", "heap",
-    "hof", "interprocess", "intrusive", "iostreams", "json", "lambda",
-    "leaf", "math", "mp11", "multiprecision", "nowide", "parameter",
-    "parser", "pfr", "poly_collection", "process", "program_options", "qvm",
-    "range", "safe_numerics", "stacktrace", "system", "thread", "tuple",
-    "url", "utility", "variant", "winapi",
+    "align", "atomic", "bloom", "charconv", "cobalt", "config",
+    "container", "core", "decimal", "dll", "functional", "graph", "hana",
+    "heap", "hof", "hof_src", "interprocess", "intrusive", "iostreams",
+    "json", "lambda", "lambda_src", "leaf", "math", "mp11", "multiprecision",
+    "nowide", "parameter", "parser", "pfr", "poly_collection", "process",
+    "program_options", "qvm", "range", "safe_numerics", "safe_numerics_src",
+    "stacktrace", "system_src", "thread", "tuple", "url", "utility",
+    "variant", "winapi",
 ]
+# note: the vendored/src split — hof/io/lambda/safe_numerics/system spanned
+# deps/boost/ AND regenerated src/ files in one diff, which cannot replay
+# after a regen (deps part already applied ⇒ forward fails; src part freshly
+# regenerated ⇒ reverse fails). The deps hunks stay in VENDORED_PATCHES, the
+# src hunks moved to <name>_src.patch (io_src dropped: src/io.cppm is
+# git-restored right after, its hunk was a transitional no-op; core.patch's
+# core.cppm hunk dropped for the same reason). hana was orphaned (never
+# listed) — the ::boost:: ext-tag spelling regressed on every regen.
 
 
 def apply_patch_file(name):

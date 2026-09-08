@@ -7,11 +7,13 @@ export module boost.signals2;
 
 export import boost.assert;
 export import boost.core;
+export import boost.function;
 export import boost.iterator;
 export import boost.mp11;
 export import boost.optional;
 export import boost.smart_ptr;
 export import boost.type_traits;
+export import boost.variant;
 
 #include "gen_exports/signals2.inc"
 

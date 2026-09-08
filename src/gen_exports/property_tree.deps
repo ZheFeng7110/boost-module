@@ -1,4 +1,7 @@
+boost.any
 boost.assert
+boost.bind
 boost.optional
+boost.range
 boost.serialization
 boost.type_traits

@@ -61,15 +61,18 @@ include 根, 库↔头映射经 `libs/<lib>/meta/libraries.json` 或同名目录
 | M13 暂缓 (用户决策) | 11 | — | context / fiber / coroutine (asm)、locale (ICU)、mpi、python、parameter_python、graph_parallel、compute (OpenCL)、mysql / redis (OpenSSL) |
 | 非库/边界外 | 若干 | — | conversion (无头 stub)、coroutine2 (依赖 context)、property_map_parallel (无汇总根头)、detail/headers 目录 |
 
-- 默认集 **36 库闭包** (`[features].default`, 全为模块 feature; 闭包 0 跨入 log/utf,
-  命名 `default` 序列为权威): 其余 opt-in (`mcpp build --features <库,...>`);
+- 默认集 **48 库闭包** (`[features].default`, 全为模块 feature; 闭包 0 跨入
+  log/utf; 2026-09-08 dep_graph 修复 (§10#7) 体引用边使闭包 36 → 48,
+  命名 `default` 序列为权威, 见 docs/2026-09-08-dep-graph-two-pass-body-edge-completion.md):
+  其余 opt-in (`mcpp build --features <库,...>`);
   全量 `--features all`。
 - **CI A/B 分组** (因 clang 2^31 源位置上限, §7.2#1): A = default + T1a + T2
-  共 **105 feature** (= 103 模块 + log + unit_test_framework); B = T1b
+  共 **105 feature** (= 103 模块 + log + unit_test_framework; 新默认成员
+  全部 ∈ M3/T1a/T2, A 组计数不变); B = T1b
   **12 feature** (accumulators / asio / beast / geometry / gil / graph / hana /
   interprocess / mqtt5 / multiprecision / polygon / qvm)。
 - **测试** (`tests/` 下 `*.cpp` = **141** + `*.hpp` = **1**, 共 142 文件):
-  - **141 个 `.cpp`** = 36 默认集 smoke + 80 opt-in feature smoke + 20 纯
+  - **141 个 `.cpp`** = 48 默认集 smoke + 68 opt-in feature smoke + 20 纯
     include-only smoke + 5 辅助 (`test_included.cpp` included 形态、`test_utf.cpp`
     utf 编译形态、`hof_include.cpp`/`units_include.cpp` 包含形态对照、`macros.cpp`
     旁路头);
@@ -348,9 +351,10 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
 - 新增 vendored 修补需手工向 `reapply_vendored_patches()` 登记 (锚点漂移需
   人工维护, M12 出现 required→best-effort 降级先例; patch 文件化后 hunk 上下文
   对 gen_exports 输出格式敏感, 格式变化需同步再生成 .patch)。
-- bimap 的 `boost.iterator` re-export 边为手工钉定 (C4 §4.3), 根因是
-  dep_graph 对"同库根"停步 + first-wins BFS 巧合路径的结构性缺陷; 全局修复
-  两案 (own-subtree 递归 / 全局递归) 均因副作用否决; .deps 再漂移时同法补钉。
+- bimap 的 `boost.iterator` re-export 边**已由生成器自然再生** (2026-09-08
+  dep_graph 两遍扫描修复, §10#7; 手工钉边 `patchs/bimap.patch` 已删除);
+  根因 (dep_graph 对"同库根"停步 + first-wins BFS 巧合路径) 的修法与
+  剩余限制见 docs/2026-09-08-dep-graph-two-pass-body-edge-completion.md。
 - `gen_audit.py --macros` 判定盲点 (C4): 宏面统计须与实体面审计交叉验证。
 
 ## 8. 消费者/测试写法陷阱沉淀
@@ -400,7 +404,8 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    修订 (实为 5 项失败) 矛盾; M10 文档 include-only "23 库" 漏数 exception
    (实 24, C1 前) —— 均为过程文档记录不实, 已由后继文档勘误。
 4. **默认闭包数字演变散落**: 18 (M8) → 31 (M9/M10) → 34 (M11) → 36 (M12)
-   → C1 计划预估 35 实际 36 (functional 移出)。最终值 **36** 多处确认;
+   → C1 计划预估 35 实际 36 (functional 移出) → **48** (2026-09-08 dep_graph
+   修复, 体引用边补全使闭包扩张, 用户决策接受; CI A 组不受影响)。
    今后以 `gen_features.py` 输出为唯一权威。
 5. **hof/units gcc 混用守卫**: C1 计划预设需要 gcc 侧 ODR 守卫, CI 实测
    不需要并已移除 —— 已解, 但说明"宏面大 ⇒ 会撞 ODR"的推断不可靠
@@ -408,11 +413,15 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
 6. ~~**`--features all` 的发布表述**~~ — **已定 (用户决策 2026-09-08)**:
    **推荐消费者逐库 import**; 预览版 release notes / architecture.md 按此
    口径表述 (不承诺 `--features all` 单次可用, gcc 侧亦不再补测)。
-7. ~~**bimap 钉边与生成器债务**~~ — **已定 (用户决策 2026-09-08)**: 决定
-   **尝试修复 dep_graph 结构性缺陷** (同库根停步 + first-wins BFS 巧合路径
-   导致聚合式 GMF 的 re-export 边丢失, 见 C4 §4.2; 前提是不得复现两案否决
-   记录中的副作用 —— topo 洗牌/实体归属漂移/平台守卫爆炸)。修复落地前
-   bimap 钉边与守卫保持现状; 修复方案设计另行展开 (未实施, 仅记录决策)。
+7. ~~**bimap 钉边与生成器债务**~~ — **已定并实施 (用户决策 2026-09-08)**:
+   修复 dep_graph 结构性缺陷 (同库根停步 + first-wins BFS 巧合路径导致
+   聚合式 GMF 的 re-export 边丢失, 见 C4 §4.2), 采用 **claim 与 edge 分离
+   的两遍扫描** (pass 1 first-wins 归属冻结, pass 2 遍历导出实体函数体
+   收集家库引用边, 环检测 + 传递过滤后并入 `.deps`), 未复现两案否决
+   记录中的副作用 (归属零漂移 / topo 不变 / 守卫零变化)。连带决策:
+   **默认闭包 36 → 48** (体引用边使默认集真实闭包显形, 用户接受)。
+   实施与验证见 docs/2026-09-08-dep-graph-two-pass-body-edge-completion.md;
+   bimap 钉边删除, 边由生成器自然再生。
 8. **M13/M14 前置关系**: 原计划 M14 发布以"剩余库全量接入"为前置; 2026-09-05
    M13 被用户决策暂缓, 2026-09-08 进一步决策**直接发布预览版** —— 发布门槛
    由"全量接入"改为"当前 115 模块 + 已知限制披露", 本决策以此为准。

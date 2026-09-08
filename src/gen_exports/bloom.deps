@@ -1,2 +1,4 @@
 boost.assert
+boost.container_hash
 boost.core
+boost.type_traits

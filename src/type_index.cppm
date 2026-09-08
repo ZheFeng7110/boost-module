@@ -7,6 +7,8 @@ module;
 export module boost.type_index;
 
 export import boost.assert;
+export import boost.container_hash;
+export import boost.throw_exception;
 
 #include "gen_exports/type_index.inc"
 

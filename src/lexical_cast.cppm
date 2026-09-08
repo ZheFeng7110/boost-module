@@ -6,6 +6,7 @@ export module boost.lexical_cast;
 
 export import boost.assert;
 export import boost.config;
+export import boost.container;
 export import boost.core;
 
 #include "gen_exports/lexical_cast.inc"

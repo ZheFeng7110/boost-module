@@ -16,6 +16,7 @@ export module boost.regex;
 export import boost.assert;
 export import boost.concept_check;
 export import boost.config;
+export import boost.throw_exception;
 export import boost.type_traits;
 
 #include "gen_exports/regex.inc"

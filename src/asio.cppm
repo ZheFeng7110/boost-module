@@ -18,6 +18,7 @@ module;
 
 export module boost.asio;
 
+export import boost.align;
 export import boost.assert;
 export import boost.date_time;
 export import boost.system;

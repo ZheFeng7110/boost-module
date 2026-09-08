@@ -12,6 +12,7 @@ export module boost.uuid;
 
 export import boost.assert;
 export import boost.config;
+export import boost.throw_exception;
 
 #include "gen_exports/uuid.inc"
 

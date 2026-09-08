@@ -10,6 +10,8 @@ export import boost.any;
 export import boost.assert;
 export import boost.function;
 export import boost.iterator;
+export import boost.lexical_cast;
+export import boost.smart_ptr;
 
 #include "gen_exports/program_options.inc"
 

@@ -2,5 +2,7 @@ boost.assert
 boost.config
 boost.core
 boost.dynamic_bitset
+boost.integer
+boost.io
 boost.system
 boost.type_traits

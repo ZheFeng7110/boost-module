@@ -1,1 +1,3 @@
 boost.config
+boost.type_traits
+boost.winapi

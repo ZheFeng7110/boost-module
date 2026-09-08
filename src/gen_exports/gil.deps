@@ -1,6 +1,7 @@
 boost.assert
 boost.config
 boost.core
+boost.integer
 boost.iterator
 boost.mp11
 boost.variant2

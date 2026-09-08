@@ -2,6 +2,7 @@ boost.assert
 boost.config
 boost.core
 boost.iterator
+boost.smart_ptr
 boost.throw_exception
 boost.type_traits
 boost.utility

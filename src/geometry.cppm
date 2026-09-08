@@ -98,6 +98,7 @@ export import boost.iterator;
 export import boost.lexical_cast;
 export import boost.math;
 export import boost.mp11;
+export import boost.multiprecision;
 export import boost.polygon;
 export import boost.qvm;
 export import boost.range;

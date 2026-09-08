@@ -6,6 +6,7 @@ export module boost.circular_buffer;
 
 export import boost.assert;
 export import boost.config;
+export import boost.core;
 export import boost.type_traits;
 
 #include "gen_exports/circular_buffer.inc"

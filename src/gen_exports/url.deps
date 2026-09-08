@@ -2,4 +2,5 @@ boost.assert
 boost.core
 boost.optional
 boost.system
+boost.type_traits
 boost.variant2

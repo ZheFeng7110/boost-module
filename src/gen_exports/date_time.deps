@@ -1,7 +1,9 @@
+boost.algorithm
 boost.assert
 boost.core
 boost.io
 boost.iterator
 boost.numeric
 boost.throw_exception
+boost.tokenizer
 boost.type_traits

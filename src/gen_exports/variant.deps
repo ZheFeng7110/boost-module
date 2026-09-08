@@ -1,5 +1,8 @@
 boost.assert
 boost.config
+boost.container_hash
 boost.core
+boost.integer
 boost.throw_exception
+boost.type_index
 boost.type_traits

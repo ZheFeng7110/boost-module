@@ -6,6 +6,7 @@ module;
 export module boost.parser;
 
 export import boost.assert;
+export import boost.type_index;
 
 #include "gen_exports/parser.inc"
 

@@ -8,12 +8,14 @@ module;
 
 export module boost.date_time;
 
+export import boost.algorithm;
 export import boost.assert;
 export import boost.core;
 export import boost.io;
 export import boost.iterator;
 export import boost.numeric;
 export import boost.throw_exception;
+export import boost.tokenizer;
 export import boost.type_traits;
 
 #include "gen_exports/date_time.inc"

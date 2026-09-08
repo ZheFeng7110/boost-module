@@ -14,6 +14,7 @@ export import boost.config;
 export import boost.core;
 export import boost.iterator;
 export import boost.mp11;
+export import boost.type_erasure;
 export import boost.type_traits;
 
 #include "gen_exports/poly_collection.inc"

@@ -1,4 +1,5 @@
 boost.assert
+boost.circular_buffer
 boost.config
 boost.core
 boost.numeric

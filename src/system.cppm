@@ -9,6 +9,7 @@ module;
 export module boost.system;
 
 export import boost.assert;
+export import boost.compat;
 export import boost.variant2;
 export import boost.winapi;
 

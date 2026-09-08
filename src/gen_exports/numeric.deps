@@ -2,6 +2,11 @@ boost.assert
 boost.config
 boost.core
 boost.iterator
+boost.lexical_cast
+boost.math
+boost.multi_array
 boost.range
+boost.serialization
 boost.type_traits
+boost.units
 boost.utility

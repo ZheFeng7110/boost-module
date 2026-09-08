@@ -9,6 +9,7 @@ export module boost.dll;
 export import boost.assert;
 export import boost.core;
 export import boost.filesystem;
+export import boost.type_index;
 export import boost.winapi;
 
 #include "gen_exports/dll.inc"

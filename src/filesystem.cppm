@@ -6,6 +6,8 @@ module;
 
 export module boost.filesystem;
 
+export import boost.io;
+export import boost.iterator;
 export import boost.smart_ptr;
 export import boost.system;
 

@@ -3,4 +3,5 @@ boost.config
 boost.core
 boost.iterator
 boost.mp11
+boost.type_erasure
 boost.type_traits

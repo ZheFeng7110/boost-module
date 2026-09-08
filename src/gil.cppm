@@ -24,6 +24,7 @@ export module boost.gil;
 export import boost.assert;
 export import boost.config;
 export import boost.core;
+export import boost.integer;
 export import boost.iterator;
 export import boost.mp11;
 export import boost.variant2;

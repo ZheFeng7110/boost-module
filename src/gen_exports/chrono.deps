@@ -1,5 +1,8 @@
 boost.assert
 boost.config
+boost.core
+boost.integer
+boost.move
 boost.ratio
 boost.system
 boost.type_traits

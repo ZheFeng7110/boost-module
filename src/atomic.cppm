@@ -5,6 +5,8 @@ module;
 export module boost.atomic;
 
 export import boost.config;
+export import boost.type_traits;
+export import boost.winapi;
 
 #include "gen_exports/atomic.inc"
 

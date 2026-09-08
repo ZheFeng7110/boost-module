@@ -6,6 +6,9 @@ export module boost.format;
 
 export import boost.assert;
 export import boost.config;
+export import boost.optional;
+export import boost.smart_ptr;
+export import boost.utility;
 
 #include "gen_exports/format.inc"
 

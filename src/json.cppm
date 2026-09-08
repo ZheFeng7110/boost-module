@@ -7,6 +7,7 @@ export module boost.json;
 
 export import boost.assert;
 export import boost.container;
+export import boost.endian;
 export import boost.mp11;
 export import boost.system;
 export import boost.variant2;

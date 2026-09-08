@@ -2,9 +2,11 @@ boost.asio
 boost.assert
 boost.config
 boost.core
+boost.endian
 boost.logic
 boost.optional
 boost.smart_ptr
+boost.static_string
 boost.system
 boost.throw_exception
 boost.type_index

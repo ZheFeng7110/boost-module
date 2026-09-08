@@ -8,6 +8,9 @@ export module boost.chrono;
 
 export import boost.assert;
 export import boost.config;
+export import boost.core;
+export import boost.integer;
+export import boost.move;
 export import boost.ratio;
 export import boost.system;
 export import boost.type_traits;

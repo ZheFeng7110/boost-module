@@ -1,1 +1,3 @@
 boost.assert
+boost.container_hash
+boost.throw_exception

@@ -25,11 +25,14 @@ export module boost.cobalt;
 export import boost.asio;
 export import boost.assert;
 export import boost.callable_traits;
+export import boost.circular_buffer;
 export import boost.config;
 export import boost.core;
+export import boost.endian;
 export import boost.intrusive;
 export import boost.mp11;
 export import boost.smart_ptr;
+export import boost.static_string;
 export import boost.system;
 export import boost.variant2;
 

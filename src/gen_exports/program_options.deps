@@ -2,3 +2,5 @@ boost.any
 boost.assert
 boost.function
 boost.iterator
+boost.lexical_cast
+boost.smart_ptr

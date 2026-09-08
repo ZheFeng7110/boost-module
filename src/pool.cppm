@@ -7,6 +7,7 @@ export module boost.pool;
 
 export import boost.assert;
 export import boost.config;
+export import boost.integer;
 export import boost.throw_exception;
 
 #include "gen_exports/pool.inc"

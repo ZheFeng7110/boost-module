@@ -13,6 +13,7 @@ export module boost.compat;
 
 export import boost.assert;
 export import boost.config;
+export import boost.throw_exception;
 
 #include "gen_exports/compat.inc"
 

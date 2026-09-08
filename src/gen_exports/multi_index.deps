@@ -1,7 +1,9 @@
 boost.assert
 boost.bind
 boost.config
+boost.container_hash
 boost.core
+boost.integer
 boost.mp11
 boost.throw_exception
 boost.tuple

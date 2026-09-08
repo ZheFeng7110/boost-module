@@ -61,8 +61,13 @@ export import boost.assert;
 export import boost.config;
 export import boost.core;
 export import boost.iterator;
+export import boost.lexical_cast;
+export import boost.math;
+export import boost.multi_array;
 export import boost.range;
+export import boost.serialization;
 export import boost.type_traits;
+export import boost.units;
 export import boost.utility;
 
 #include "gen_exports/numeric.inc"

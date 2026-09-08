@@ -1,3 +1,4 @@
 boost.assert
 boost.config
+boost.core
 boost.type_traits

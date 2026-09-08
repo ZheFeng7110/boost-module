@@ -8,6 +8,7 @@ module;
 export module boost.accumulators;
 
 export import boost.assert;
+export import boost.circular_buffer;
 export import boost.config;
 export import boost.core;
 export import boost.numeric;

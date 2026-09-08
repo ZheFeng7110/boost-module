@@ -16,6 +16,7 @@ export import boost.assert;
 export import boost.config;
 export import boost.core;
 export import boost.iterator;
+export import boost.smart_ptr;
 export import boost.throw_exception;
 export import boost.type_traits;
 export import boost.utility;

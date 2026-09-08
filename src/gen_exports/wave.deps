@@ -3,7 +3,9 @@ boost.concept_check
 boost.config
 boost.core
 boost.filesystem
+boost.format
 boost.iterator
+boost.multi_index
 boost.optional
 boost.pool
 boost.smart_ptr

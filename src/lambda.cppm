@@ -16,6 +16,7 @@ export module boost.lambda;
 export import boost.config;
 export import boost.tuple;
 export import boost.type_traits;
+export import boost.utility;
 
 #include "gen_exports/lambda.inc"
 

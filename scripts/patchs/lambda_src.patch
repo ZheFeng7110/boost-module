@@ -1,0 +1,17 @@
+diff --git a/src/gen_exports/lambda.inc b/src/gen_exports/lambda.inc
+index e1c45b5..bd586f7 100644
+--- a/src/gen_exports/lambda.inc
++++ b/src/gen_exports/lambda.inc
+@@ -343,7 +343,12 @@ export namespace boost { namespace lambda { namespace ll {
+   using boost::lambda::ll::pop_heap;
+   using boost::lambda::ll::prev_permutation;
+   using boost::lambda::ll::push_heap;
++#if !defined(BOOST_NO_CXX98_RANDOM_SHUFFLE)
++  // C4 flavor guard: random_shuffle is the
++  // !BOOST_NO_CXX98_RANDOM_SHUFFLE branch of algorithm.hpp
++  // (MSVC STL/libc++ under C++17 removed std::random_shuffle).
+   using boost::lambda::ll::random_shuffle;
++#endif
+   using boost::lambda::ll::remove;
+   using boost::lambda::ll::remove_copy;
+   using boost::lambda::ll::remove_copy_if;
