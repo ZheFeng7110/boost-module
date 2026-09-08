@@ -32,7 +32,7 @@
 | C1–C3 | 消费者使用方式重分类 (五库降级 + hof/units 重新模块化) | ✅ |
 | C4 | bind/lambda/lambda2 重新模块化 (T3 宏面误判纠正) + dep_graph 走查修复 | ✅ |
 
-> 里程碑 M7 之后见 [`boost-mcpp-all-libs-features-plan.md`](.agents/plan/boost-mcpp-all-libs-features-plan.md):
+> 里程碑 M7 之后见[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md):
 > 全库 (155 库) 接入 + mcpp `[features]` 按库选择性构建 (`default-features = false` 自选,
 > `features = ["all"]` 全量); 汇总模块 `import boost;` 由 build.mcpp 动态生成, 恰好
 > re-export 激活的库。
@@ -69,7 +69,7 @@ boost.boost = { path = "..", features = ["all"] }
 
 `import boost;`（build.mcpp 动态生成的汇总模块）恰好 re-export 当前激活的库；
 零激活时是合法空壳。详见
-[`.agents/docs/2026-08-15-m8-mcpp-features-infra.md`](.agents/docs/2026-08-15-m8-mcpp-features-infra.md)。
+[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md)。
 
 ## include-only 库 (M10 / M11 / C1)
 
@@ -151,8 +151,7 @@ BOOST_FOREACH (int x, vec) { /* ... */ }
 
 `include/boost-module/macros.hpp` 旁路头仅承载包级版本宏 (BOOST_VERSION),
 不逐库扩展宏面 —— T3 宏 API 一律 include 上游头获取。
-详见 [`.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md`](.agents/docs/2026-08-30-m10-t3-macro-driven-libs.md)
-与 [`.agents/plan/2026-09-06-usage-reclassification-and-include-only-adjustment-plan.md`](.agents/plan/2026-09-06-usage-reclassification-and-include-only-adjustment-plan.md)。
+详见[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md)。
 
 ## 辅助脚本
 
@@ -228,6 +227,5 @@ Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`�
 
 ## 相关文档
 
-- 计划与里程碑: [`.agents/plan/boost-mcpp-module-plan.md`](.agents/plan/boost-mcpp-module-plan.md)
-- 全库导入 + mcpp features 计划: [`.agents/plan/boost-mcpp-all-libs-features-plan.md`](.agents/plan/boost-mcpp-all-libs-features-plan.md)
-- 设计文档: [`.agents/docs/`](.agents/docs/)
+- 总体设计汇总（替代全部旧设计/计划文档）: [`.agents/docs/2026-09-08-consolidated-design.md`](.agents/docs/2026-09-08-consolidated-design.md)
+- 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](.agents/plan/2026-09-08-release-preview-plan.md)
