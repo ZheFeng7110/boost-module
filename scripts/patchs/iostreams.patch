@@ -1,0 +1,19 @@
+diff --git a/src/gen_exports/iostreams.inc b/src/gen_exports/iostreams.inc
+index c31f321..5181bf4 100644
+--- a/src/gen_exports/iostreams.inc
++++ b/src/gen_exports/iostreams.inc
+@@ -269,7 +269,14 @@ export namespace boost { namespace iostreams { namespace detail {
+   using boost::iostreams::detail::codecvt_extern;
+   using boost::iostreams::detail::codecvt_helper;
+   using boost::iostreams::detail::codecvt_holder;
++#if defined(BOOST_IOSTREAMS_NO_PRIMARY_CODECVT_DEFINITION) || \
++    defined(BOOST_IOSTREAMS_EMPTY_PRIMARY_CODECVT_DEFINITION) || \
++    defined(BOOST_IOSTREAMS_NO_LOCALE)
++  // M11 platform guard: detail/codecvt_helper.hpp declares codecvt_impl only
++  // on these std::codecvt workaround paths (libstdc++ mingw snapshot); the
++  // MSVC STL takes none of them.
+   using boost::iostreams::detail::codecvt_impl;
++#endif
+   using boost::iostreams::detail::codecvt_intern;
+   using boost::iostreams::detail::codecvt_state;
+   using boost::iostreams::detail::combination_traits;

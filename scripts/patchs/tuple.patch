@@ -1,0 +1,15 @@
+diff --git a/src/gen_exports/tuple.inc b/src/gen_exports/tuple.inc
+index 6bd19cf..68a520a 100644
+--- a/src/gen_exports/tuple.inc
++++ b/src/gen_exports/tuple.inc
+@@ -46,7 +46,10 @@ export namespace boost { namespace tuples { namespace detail {
+   using boost::tuples::detail::gt;
+   using boost::tuples::detail::gte;
+   using boost::tuples::detail::handle_width;
++#if !defined(__GNUC__)
++  // M3 hand-guard: ignore_t is a member-pointer typedef; gcc treats it as internal linkage.
+   using boost::tuples::detail::ignore_t;
++#endif
+   using boost::tuples::detail::lt;
+   using boost::tuples::detail::lte;
+   using boost::tuples::detail::make_tuple_mapper;

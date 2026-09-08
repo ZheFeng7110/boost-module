@@ -1,0 +1,118 @@
+diff --git a/src/gen_exports/multiprecision.inc b/src/gen_exports/multiprecision.inc
+index 017ec61..a2bc91f 100644
+--- a/src/gen_exports/multiprecision.inc
++++ b/src/gen_exports/multiprecision.inc
+@@ -143,7 +143,11 @@ export namespace boost { namespace multiprecision {
+   using boost::multiprecision::import_bits;
+   using boost::multiprecision::int1024_t;
+   using boost::multiprecision::int128_t;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: detail/standalone_config.hpp defines int128_type only
++  // under BOOST_HAS_INT128 (off under the clang-msvc flavor).
+   using boost::multiprecision::int128_type;
++#endif
+   using boost::multiprecision::int256_t;
+   using boost::multiprecision::int512_t;
+   using boost::multiprecision::integer_modulus;
+@@ -284,7 +288,10 @@ export namespace boost { namespace multiprecision {
+   using boost::multiprecision::trunc;
+   using boost::multiprecision::uint1024_t;
+   using boost::multiprecision::uint128_t;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: as above (uint128_type).
+   using boost::multiprecision::uint128_type;
++#endif
+   using boost::multiprecision::uint256_t;
+   using boost::multiprecision::uint512_t;
+   using boost::multiprecision::uniform_int_distribution;
+@@ -316,8 +323,15 @@ export namespace boost { namespace multiprecision { namespace backends {
+   using boost::multiprecision::backends::digit_base_type;
+   using boost::multiprecision::backends::digit_base_type::digit_base_10;
+   using boost::multiprecision::backends::digit_base_type::digit_base_2;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: divide_subtract is the synthetic-double_limb_type
++  // division branch of cpp_int/misc.hpp (BOOST_HAS_INT128 only).
+   using boost::multiprecision::backends::divide_subtract;
++#endif
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: as above (divide_unsigned_helper).
+   using boost::multiprecision::backends::divide_unsigned_helper;
++#endif
+   using boost::multiprecision::backends::do_eval_add;
+   using boost::multiprecision::backends::do_eval_subtract;
+   using boost::multiprecision::backends::eval_abs;
+@@ -689,7 +703,13 @@ export namespace boost { namespace multiprecision { namespace detail {
+   using boost::multiprecision::detail::abs;
+   using boost::multiprecision::detail::abs_funct;
+   using boost::multiprecision::detail::add_immediates;
++#if defined(BOOST_MP_HAS_IMMINTRIN_H)
++  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares addcarry_limb
++  // only under BOOST_MP_HAS_IMMINTRIN_H (the adc intrinsics dispatch — clang on
++  // macOS arm64 unsets the macro because __builtin_ia32_addcarryx_u64 is a
++  // gcc-only builtin and BOOST_GCC is not defined).
+   using boost::multiprecision::detail::addcarry_limb;
++#endif
+   using boost::multiprecision::detail::arg_type;
+   using boost::multiprecision::detail::assign_bits;
+   using boost::multiprecision::detail::backend_type;
+@@ -881,13 +901,19 @@ export namespace boost { namespace multiprecision { namespace detail {
+   using boost::multiprecision::detail::scoped_target_precision;
+   using boost::multiprecision::detail::shift_left;
+   using boost::multiprecision::detail::shift_right;
++#if defined(BOOST_MP_HAS_IMMINTRIN_H)
++  // M11 platform guard: cpp_int/intel_intrinsics.hpp declares subborrow_limb
++  // only under BOOST_MP_HAS_IMMINTRIN_H (see addcarry_limb guard for rationale).
+   using boost::multiprecision::detail::subborrow_limb;
++#endif
+   using boost::multiprecision::detail::subtract_immediates;
+   using boost::multiprecision::detail::terminal;
+   using boost::multiprecision::detail::transcendental_reduction_type;
+   using boost::multiprecision::detail::uint_t;
+-  using boost::multiprecision::detail::unmentionable;
+-  using boost::multiprecision::detail::unmentionable_type;
++  // M12: unmentionable dropped — no external linkage (multiprecision detail
++  // placeholder); gcc refuses the export.
++  // M12: unmentionable_type dropped — no external linkage (multiprecision detail
++  // placeholder); gcc refuses the export.
+   using boost::multiprecision::detail::unsigned_abs;
+   using boost::multiprecision::detail::use_empty_value_base;
+ }}}
+@@ -1034,7 +1060,12 @@ export namespace boost { namespace serialization { namespace cpp_int_detail {
+   using boost::serialization::cpp_int_detail::denominator;
+   using boost::serialization::cpp_int_detail::digit_base_type;
+   using boost::serialization::cpp_int_detail::divide_qr;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: serialize.hpp's `using namespace
++  // boost::multiprecision(::backends)` exposes the divide_subtract entity into
++  // cpp_int_detail — present only under BOOST_HAS_INT128.
+   using boost::serialization::cpp_int_detail::divide_subtract;
++#endif
+   using boost::serialization::cpp_int_detail::divide_unsigned_helper;
+   using boost::serialization::cpp_int_detail::do_eval_add;
+   using boost::serialization::cpp_int_detail::do_eval_subtract;
+@@ -1148,7 +1179,12 @@ export namespace boost { namespace serialization { namespace cpp_int_detail {
+   using boost::serialization::cpp_int_detail::import_bits;
+   using boost::serialization::cpp_int_detail::int1024_t;
+   using boost::serialization::cpp_int_detail::int128_t;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: serialize.hpp's `using namespace
++  // boost::multiprecision(::backends)` exposes the int128_type entity into
++  // cpp_int_detail — present only under BOOST_HAS_INT128.
+   using boost::serialization::cpp_int_detail::int128_type;
++#endif
+   using boost::serialization::cpp_int_detail::int256_t;
+   using boost::serialization::cpp_int_detail::int512_t;
+   using boost::serialization::cpp_int_detail::integer_modulus;
+@@ -1314,7 +1350,12 @@ export namespace boost { namespace serialization { namespace cpp_int_detail {
+   using boost::serialization::cpp_int_detail::trunc;
+   using boost::serialization::cpp_int_detail::uint1024_t;
+   using boost::serialization::cpp_int_detail::uint128_t;
++#if defined(BOOST_HAS_INT128)
++  // M12 platform guard: serialize.hpp's `using namespace
++  // boost::multiprecision(::backends)` exposes the uint128_type entity into
++  // cpp_int_detail — present only under BOOST_HAS_INT128.
+   using boost::serialization::cpp_int_detail::uint128_type;
++#endif
+   using boost::serialization::cpp_int_detail::uint256_t;
+   using boost::serialization::cpp_int_detail::uint512_t;
+   using boost::serialization::cpp_int_detail::uniform_int_distribution;

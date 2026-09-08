@@ -1,0 +1,112 @@
+diff --git a/deps/boost/boost/hof/detail/static_const_var.hpp b/deps/boost/boost/hof/detail/static_const_var.hpp
+index 553bd23..ce98b61 100644
+--- a/deps/boost/boost/hof/detail/static_const_var.hpp
++++ b/deps/boost/boost/hof/detail/static_const_var.hpp
+@@ -45,7 +45,12 @@ constexpr const T& static_const_var()
+ }} // namespace boost::hof
+ 
+ #if BOOST_HOF_HAS_RELAXED_CONSTEXPR || defined(_MSC_VER)
+-#define BOOST_HOF_STATIC_CONSTEXPR const constexpr
++// boost-module C2 vendor patch: `const constexpr` namespace-scope
++// objects are const-qualified → internal linkage, which made the whole
++// boost::hof public object face non-exportable through a module (M9
++// downgrade). Inline constexpr keeps spelling/semantics while giving
++// external linkage + cross-TU dedup. Replay after import_boost.
++#define BOOST_HOF_STATIC_CONSTEXPR inline constexpr
+ #else
+ #define BOOST_HOF_STATIC_CONSTEXPR static constexpr
+ #endif
+@@ -53,14 +58,21 @@ constexpr const T& static_const_var()
+ #if defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
+ #define BOOST_HOF_STATIC_AUTO_REF extern __attribute__((weak)) constexpr auto
+ #else
+-#define BOOST_HOF_STATIC_AUTO_REF static constexpr auto&
++// boost-module C2 vendor patch: was `static constexpr auto&` (internal
++// linkage); an inline constexpr reference is ODR-safe and exportable.
++#define BOOST_HOF_STATIC_AUTO_REF inline constexpr auto&
+ #endif
+ 
+ // On gcc 4.6 use weak variables
+ #if defined(__GNUC__) && !defined (__clang__) && __GNUC__ == 4 && __GNUC_MINOR__ < 7
+ #define BOOST_HOF_STATIC_CONST_VAR(name) extern __attribute__((weak)) constexpr auto name
+ #else
+-#define BOOST_HOF_STATIC_CONST_VAR(name) static constexpr auto& name = boost::hof::detail::static_const_var_factory()
++// boost-module C2 vendor patch: was `static constexpr auto&` (internal
++// linkage) — every BOOST_HOF_DECLARE_STATIC_VAR object (compose, _1.._9,
++// _, capture, pack, ... — the whole public face) was un-exportable
++// through a module; an inline constexpr reference keeps the spelling
++// and merges the definitions across TUs. All sites are namespace-scope.
++#define BOOST_HOF_STATIC_CONST_VAR(name) inline constexpr auto& name = boost::hof::detail::static_const_var_factory()
+ #endif
+ 
+ #define BOOST_HOF_DECLARE_STATIC_VAR(name, ...) BOOST_HOF_STATIC_CONST_VAR(name) = __VA_ARGS__{}
+diff --git a/src/gen_exports/hof.inc b/src/gen_exports/hof.inc
+index d276ea2..f99651f 100644
+--- a/src/gen_exports/hof.inc
++++ b/src/gen_exports/hof.inc
+@@ -145,15 +145,31 @@ export namespace boost { namespace hof { namespace detail {
+   using boost::hof::detail::args_at;
+   using boost::hof::detail::basic_first_of_adaptor;
+   using boost::hof::detail::bind_transformer;
++#if !defined(_MSC_VER)
++  // C2 platform guard: bool_seq is the non-_MSC_VER branch of
++  // detail/and.hpp (the MSVC branch declares struct and_ instead).
+   using boost::hof::detail::bool_seq;
++#endif
+   using boost::hof::detail::by_eval;
+   using boost::hof::detail::by_void_eval;
++#if !BOOST_HOF_NO_EXPRESSION_SFINAE
++  // C2 platform guard: callable_args is the !NO_EXPRESSION_SFINAE branch
++  // of detail/can_be_called.hpp (config.hpp: _MSC_VER → 1).
+   using boost::hof::detail::callable_args;
++#endif
+   using boost::hof::detail::callable_base;
+   using boost::hof::detail::callable_base_type;
++#if !BOOST_HOF_NO_EXPRESSION_SFINAE
++  // C2 platform guard: called_val is the !NO_EXPRESSION_SFINAE branch
++  // of detail/can_be_called.hpp (config.hpp: _MSC_VER → 1).
+   using boost::hof::detail::called_val;
++#endif
+   using boost::hof::detail::can_be_called;
++#if !BOOST_HOF_NO_EXPRESSION_SFINAE
++  // C2 platform guard: can_be_called_impl is the !NO_EXPRESSION_SFINAE branch
++  // of detail/can_be_called.hpp (config.hpp: _MSC_VER → 1).
+   using boost::hof::detail::can_be_called_impl;
++#endif
+   using boost::hof::detail::capture_f;
+   using boost::hof::detail::capture_invoke;
+   using boost::hof::detail::capture_pack;
+@@ -176,7 +192,11 @@ export namespace boost { namespace hof { namespace detail {
+   using boost::hof::detail::decoration;
+   using boost::hof::detail::decorator_invoke;
+   using boost::hof::detail::enable_if_constructible;
++#if !BOOST_HOF_NO_ORDERED_BRACE_INIT
++  // C2 platform guard: eval_helper is the !NO_ORDERED_BRACE_INIT branch
++  // of apply_eval.hpp (config.hpp: _MSC_VER → 1).
+   using boost::hof::detail::eval_helper;
++#endif
+   using boost::hof::detail::fix_adaptor_base;
+   using boost::hof::detail::fix_result;
+   using boost::hof::detail::flow_kernel;
+@@ -339,13 +359,21 @@ export namespace boost { namespace hof { namespace operators {
+   using boost::hof::operators::bit_or;
+   using boost::hof::operators::call;
+   using boost::hof::operators::compl_;
++#if !defined(_MSC_VER)
++  // C2 platform guard: operators::decrement is the #ifndef _MSC_VER
++  // branch of placeholders.hpp (MSVC 2017 ICE on ++/-- constexpr).
+   using boost::hof::operators::decrement;
++#endif
+   using boost::hof::operators::dereference;
+   using boost::hof::operators::divide;
+   using boost::hof::operators::equal;
+   using boost::hof::operators::greater_than;
+   using boost::hof::operators::greater_than_equal;
++#if !defined(_MSC_VER)
++  // C2 platform guard: operators::increment is the #ifndef _MSC_VER
++  // branch of placeholders.hpp (MSVC 2017 ICE on ++/-- constexpr).
+   using boost::hof::operators::increment;
++#endif
+   using boost::hof::operators::less_than;
+   using boost::hof::operators::less_than_equal;
+   using boost::hof::operators::multiply;

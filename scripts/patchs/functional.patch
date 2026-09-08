@@ -1,0 +1,20 @@
+diff --git a/src/gen_exports/functional.inc b/src/gen_exports/functional.inc
+index 92b6f93..e5cceea 100644
+--- a/src/gen_exports/functional.inc
++++ b/src/gen_exports/functional.inc
+@@ -368,10 +368,15 @@ export namespace boost { namespace mpl {
+   using boost::mpl::reverse_remove;
+   using boost::mpl::reverse_remove_if;
+   using boost::mpl::v_at;
++#if defined(__GNUC__)
++  // M9 platform guard: gcc-preprocessed mpl vector headers only.
+   using boost::mpl::v_at_impl;
+   using boost::mpl::v_item;
++#endif
+   using boost::mpl::v_iter;
++#if defined(__GNUC__)
+   using boost::mpl::v_mask;
++#endif
+   using boost::mpl::vector0;
+   using boost::mpl::vector1;
+   using boost::mpl::vector10;

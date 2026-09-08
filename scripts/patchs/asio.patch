@@ -1,0 +1,127 @@
+diff --git a/deps/boost/boost/asio/detail/call_stack.hpp b/deps/boost/boost/asio/detail/call_stack.hpp
+index 12afdfc..4c21c88 100644
+--- a/deps/boost/boost/asio/detail/call_stack.hpp
++++ b/deps/boost/boost/asio/detail/call_stack.hpp
+@@ -116,7 +116,7 @@ private:
+ };
+ 
+ template <typename Key, typename Value>
+-tss_ptr<typename call_stack<Key, Value>::context>
++inline tss_ptr<typename call_stack<Key, Value>::context>
+ call_stack<Key, Value>::top_;
+ 
+ } // namespace detail
+diff --git a/deps/boost/boost/asio/detail/keyword_tss_ptr.hpp b/deps/boost/boost/asio/detail/keyword_tss_ptr.hpp
+index 908c6f6..4a53a8b 100644
+--- a/deps/boost/boost/asio/detail/keyword_tss_ptr.hpp
++++ b/deps/boost/boost/asio/detail/keyword_tss_ptr.hpp
+@@ -60,7 +60,7 @@ private:
+ };
+ 
+ template <typename T>
+-BOOST_ASIO_THREAD_KEYWORD T* keyword_tss_ptr<T>::value_;
++inline BOOST_ASIO_THREAD_KEYWORD T* keyword_tss_ptr<T>::value_;
+ 
+ } // namespace detail
+ BOOST_ASIO_INLINE_NAMESPACE_END
+diff --git a/deps/boost/boost/asio/prefer.hpp b/deps/boost/boost/asio/prefer.hpp
+index 723f581..613e2ac 100644
+--- a/deps/boost/boost/asio/prefer.hpp
++++ b/deps/boost/boost/asio/prefer.hpp
+@@ -523,13 +523,15 @@ const T static_instance<T>::instance = {};
+ namespace boost {
+ namespace asio {
+ BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+-namespace {
+-
+-static constexpr const BOOST_ASIO_VERSIONED_NAME(prefer_fn)::impl&
++// boost-module M12 vendor patch: anonymous namespace -> inline variable.
++// The TU-local prefer object is referenced from the module face; when the
++// boost.asio CMI and a consumer GMF (beast/cobalt/process) both carry the
++// _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
++// print_helper family). A named inline constexpr keeps the spelling and
++// merges the definitions.
++inline constexpr const BOOST_ASIO_VERSIONED_NAME(prefer_fn)::impl&
+   prefer = BOOST_ASIO_VERSIONED_NAME(prefer_fn)::static_instance<>::instance;
+ 
+-} // namespace
+-
+ typedef BOOST_ASIO_VERSIONED_NAME(prefer_fn)::impl prefer_t;
+ 
+ template <typename T, typename... Properties>
+diff --git a/deps/boost/boost/asio/query.hpp b/deps/boost/boost/asio/query.hpp
+index 8e9e2c6..3a91993 100644
+--- a/deps/boost/boost/asio/query.hpp
++++ b/deps/boost/boost/asio/query.hpp
+@@ -260,13 +260,15 @@ const T static_instance<T>::instance = {};
+ namespace boost {
+ namespace asio {
+ BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+-namespace {
+-
+-static constexpr const BOOST_ASIO_VERSIONED_NAME(query_fn)::impl&
++// boost-module M12 vendor patch: anonymous namespace -> inline variable.
++// The TU-local query object is referenced from the module face; when the
++// boost.asio CMI and a consumer GMF (beast/cobalt/process) both carry the
++// _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
++// print_helper family). A named inline constexpr keeps the spelling and
++// merges the definitions.
++inline constexpr const BOOST_ASIO_VERSIONED_NAME(query_fn)::impl&
+   query = BOOST_ASIO_VERSIONED_NAME(query_fn)::static_instance<>::instance;
+ 
+-} // namespace
+-
+ typedef BOOST_ASIO_VERSIONED_NAME(query_fn)::impl query_t;
+ 
+ template <typename T, typename Property>
+diff --git a/deps/boost/boost/asio/require.hpp b/deps/boost/boost/asio/require.hpp
+index 90e44b4..8e23a39 100644
+--- a/deps/boost/boost/asio/require.hpp
++++ b/deps/boost/boost/asio/require.hpp
+@@ -378,13 +378,15 @@ const T static_instance<T>::instance = {};
+ namespace boost {
+ namespace asio {
+ BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+-namespace {
+-
+-static constexpr const BOOST_ASIO_VERSIONED_NAME(require_fn)::impl&
++// boost-module M12 vendor patch: anonymous namespace -> inline variable.
++// The TU-local require object is referenced from the module face; when the
++// boost.asio CMI and a consumer GMF (beast/cobalt/process) both carry the
++// _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
++// print_helper family). A named inline constexpr keeps the spelling and
++// merges the definitions.
++inline constexpr const BOOST_ASIO_VERSIONED_NAME(require_fn)::impl&
+   require = BOOST_ASIO_VERSIONED_NAME(require_fn)::static_instance<>::instance;
+ 
+-} // namespace
+-
+ typedef BOOST_ASIO_VERSIONED_NAME(require_fn)::impl require_t;
+ 
+ template <typename T, typename... Properties>
+diff --git a/deps/boost/boost/asio/require_concept.hpp b/deps/boost/boost/asio/require_concept.hpp
+index 4d1cae8..70aa730 100644
+--- a/deps/boost/boost/asio/require_concept.hpp
++++ b/deps/boost/boost/asio/require_concept.hpp
+@@ -288,14 +288,16 @@ const T static_instance<T>::instance = {};
+ namespace boost {
+ namespace asio {
+ BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+-namespace {
+-
+-static constexpr const BOOST_ASIO_VERSIONED_NAME(require_concept_fn)::impl&
++// boost-module M12 vendor patch: anonymous namespace -> inline variable.
++// The TU-local require_concept object is referenced from the module face; when the
++// boost.asio CMI and a consumer GMF (beast/cobalt/process) both carry the
++// _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
++// print_helper family). A named inline constexpr keeps the spelling and
++// merges the definitions.
++inline constexpr const BOOST_ASIO_VERSIONED_NAME(require_concept_fn)::impl&
+   require_concept = BOOST_ASIO_VERSIONED_NAME(
+     require_concept_fn)::static_instance<>::instance;
+ 
+-} // namespace
+-
+ typedef BOOST_ASIO_VERSIONED_NAME(require_concept_fn)::impl require_concept_t;
+ 
+ template <typename T, typename Property>

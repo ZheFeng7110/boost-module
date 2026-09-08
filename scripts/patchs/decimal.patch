@@ -1,0 +1,41 @@
+diff --git a/src/gen_exports/decimal.inc b/src/gen_exports/decimal.inc
+index 217dbd9..5d69be3 100644
+--- a/src/gen_exports/decimal.inc
++++ b/src/gen_exports/decimal.inc
+@@ -271,8 +271,12 @@ export namespace boost { namespace decimal { namespace detail {
+   using boost::decimal::detail::beta_impl;
+   using boost::decimal::detail::bias;
+   using boost::decimal::detail::buffer_length_exp;
++#if defined(BOOST_DECIMAL_HAS_INT128)
++  // M9 platform guard: config.hpp defines the __int128 typedefs only where
++  // BOOST_DECIMAL_HAS_INT128 (off under the MSVC ABI).
+   using boost::decimal::detail::builtin_int128_t;
+   using boost::decimal::detail::builtin_uint128_t;
++#endif
+   using boost::decimal::detail::cbrt_impl;
+   using boost::decimal::detail::check_non_finite;
+   using boost::decimal::detail::coefficient_rounding;
+@@ -409,7 +413,11 @@ export namespace boost { namespace decimal { namespace detail {
+   using boost::decimal::detail::ieee754_binary128;
+   using boost::decimal::detail::ieee754_binary32;
+   using boost::decimal::detail::ieee754_binary64;
++#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
++  // M9 platform guard: bit_layouts.hpp defines ieee754_binary80 only for 80-bit
++  // long double (x86-64 gcc/mingw); MSVC long double is 53-bit.
+   using boost::decimal::detail::ieee754_binary80;
++#endif
+   using boost::decimal::detail::int_round_impl;
+   using boost::decimal::detail::is_decimal_floating_point;
+   using boost::decimal::detail::is_decimal_floating_point_components;
+@@ -653,7 +661,11 @@ export namespace boost { namespace decimal { namespace detail { namespace impl {
+   using boost::decimal::detail::impl::basic_lt_impl;
+   using boost::decimal::detail::impl::basic_or_impl;
+   using boost::decimal::detail::impl::bias_v;
++#if defined(BOOST_DECIMAL_HAS_INT128)
++  // M9 platform guard: power_tables.hpp defines builtin_128_pow10 only under
++  // BOOST_DECIMAL_HAS_INT128.
+   using boost::decimal::detail::impl::builtin_128_pow10;
++#endif
+   using boost::decimal::detail::impl::combination_field_width_v;
+   using boost::decimal::detail::impl::countl_impl;
+   using boost::decimal::detail::impl::decimal_components;

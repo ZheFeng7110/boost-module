@@ -1,0 +1,58 @@
+diff --git a/src/interprocess.cppm b/src/interprocess.cppm
+index 6871a9f..099ecc6 100644
+--- a/src/interprocess.cppm
++++ b/src/interprocess.cppm
+@@ -26,7 +26,12 @@ module;
+ #include <boost/interprocess/managed_heap_memory.hpp>
+ #include <boost/interprocess/managed_mapped_file.hpp>
+ #include <boost/interprocess/managed_shared_memory.hpp>
++#if defined(_WIN32) || defined(__CYGWIN__)
++// M12 platform guard: managed_windows_shared_memory.hpp pulls
++// windows_shared_memory.hpp / detail/win32_api.hpp, which #error off-Windows
++// (M9 winapi.cppm convention).
+ #include <boost/interprocess/managed_windows_shared_memory.hpp>
++#endif
+ #include <boost/interprocess/mem_algo/simple_seq_fit.hpp>
+ #include <boost/interprocess/segment_manager.hpp>
+ #include <boost/interprocess/smart_ptr/enable_shared_from_this.hpp>
+diff --git a/src/gen_exports/interprocess.inc b/src/gen_exports/interprocess.inc
+index bdb8362..24c0189 100644
+--- a/src/gen_exports/interprocess.inc
++++ b/src/gen_exports/interprocess.inc
+@@ -507,7 +507,10 @@ export namespace boost { namespace interprocess { namespace ipcdetail_really_dee
+   using boost::interprocess::ipcdetail_really_deep_namespace::dummy;
+ }}}
+ 
++#if defined(_WIN32)
+ export namespace boost { namespace interprocess { namespace winapi {
++  // M12 platform guard: the interprocess::winapi surface (detail/win32_api.hpp)
++  // is Windows-only; POSIX interprocess never declares it.
+   using boost::interprocess::winapi::NtClose_t;
+   using boost::interprocess::winapi::NtDeleteFile_t;
+   using boost::interprocess::winapi::NtOpenFile;
+@@ -692,13 +695,17 @@ export namespace boost { namespace interprocess { namespace winapi {
+   using boost::interprocess::winapi::winapi_traits;
+   using boost::interprocess::winapi::write_file;
+ }}}
++#endif
+ 
+ export namespace boost { namespace intrusive {
+   using boost::intrusive::max_pointer_plus_bits;
+   using boost::intrusive::pointer_plus_bits;
+ }}
+ 
++#if defined(_WIN32)
+ export namespace boost { namespace ipwinapiext {
++  // M12 platform guard: registry / virtual-memory extension surface —
++  // Windows-only (win32_api.hpp chain).
+   using boost::ipwinapiext::CreateThread;
+   using boost::ipwinapiext::FlushFileBuffers;
+   using boost::ipwinapiext::GetFileType;
+@@ -716,6 +723,7 @@ export namespace boost { namespace ipwinapiext {
+   using boost::ipwinapiext::VirtualProtect;
+   using boost::ipwinapiext::VirtualUnlock;
+ }}
++#endif
+ 
+ export namespace boost { namespace move_detail {
+   using boost::move_detail::is_trivially_destructible;

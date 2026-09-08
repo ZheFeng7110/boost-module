@@ -1,0 +1,166 @@
+diff --git a/deps/boost/boost/system/detail/error_category_impl.hpp b/deps/boost/boost/system/detail/error_category_impl.hpp
+index 2162c4c..d1e11f7 100644
+--- a/deps/boost/boost/system/detail/error_category_impl.hpp
++++ b/deps/boost/boost/system/detail/error_category_impl.hpp
+@@ -84,81 +84,10 @@ namespace boost
+ namespace system
+ {
+ 
+-inline void error_category::init_stdcat() const
+-{
+-    static_assert( sizeof( stdcat_ ) >= sizeof( boost::system::detail::std_category ), "sizeof(stdcat_) is not enough for std_category" );
+-
+-#if defined(BOOST_MSVC) && BOOST_MSVC < 1900
+-    // no alignof
+-#else
+-
+-    static_assert( alignof( decltype(stdcat_align_) ) >= alignof( boost::system::detail::std_category ), "alignof(stdcat_) is not enough for std_category" );
+-
+-#endif
+-
+-    // detail::mutex has a constexpr default constructor,
+-    // and therefore guarantees static initialization, on
+-    // everything except VS 2013 (msvc-12.0)
+-
+-    static system::detail::mutex mx_;
+-
+-    system::detail::lock_guard<system::detail::mutex> lk( mx_ );
+-
+-    if( sc_init_.load( std::memory_order_acquire ) == 0 )
+-    {
+-        ::new( static_cast<void*>( stdcat_ ) ) boost::system::detail::std_category( this, system::detail::id_wrapper<0>() );
+-        sc_init_.store( 1, std::memory_order_release );
+-    }
+-}
+-
+-#if defined( BOOST_GCC ) && BOOST_GCC >= 40800 && BOOST_GCC < 70000
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+-#endif
+-
+-inline BOOST_NOINLINE error_category::operator std::error_category const& () const
+-{
+-    if( id_ == detail::generic_category_id )
+-    {
+-// This condition must be the same as the one in error_condition.hpp
+-#if defined(BOOST_SYSTEM_AVOID_STD_GENERIC_CATEGORY)
+-
+-        static const boost::system::detail::std_category generic_instance( this, system::detail::id_wrapper<0x1F4D3>() );
+-        return generic_instance;
+-
+-#else
+-
+-        return std::generic_category();
+-
+-#endif
+-    }
+-
+-    if( id_ == detail::system_category_id )
+-    {
+-// This condition must be the same as the one in error_code.hpp
+-#if defined(BOOST_SYSTEM_AVOID_STD_SYSTEM_CATEGORY)
+-
+-        static const boost::system::detail::std_category system_instance( this, system::detail::id_wrapper<0x1F4D7>() );
+-        return system_instance;
+-
+-#else
+-
+-        return std::system_category();
+-
+-#endif
+-    }
+-
+-    if( sc_init_.load( std::memory_order_acquire ) == 0 )
+-    {
+-        init_stdcat();
+-    }
+-
+-    return *static_cast<boost::system::detail::std_category const*>( static_cast<void const*>( stdcat_ ) );
+-}
+-
+-#if defined( BOOST_GCC ) && BOOST_GCC >= 40800 && BOOST_GCC < 70000
+-#pragma GCC diagnostic pop
+-#endif
++// boost-module (M5 B'): init_stdcat() 与 operator std::error_category const& () const
++// 的定义移入 src/boost_system_extras.cpp — 函数内 static (mutex / std_category 实例) 在
++// gcc 模块管线消费者 TU 以强符号发射 → 多重定义; 移出头部后消费者只调用外部定义,
++// 函数内 static 只在库 TU 单份存在 (语义不变)。
+ 
+ } // namespace system
+ } // namespace boost
+diff --git a/deps/boost/boost/system/detail/error_code.hpp b/deps/boost/boost/system/detail/error_code.hpp
+index a395c81..9b418e4 100644
+--- a/deps/boost/boost/system/detail/error_code.hpp
++++ b/deps/boost/boost/system/detail/error_code.hpp
+@@ -54,6 +54,11 @@ namespace system
+ bool operator==( const error_code & code, const error_condition & condition ) noexcept;
+ std::size_t hash_value( error_code const & ec );
+ 
++// boost-module (M5 B'): 原为 error_code::location() 函数内 static — gcc 模块管线在消费者
++// TU 以强符号发射函数内 static (非 COMDAT), 与库 TU 多重定义; 改命名空间作用域内部链接
++// constexpr (空 source_location, 每 TU 独立持有, 语义等价)。
++static constexpr source_location default_location = source_location();
++
+ class error_code
+ {
+ private:
+@@ -314,8 +319,7 @@ public:
+ 
+     source_location const & location() const noexcept
+     {
+-        BOOST_STATIC_CONSTEXPR source_location loc;
+-        return lc_flags_ >= 4? *reinterpret_cast<source_location const*>( lc_flags_ &~ static_cast<boost::uintptr_t>( 1 ) ): loc;
++        return lc_flags_ >= 4? *reinterpret_cast<source_location const*>( lc_flags_ &~ static_cast<boost::uintptr_t>( 1 ) ): default_location;
+     }
+ 
+     // relationals:
+diff --git a/src/gen_exports/system.inc b/src/gen_exports/system.inc
+index 2aff312..c6d77ea 100644
+--- a/src/gen_exports/system.inc
++++ b/src/gen_exports/system.inc
+@@ -57,18 +57,28 @@ export namespace boost { namespace system { namespace detail {
+   using boost::system::detail::is_errc_t;
+   using boost::system::detail::is_result;
+   using boost::system::detail::is_value_convertible_to;
++#if defined(BOOST_WINDOWS_API)
++  // M6 platform guard: snapshot = mingw flavor; these boost/system/detail entities
++  // exist only under BOOST_WINDOWS_API (system_category_message_win32.hpp / condition).
+   using boost::system::detail::local_free;
+-  using boost::system::detail::lock_guard;
+   using boost::system::detail::message_cp_win32;
++#endif
++  using boost::system::detail::lock_guard;
+   using boost::system::detail::reference_to_temporary;
+   using boost::system::detail::remove_cvref;
+   using boost::system::detail::std_category;
+   using boost::system::detail::system_cat_holder;
++#if defined(BOOST_WINDOWS_API)
++  // M6 platform guard: as above.
+   using boost::system::detail::system_category_condition_win32;
+   using boost::system::detail::system_category_message_win32;
++#endif
+   using boost::system::detail::system_error_category;
+   using boost::system::detail::system_error_category_message;
++#if defined(BOOST_WINDOWS_API)
++  // M6 platform guard: as above.
+   using boost::system::detail::unknown_message_win32;
++#endif
+   using std::enable_if;
+   using std::is_same;
+   using std::mutex;
+@@ -160,6 +170,7 @@ export namespace boost { namespace system { namespace errc {
+   using boost::system::errc::make_error_condition;
+ }}}
+ 
++#if defined(BOOST_WINDOWS_API)
+ export namespace boost { namespace system { namespace windows_error {
+   using boost::system::windows_error::make_error_code;
+   using boost::system::windows_error::windows_error_code;
+@@ -216,6 +227,7 @@ export namespace boost { namespace system { namespace windows_error {
+   using boost::system::windows_error::windows_error_code::write_protect;
+   using boost::system::windows_error::windows_error_code::wrong_disk;
+ }}}
++#endif
+ 
+ export namespace boost { namespace variant2 {
+   using boost::variant2::in_place_index_t;

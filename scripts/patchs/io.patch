@@ -1,0 +1,38 @@
+diff --git a/deps/boost/boost/io/detail/buffer_fill.hpp b/deps/boost/boost/io/detail/buffer_fill.hpp
+index b25a884..d384ad9 100644
+--- a/deps/boost/boost/io/detail/buffer_fill.hpp
++++ b/deps/boost/boost/io/detail/buffer_fill.hpp
+@@ -21,9 +21,15 @@ buffer_fill(std::basic_streambuf<charT, traits>& buf, charT ch,
+     std::size_t size)
+ {
+     charT fill[] = { ch, ch, ch, ch, ch, ch, ch, ch };
+-    enum {
+-        chunk = sizeof fill / sizeof(charT)
+-    };
++    // M11 vendored edit (gcc C++23 modules): the unnamed enum inside this
++    // inline template failed to stream consistently across CMIs that include
++    // this header from different module faces (boost.utility via
++    // utility/string_view.hpp, boost.filesystem/wave via filesystem/path.hpp →
++    // io/quoted.hpp) — gcc hard-errors "definition of enum ... does not match"
++    // when a consumer TU loads both pendings. A constexpr local is
++    // behavior-identical and streams fine. Replay after re-running
++    // import_boost (see M11 doc §6.9).
++    constexpr std::size_t chunk = sizeof fill / sizeof(charT);
+     for (; size > chunk; size -= chunk) {
+         if (static_cast<std::size_t>(buf.sputn(fill, chunk)) != chunk) {
+             return false;
+diff --git a/src/io.cppm b/src/io.cppm
+index 3b39b77..5303157 100644
+--- a/src/io.cppm
++++ b/src/io.cppm
+@@ -2,7 +2,9 @@
+ module;
+ #include <boost/io/nullstream.hpp>
+ #include <boost/io/ostream_joiner.hpp>
+-#include <boost/io/ostream_put.hpp>
++// M11: ostream_put.hpp curated out of the io module GMF — its
++// buffer_fill enum mismatches between the boost.io/boost.utility CMIs
++// on gcc 16.1; consumers include the header themselves.
+ #include <boost/io/quoted.hpp>
+ 
+ export module boost.io;

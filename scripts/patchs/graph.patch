@@ -1,0 +1,26 @@
+diff --git a/src/gen_exports/graph.inc b/src/gen_exports/graph.inc
+index 1c9be11..8761173 100644
+--- a/src/gen_exports/graph.inc
++++ b/src/gen_exports/graph.inc
+@@ -2251,9 +2251,21 @@ export namespace boost { namespace proto { namespace detail {
+   using boost::proto::detail::same_cv;
+   using boost::proto::detail::sized_type;
+   using boost::proto::detail::static_const;
++#if defined(BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING)
++  // M11 platform guard: proto/detail/template_arity.hpp declares template_arity only under
++  // BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING (gcc extended-template matching).
+   using boost::proto::detail::template_arity;
++#endif
++#if defined(BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING)
++  // M11 platform guard: proto/detail/template_arity.hpp declares template_arity_helper only under
++  // BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING (gcc extended-template matching).
+   using boost::proto::detail::template_arity_helper;
++#endif
++#if defined(BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING)
++  // M11 platform guard: proto/detail/template_arity.hpp declares template_arity_impl2 only under
++  // BOOST_PROTO_EXTENDED_TEMPLATE_PARAMETERS_MATCHING (gcc extended-template matching).
+   using boost::proto::detail::template_arity_impl2;
++#endif
+   using boost::proto::detail::term_traits;
+   using boost::proto::detail::terminal_matches;
+   using boost::proto::detail::test_poly_function;

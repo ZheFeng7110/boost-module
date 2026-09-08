@@ -1,0 +1,16 @@
+diff --git a/src/gen_exports/mp11.inc b/src/gen_exports/mp11.inc
+index 158a957..10bf901 100644
+--- a/src/gen_exports/mp11.inc
++++ b/src/gen_exports/mp11.inc
+@@ -438,8 +438,11 @@ export namespace boost { namespace mp11 { namespace detail {
+   using boost::mp11::detail::mp_valid_impl;
+   using boost::mp11::detail::mp_void_impl;
+   using boost::mp11::detail::mp_with_index_impl_;
++#if !defined(__GNUC__)
++  // M3 hand-guard: mp_map_find.hpp (gcc bug 120161 workaround) defines mpmf_* only outside gcc.
+   using boost::mp11::detail::mpmf_unwrap;
+   using boost::mp11::detail::mpmf_wrap;
++#endif
+   using boost::mp11::detail::select_max;
+   using boost::mp11::detail::select_min;
+   using boost::mp11::detail::tp_extract;

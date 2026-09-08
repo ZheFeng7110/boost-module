@@ -1,0 +1,30 @@
+diff --git a/src/gen_exports/bimap.deps b/src/gen_exports/bimap.deps
+index a41ba81..d60380d 100644
+--- a/src/gen_exports/bimap.deps
++++ b/src/gen_exports/bimap.deps
+@@ -2,7 +2,10 @@ boost.assert
+ boost.concept_check
+ boost.config
+ boost.core
++# C4 pin: boost.iterator — view-iterator free operator!= lives in
++# boost.iterator; see the pin comment in this file (bimap.cppm).
+ boost.functional
++boost.iterator
+ boost.lambda
+ boost.multi_index
+ boost.type_traits
+diff --git a/src/bimap.cppm b/src/bimap.cppm
+index 50221df..ffc83ea 100644
+--- a/src/bimap.cppm
++++ b/src/bimap.cppm
+@@ -26,6 +26,10 @@ export import boost.concept_check;
+ export import boost.config;
+ export import boost.core;
+ export import boost.functional;
++// C4 pin: view-iterator free operators (operator!=) live in boost.iterator;
++// the generated .deps lost this edge when lambda became a target lib — see
++// the bimap.deps pin comment in reapply_hand_edits.py.
++export import boost.iterator;
+ export import boost.lambda;
+ export import boost.multi_index;
+ export import boost.type_traits;

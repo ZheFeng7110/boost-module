@@ -1,0 +1,50 @@
+diff --git a/src/gen_exports/hana.inc b/src/gen_exports/hana.inc
+index 7368c47..25e52c5 100644
+--- a/src/gen_exports/hana.inc
++++ b/src/gen_exports/hana.inc
+@@ -834,30 +834,30 @@ export namespace boost { namespace hana { namespace experimental { namespace pri
+ }}}}
+ 
+ export namespace boost { namespace hana { namespace ext { namespace boost {
+-  using boost::hana::ext::boost::tuple_tag;
++  using ::boost::hana::ext::boost::tuple_tag;
+ }}}}
+ 
+ export namespace boost { namespace hana { namespace ext { namespace boost { namespace fusion {
+-  using boost::hana::ext::boost::fusion::deque_tag;
+-  using boost::hana::ext::boost::fusion::list_tag;
+-  using boost::hana::ext::boost::fusion::tuple_tag;
+-  using boost::hana::ext::boost::fusion::vector_tag;
++  using ::boost::hana::ext::boost::fusion::deque_tag;
++  using ::boost::hana::ext::boost::fusion::list_tag;
++  using ::boost::hana::ext::boost::fusion::tuple_tag;
++  using ::boost::hana::ext::boost::fusion::vector_tag;
+ }}}}}
+ 
+ export namespace boost { namespace hana { namespace ext { namespace boost { namespace mpl {
+-  using boost::hana::ext::boost::mpl::integral_c_tag;
+-  using boost::hana::ext::boost::mpl::list_tag;
+-  using boost::hana::ext::boost::mpl::vector_tag;
++  using ::boost::hana::ext::boost::mpl::integral_c_tag;
++  using ::boost::hana::ext::boost::mpl::list_tag;
++  using ::boost::hana::ext::boost::mpl::vector_tag;
+ }}}}}
+ 
+ export namespace boost { namespace hana { namespace ext { namespace std {
+-  using boost::hana::ext::std::array_tag;
+-  using boost::hana::ext::std::integer_sequence_tag;
+-  using boost::hana::ext::std::integral_constant_tag;
+-  using boost::hana::ext::std::pair_tag;
+-  using boost::hana::ext::std::ratio_tag;
+-  using boost::hana::ext::std::tuple_tag;
+-  using boost::hana::ext::std::vector_tag;
++  using ::boost::hana::ext::std::array_tag;
++  using ::boost::hana::ext::std::integer_sequence_tag;
++  using ::boost::hana::ext::std::integral_constant_tag;
++  using ::boost::hana::ext::std::pair_tag;
++  using ::boost::hana::ext::std::ratio_tag;
++  using ::boost::hana::ext::std::tuple_tag;
++  using ::boost::hana::ext::std::vector_tag;
+ }}}}
+ 
+ export namespace boost { namespace hana { namespace ic_detail {

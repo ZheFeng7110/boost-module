@@ -1,0 +1,16 @@
+diff --git a/src/gen_exports/intrusive.inc b/src/gen_exports/intrusive.inc
+index cc0eeb2..114d098 100644
+--- a/src/gen_exports/intrusive.inc
++++ b/src/gen_exports/intrusive.inc
+@@ -382,7 +382,11 @@ export namespace boost { namespace intrusive { namespace detail {
+   using boost::intrusive::detail::boost_intrusive_has_type_size_type;
+   using boost::intrusive::detail::boost_intrusive_has_type_value_traits_ptr;
+   using boost::intrusive::detail::bstree_node_checker;
++#if defined(__GNUC__)
++  // M9 platform guard: math.hpp defines builtin_clz_dispatch only in the
++  // __GNUC__ branch of the BSR intrinsic chain.
+   using boost::intrusive::detail::builtin_clz_dispatch;
++#endif
+   using boost::intrusive::detail::calculate_h_sqrt2;
+   using boost::intrusive::detail::ceil_log2;
+   using boost::intrusive::detail::ceil_pow2;

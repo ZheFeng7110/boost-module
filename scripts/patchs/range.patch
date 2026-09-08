@@ -1,0 +1,16 @@
+diff --git a/src/gen_exports/range.inc b/src/gen_exports/range.inc
+index e8431a5..ee5583c 100644
+--- a/src/gen_exports/range.inc
++++ b/src/gen_exports/range.inc
+@@ -329,7 +329,11 @@ export namespace boost { namespace range { namespace detail {
+   using boost::range::detail::less;
+   using boost::range::detail::max_element;
+   using boost::range::detail::min_element;
++#if defined(__GLIBCXX__)
++  // M9 platform guard: std::random_shuffle was removed in C++17; only
++  // libstdc++ (mingw/linux-gcc) still provides it.
+   using std::random_shuffle;
++#endif
+ }}}
+ 
+ export namespace boost { namespace range_adl_barrier {

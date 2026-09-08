@@ -1,0 +1,41 @@
+diff --git a/src/gen_exports/dll.inc b/src/gen_exports/dll.inc
+index dd4dca0..ba276d8 100644
+--- a/src/gen_exports/dll.inc
++++ b/src/gen_exports/dll.inc
+@@ -55,7 +55,11 @@ export namespace boost { namespace dll { namespace detail {
+   using boost::dll::detail::get_mem_fn_type;
+   using boost::dll::detail::import_type;
+   using boost::dll::detail::integer_t;
++#if defined(_WIN32)
++  // M9 platform guard: last_error_code is in detail/windows/
++  // path_from_handle.hpp (no POSIX counterpart).
+   using boost::dll::detail::last_error_code;
++#endif
+   using boost::dll::detail::library_function;
+   using boost::dll::detail::load_command_;
+   using boost::dll::detail::load_command_types;
+@@ -94,6 +98,9 @@ export namespace boost { namespace dll { namespace detail {
+ }}}
+ 
+ export namespace boost { namespace dll { namespace detail { namespace parser {
++#if !defined(_MSC_VER)
++  // M9 platform guard: the itanium demangling parser (demangling/itanium.hpp)
++  // is selected only outside _MSC_VER (dll/detail/ctor_dtor.hpp).
+   using boost::dll::detail::parser::arg_list;
+   using boost::dll::detail::parser::const_rule;
+   using boost::dll::detail::parser::const_rule_impl;
+@@ -106,10 +113,14 @@ export namespace boost { namespace dll { namespace detail { namespace parser {
+   using boost::dll::detail::parser::type_name;
+   using boost::dll::detail::parser::volatile_rule;
+   using boost::dll::detail::parser::volatile_rule_impl;
++#endif
+ }}}}
+ 
+ export namespace boost { namespace dll { namespace experimental {
++#if !defined(_MSC_VER)
++  // M9 platform guard: demangle_symbol comes from demangling/itanium.hpp.
+   using boost::dll::experimental::demangle_symbol;
++#endif
+   using boost::dll::experimental::get;
+   using boost::dll::experimental::import_class;
+   using boost::dll::experimental::import_mangled;

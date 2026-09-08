@@ -1,0 +1,28 @@
+diff --git a/src/gen_exports/charconv.inc b/src/gen_exports/charconv.inc
+index 4a120e5..fbcd79f 100644
+--- a/src/gen_exports/charconv.inc
++++ b/src/gen_exports/charconv.inc
+@@ -29,7 +29,11 @@ export namespace boost { namespace charconv { namespace detail {
+   using boost::charconv::detail::ieee754_binary16;
+   using boost::charconv::detail::ieee754_binary32;
+   using boost::charconv::detail::ieee754_binary64;
++#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
++  // M11 platform guard: bit_layouts.hpp defines ieee754_binary80 only for
++  // 80-bit long double (x86-64 gcc/mingw); MSVC long double is 53-bit.
+   using boost::charconv::detail::ieee754_binary80;
++#endif
+   using boost::charconv::detail::is_int128;
+   using boost::charconv::detail::is_signed;
+   using boost::charconv::detail::is_uint128;
+@@ -53,7 +57,11 @@ export namespace boost { namespace charconv { namespace detail {
+   using boost::charconv::detail::operator^;
+   using boost::charconv::detail::operator|;
+   using boost::charconv::detail::operator~;
++#if defined(BOOST_CHARCONV_HAS_INT128)
++  // M11 platform guard: to_chars128 exists only under BOOST_CHARCONV_HAS_INT128
++  // (to_chars_integer_impl.hpp).
+   using boost::charconv::detail::to_chars128;
++#endif
+   using boost::charconv::detail::to_chars_128integer_impl;
+   using boost::charconv::detail::to_chars_int;
+   using boost::charconv::detail::to_chars_integer_impl;

@@ -1,0 +1,15 @@
+diff --git a/src/gen_exports/poly_collection.inc b/src/gen_exports/poly_collection.inc
+index 09740fa..39f469b 100644
+--- a/src/gen_exports/poly_collection.inc
++++ b/src/gen_exports/poly_collection.inc
+@@ -14,7 +14,10 @@ export namespace boost { namespace mpl {
+   using boost::mpl::contains_impl;
+   using boost::mpl::has_key_impl;
+   using boost::mpl::item_by_order;
++#if defined(__GNUC__)
++  // M9 platform guard: gcc-preprocessed mpl map headers only.
+   using boost::mpl::item_by_order_impl;
++#endif
+   using boost::mpl::lambda;
+   using boost::mpl::m_at;
+   using boost::mpl::m_item;

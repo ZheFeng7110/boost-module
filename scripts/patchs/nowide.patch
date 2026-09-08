@@ -1,0 +1,59 @@
+diff --git a/src/nowide.cppm b/src/nowide.cppm
+index 5ee766a..56b655d 100644
+--- a/src/nowide.cppm
++++ b/src/nowide.cppm
+@@ -5,6 +5,13 @@ module;
+ #include <boost/nowide/filesystem.hpp>
+ #include <boost/nowide/fstream.hpp>
+ #include <boost/nowide/iostream.hpp>
++// M11 platform guard (POSIX): cstdio/stackstring/convert were reached
++// only via windows-flavored transitive includes in the mingw snapshot;
++// include the cross-platform headers explicitly so the shared-surface
++// `using` lines resolve.
++#include <boost/nowide/cstdio.hpp>
++#include <boost/nowide/stackstring.hpp>
++#include <boost/nowide/convert.hpp>
+ #include <boost/nowide/quoted.hpp>
+ #include <boost/nowide/stat.hpp>
+ 
+diff --git a/src/gen_exports/nowide.inc b/src/gen_exports/nowide.inc
+index 8709b1e..79ea26e 100644
+--- a/src/gen_exports/nowide.inc
++++ b/src/gen_exports/nowide.inc
+@@ -45,8 +45,14 @@ export namespace boost { namespace nowide { namespace detail {
+   using boost::nowide::detail::StreamTypeInOut;
+   using boost::nowide::detail::StreamTypeOut;
+   using boost::nowide::detail::buf_holder;
++#if defined(_WIN32)
++  // M11 platform guard: console_input_buffer is the windows console machinery (detail/console_buffer.hpp); POSIX nowide uses std:: streams directly.
+   using boost::nowide::detail::console_input_buffer;
++#endif
++#if defined(_WIN32)
++  // M11 platform guard: console_output_buffer is the windows console machinery (detail/console_buffer.hpp); POSIX nowide uses std:: streams directly.
+   using boost::nowide::detail::console_output_buffer;
++#endif
+   using boost::nowide::detail::const_data_result;
+   using boost::nowide::detail::copy_uint16_t;
+   using boost::nowide::detail::enable_if_path_t;
+@@ -70,11 +76,21 @@ export namespace boost { namespace nowide { namespace detail {
+   using boost::nowide::detail::requires_wide_char;
+   using boost::nowide::detail::requires_wide_string_container;
+   using boost::nowide::detail::size_result;
++#if defined(_WIN32)
++  // M11 platform guard: detail::stat is the BOOST_WINDOWS branch of
++  // stat.hpp; POSIX exposes ::stat via a using-declaration instead.
+   using boost::nowide::detail::stat;
++#endif
+   using boost::nowide::detail::void_t;
+   using boost::nowide::detail::wfopen;
++#if defined(_WIN32)
++  // M11 platform guard: winconsole_istream is the windows console stream branch of iostream.hpp; POSIX takes std:: streams directly.
+   using boost::nowide::detail::winconsole_istream;
++#endif
++#if defined(_WIN32)
++  // M11 platform guard: winconsole_ostream is the windows console stream branch of iostream.hpp; POSIX takes std:: streams directly.
+   using boost::nowide::detail::winconsole_ostream;
++#endif
+   using boost::nowide::detail::write_state;
+ }}}
+ 

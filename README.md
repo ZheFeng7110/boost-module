@@ -197,6 +197,9 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
   （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
+  字符串补丁以统一 diff 形式存于 `scripts/patchs/<module>.patch`（一个模块一个
+  patch 文件），用 `git apply` 应用并以反向 apply 检测实现幂等；`.inc` 平台守卫、
+  vendored 新增文件与 "M3 final form" git 恢复仍为脚本内逻辑。
   同时回放 `deps/boost/` 下的 vendored 头修补（M5 B' / M9 / M11 / M12，
   共 22 个修补文件 + 1 个新增文件）—— `import_boost.py` 重新 vendoring 会把
   这些文件还原成上游原貌，重导入后必须重跑本脚本（rollup 文档 §3.7#1）。

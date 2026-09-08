@@ -1,0 +1,64 @@
+diff --git a/src/gen_exports/math.inc b/src/gen_exports/math.inc
+index 3221ae3..1b01fd8 100644
+--- a/src/gen_exports/math.inc
++++ b/src/gen_exports/math.inc
+@@ -4,13 +4,25 @@
+ export namespace boost {
+   using boost::float32_t;
+   using boost::float64_t;
++#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
++  // M11 platform guard: cstdfloat_types.hpp declares the 80-bit long-double
++  // typedefs only where long double really is 80-bit; MSVC long double is 53-bit.
+   using boost::float80_t;
++#endif
+   using boost::float_fast32_t;
+   using boost::float_fast64_t;
++#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
++  // M11 platform guard: cstdfloat_types.hpp declares the 80-bit long-double
++  // typedefs only where long double really is 80-bit; MSVC long double is 53-bit.
+   using boost::float_fast80_t;
++#endif
+   using boost::float_least32_t;
+   using boost::float_least64_t;
++#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
++  // M11 platform guard: cstdfloat_types.hpp declares the 80-bit long-double
++  // typedefs only where long double really is 80-bit; MSVC long double is 53-bit.
+   using boost::float_least80_t;
++#endif
+   using boost::floatmax_t;
+ }
+ 
+@@ -2272,10 +2284,20 @@ export namespace boost { namespace math { namespace statistics {
+ }}}
+ 
+ export namespace boost { namespace math { namespace statistics { namespace detail {
++#if defined(BOOST_MATH_EXEC_COMPATIBLE)
++  // M11 CI platform guard: statistics chatterjee_correlation_par_impl is defined only under
++  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
++  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
+   using boost::math::statistics::detail::chatterjee_correlation_par_impl;
++#endif
+   using boost::math::statistics::detail::chatterjee_correlation_seq_impl;
+   using boost::math::statistics::detail::chatterjee_transform;
++#if defined(BOOST_MATH_EXEC_COMPATIBLE)
++  // M11 CI platform guard: statistics correlation_coefficient_parallel_impl is defined only under
++  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
++  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
+   using boost::math::statistics::detail::correlation_coefficient_parallel_impl;
++#endif
+   using boost::math::statistics::detail::correlation_coefficient_seq_impl;
+   using boost::math::statistics::detail::first_four_moments_parallel_impl;
+   using boost::math::statistics::detail::first_four_moments_sequential_impl;
+@@ -2283,7 +2305,12 @@ export namespace boost { namespace math { namespace statistics { namespace detai
+   using boost::math::statistics::detail::gini_coefficient_sequential_impl;
+   using boost::math::statistics::detail::gini_range_fraction;
+   using boost::math::statistics::detail::mean_sequential_impl;
++#if defined(BOOST_MATH_EXEC_COMPATIBLE)
++  // M11 CI platform guard: statistics means_and_covariance_parallel_impl is defined only under
++  // BOOST_MATH_EXEC_COMPATIBLE (chatterjee_correlation.hpp /
++  // bivariate_statistics.hpp); libc++ lacks __cpp_lib_execution.
+   using boost::math::statistics::detail::means_and_covariance_parallel_impl;
++#endif
+   using boost::math::statistics::detail::means_and_covariance_seq_impl;
+   using boost::math::statistics::detail::mode_impl;
+   using boost::math::statistics::detail::one_sample_t_test_impl;

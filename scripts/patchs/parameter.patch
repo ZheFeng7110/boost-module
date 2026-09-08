@@ -1,0 +1,61 @@
+diff --git a/deps/boost/boost/parameter/name.hpp b/deps/boost/boost/parameter/name.hpp
+index 3b63fc3..5dfd6a8 100644
+--- a/deps/boost/boost/parameter/name.hpp
++++ b/deps/boost/boost/parameter/name.hpp
+@@ -49,12 +49,15 @@
+ 
+ #include <boost/parameter/keyword.hpp>
+ 
++// boost-module M12 vendor patch: anonymous namespace -> inline constexpr.
++// The TU-local keyword objects are referenced from module faces (e.g. BGL
++// keywords in boost.graph); when a module CMI and a consumer GMF both carry
++// the _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
++// print_helper family). An inline constexpr reference keeps the spelling and
++// merges the definitions.
+ #define BOOST_PARAMETER_NAME_KEYWORD(tag_namespace, tag, name)               \
+-    namespace                                                                \
+-    {                                                                        \
+-        ::boost::parameter::keyword<tag_namespace::tag> const& name          \
+-            = ::boost::parameter::keyword<tag_namespace::tag>::instance;     \
+-    }
++    inline constexpr ::boost::parameter::keyword<tag_namespace::tag> const& name \
++        = ::boost::parameter::keyword<tag_namespace::tag>::instance;
+ /**/
+ 
+ #define BOOST_PARAMETER_BASIC_NAME(tag_namespace, tag, qualifier, name)      \
+diff --git a/deps/boost/boost/parameter/nested_keyword.hpp b/deps/boost/boost/parameter/nested_keyword.hpp
+index fc180ec..447c959 100644
+--- a/deps/boost/boost/parameter/nested_keyword.hpp
++++ b/deps/boost/boost/parameter/nested_keyword.hpp
+@@ -51,11 +51,11 @@
+             >::instance;                                                     \
+         typedef BOOST_PP_CAT(name, _)<> name;                                \
+     }                                                                        \
+-    namespace                                                                \
+-    {                                                                        \
+-        ::boost::parameter::keyword<tag_namespace::name> const& name         \
++    /* boost-module M12 vendor patch: anonymous namespace -> inline constexpr */ \
++    /* (gcc same-mangled symbol collision, M11 doc 7.4 family; named inline) */ \
++    /* merges the definitions; spelling and semantics are unchanged.          */ \
++        inline constexpr ::boost::parameter::keyword<tag_namespace::name> const& name         \
+             = ::boost::parameter::keyword<tag_namespace::name>::instance;    \
+-    }
+ /**/
+ #else   // !defined(BOOST_PARAMETER_CAN_USE_MP11)
+ #define BOOST_PARAMETER_NESTED_KEYWORD_AUX(tag_namespace, q, name, alias)    \
+@@ -88,11 +88,11 @@
+             >::instance;                                                     \
+         typedef BOOST_PP_CAT(name, _)<> name;                                \
+     }                                                                        \
+-    namespace                                                                \
+-    {                                                                        \
+-        ::boost::parameter::keyword<tag_namespace::name> const& name         \
++    /* boost-module M12 vendor patch: anonymous namespace -> inline constexpr */ \
++    /* (gcc same-mangled symbol collision, M11 doc 7.4 family; named inline) */ \
++    /* merges the definitions; spelling and semantics are unchanged.          */ \
++        inline constexpr ::boost::parameter::keyword<tag_namespace::name> const& name         \
+             = ::boost::parameter::keyword<tag_namespace::name>::instance;    \
+-    }
+ /**/
+ #endif  // BOOST_PARAMETER_CAN_USE_MP11
+ 
