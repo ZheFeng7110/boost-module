@@ -21,4 +21,4 @@ license     = "BSL-1.0"
 git = "https://github.com/ZheFeng7110/boost-module"
 rev = "23a615338e2bdebd75ad89a30fd39920bfc3d8f2"
 default-features = false
-features = ["optional", "json", "version"]
+features = ["optional", "json", "version", "type_traits"]
