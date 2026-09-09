@@ -16,8 +16,24 @@ name: Tests
 on:
   push:
     branches: [ b1.91.0wdev ]
+    paths:
+      - '.github/workflows/**'
+      - 'build.mcpp'
+      - 'mcpp.toml'
+      - 'src/**'
+      - 'deps/**'
+      - 'tests/**'
+      - 'examples/**'
   pull_request:
     branches: [ b1.91.0wdev ]
+    paths:
+      - '.github/workflows/**'
+      - 'build.mcpp'
+      - 'mcpp.toml'
+      - 'src/**'
+      - 'deps/**'
+      - 'tests/**'
+      - 'examples/**'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
