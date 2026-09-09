@@ -76,16 +76,13 @@
       `docs/release_notes/b1.91.0w0.0.0-preview.md`; architecture.md 的
       示例 tag 同步修正为 `-preview` 后缀并修 "prelease" 拼写)。
 
-- [ ] Tag + GitHub Release 流程 (用户指示暂缓: 先不打 tag, 待后续执行);
+- [x] Tag + GitHub Release 流程 (2026-09-09 执行: annotated tag
+      `b1.91.0w0.0.0-preview` 已推送, prerelease 已创建
+      https://github.com/ZheFeng7110/boost-module/releases/tag/b1.91.0w0.0.0-preview);
       流程 runbook 已编写 (可复用流程文档):
       [`docs/github-release-process.md`](../../docs/github-release-process.md);
-      干净 checkout 下 tag 构建演练待执行。
-
-### T5 — 仓库文档收口
-
-- [ ] README "相关文档" 与文内旧链接全部指向新汇总设计/计划文档
-      (旧 `.agents` 文档已删除)。
-- [ ] README 进度表: M11/M12/C1–C4 与发布行状态刷新 (M14 → 预览版发布)。
+      干净 checkout 下 tag 构建演练经用户确认跳过 (已演练过)。
+      发布后收口待办: 消费者 probe (git dep build+run)。
 
 ## 3. 验证矩阵 (发布演练收口)
 
