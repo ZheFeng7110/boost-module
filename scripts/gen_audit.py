@@ -167,7 +167,7 @@ def macros_audit(libs, out):
     t3 = set(bc.LIBS_T3 + bc.LIBS_INCLUDE_ONLY_M9)
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "macro_surface.txt", "w", encoding="utf-8") as fh:
-        fh.write("# boost-module macro-surface audit (boost 1.91.0) — M10 T3 "
+        fh.write("# boost-module macro-surface audit (boost 1.91.0) - M10 T3 "
                  "boundary check\n")
         fh.write("# macros = unique names #defined in the library's own "
                  "public header set (libs.json for module libs,\n")
@@ -175,8 +175,8 @@ def macros_audit(libs, out):
                  "minus #undef'd names.\n")
         fh.write("# Module libs keep this face inside their GMF (macros never "
                  "reach module consumers); include-only\n")
-        fh.write("# libs inject it into every consumer TU — hence no module "
-                 "(plan §2, user decision §5.3).\n")
+        fh.write("# libs inject it into every consumer TU - hence no module "
+                 "(plan sec. 2, user decision sec. 5.3).\n")
         fh.write("# exports = entities in the generated module export list "
                  "(module libs only).\n\n")
         fh.write("{:<18} {:>8} {:>7} {:>9} {:>6} {:>8}\n".format(

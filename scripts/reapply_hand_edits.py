@@ -183,7 +183,7 @@ def main():
           "  using boost::mpl::item_by_order_impl;",
           "#if defined(__GNUC__)\n"
           "  // M9 platform guard (C4 moved the claim here from\n"
-          "  // poly_collection): gcc-preprocessed mpl map headers only —\n"
+          "  // poly_collection): gcc-preprocessed mpl map headers only -\n"
           "  // absent from the msvc-flavor TU, keep the export gcc-only.\n"
           "  using boost::mpl::item_by_order_impl;\n"
           "#endif",
