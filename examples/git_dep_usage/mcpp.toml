@@ -1,0 +1,24 @@
+# Example consumer of the boost module package — git dependency flavor.
+#
+# Same code shape as examples/default_usage/, but the dependency is declared
+# the way an external project would consume it: fetched from git, with
+# default-features = false and an explicit feature list (docs/usage.md §1).
+#
+#   mcpp run          build + run
+#   mcpp build        just build
+#
+# Features picked for the demo:
+#   optional   — header-only classic (import boost.optional;)
+#   json       — compiled library (import boost.json;)
+#   version    — boost::BOOST_VERSION constants (import boost.version;)
+[package]
+name        = "boost-example-git-dep"
+version     = "0.1.0"
+description = "Example consumer: git dep, default-features = false, features = [optional, json, version]"
+license     = "BSL-1.0"
+
+[dependencies.boost.boost]
+git = "https://github.com/ZheFeng7110/boost-module"
+rev = "23a615338e2bdebd75ad89a30fd39920bfc3d8f2"
+default-features = false
+features = ["optional", "json", "version"]

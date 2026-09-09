@@ -5,14 +5,20 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { path = ".." }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-prelease" }
 
 # 只选若干库 (default-features = false 关闭默认集)
-boost.boost = { path = "..", default-features = false, features = ["optional", "json"] }
+[dependencies.boost.boost]
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "b1.91.0w0.0.0-prelease"
+default-features = false
+features = ["optional", "json"]
 
 # 全量
-boost.boost = { path = "..", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-prelease", features = ["all"] }
 ```
+
+后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
 
 > **clang 下不要用 `features = ["all"]`**: 全部 CMI 约 2.98GB，超过 clang
 > 2^31 源位置上限，报 "ran out of source locations"，无 flag 可调。
