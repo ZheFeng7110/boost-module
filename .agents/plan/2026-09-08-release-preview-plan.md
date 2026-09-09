@@ -53,7 +53,10 @@
   **推荐消费者逐库 import** (用户决策 2026-09-08, 设计汇总 §10#6); gcc 消费
   三分规则; 特性宏构建期固定; filesystem v3 / thread v2 / stacktrace basic
   等裁剪; M13 11 库不支持清单)。
-- [ ] 编写 + CI 链接自检
+- [x] 编写 + CI 链接自检 (2026-09-09: `docs/architecture.md` 落地, 含消费者
+      三形态 import / feature 语义 / 支持矩阵 / 已知限制 / M13 暂缓清单;
+      README `辅助脚本` 章节移入 architecture.md §6, README 留短指针)。
+      CI 链接自检 = 文档无 CI 引用改动, 四腿不受影响 (纯文档变更)。
 
 ### T3 — mcpp-index 薄层 boost.lua
 
