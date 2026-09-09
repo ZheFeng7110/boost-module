@@ -1,4 +1,15 @@
-// M3 final form (derived from the scripts/gen_exports.py draft; hand-finalized)
+// M3 final form (derived from the scripts/gen_exports.py draft; hand-finalized).
+//
+// C5 (2026-09-09): BOOST_VERSION / BOOST_LIB_VERSION moved out of this module
+// to a dedicated `boost.version` module (src/version.cppm — LIBS_SPECIAL tier
+// in scripts/boost_common.py; no .inc, no .deps, hand-written TU that
+// `#include <boost/version.hpp>` then `#undef`s the object macros and re-exposes
+// them as `boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION` constexprs).
+// Consumers wanting the same constants in their TU now `import boost.version;`
+// (default feature set, §4.3 of the consolidated design doc). Macro-form
+// consumers (`#if BOOST_VERSION >= 109100`) include <boost/version.hpp>
+// directly — the upstream header is self-contained and no longer wrapped by
+// this package.
 module;
 #include <boost/core/alloc_construct.hpp>
 #include <boost/core/allocator_traits.hpp>
@@ -38,17 +49,6 @@ module;
 #include <boost/core/yield_primitives.hpp>
 
 export module boost.core;
-
-// 对象宏 re-homing (M3): 宏无法跨模块导出。上游 <boost/version.hpp> 的对象宏
-// 以 boost:: 命名空间 constexpr 重置于此 (拼写保持): 消费者 import 后可用
-// boost::BOOST_VERSION。值须与 deps/boost/boost/version.hpp 一致 — tests/macros.cpp
-// 在旁路头 (include/boost-module/macros.hpp) 参与下交叉校验。
-// 注意: 同一 TU 中若定义了同名宏 (include <boost-module/macros.hpp>), 宏展开会
-// 吞掉 boost::BOOST_VERSION 拼写 (→ boost::109100), 两种拼写互斥, 二选一。
-export namespace boost {
-  constexpr int BOOST_VERSION = 109100;
-  constexpr const char* BOOST_LIB_VERSION = "1_91";
-}
 
 #include "gen_exports/core.inc"
 

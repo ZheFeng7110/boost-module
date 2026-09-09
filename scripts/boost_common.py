@@ -117,7 +117,6 @@ LIBS_T1B = [
     "hana", "interprocess", "mqtt5", "multiprecision", "numeric",
     "polygon", "qvm",
 ]
-TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2 + LIBS_T1B
 
 # M10 T3 (boost-mcpp-all-libs-features-plan.md §2): macro-driven include-only
 # libraries — no module, no feature, no build work (user decision §5.3). Their
@@ -147,6 +146,18 @@ LIBS_T4 = [
     "context", "fiber", "coroutine",
     "compute", "mysql", "redis",
 ]
+# C5 (2026-09-09, plan .agents/plan/2026-09-09-boost-version-module-promotion.md):
+# SPECIAL — module-shaped libraries that bypass gen_exports.py entirely. They
+# have a hand-written `src/<lib>.cppm` but no libclang bundle TU (their exports
+# are simple constexprs derived from upstream headers, not namespace-scope
+# `using` candidates for the AST scanner). Mirror image of LIBS_COMPILED_INCLUDE_ONLY
+# (C1): that tier has TU globs and NO module; SPECIAL has a module and NO TU
+# globs. The feature still ships through gen_features.py — sources = .cppm +
+# empty TU glob set, implies = empty (deps_of() returns ∅ when the .deps file
+# is absent, which it intentionally is for SPECIAL).
+LIBS_SPECIAL = ["version"]
+TARGET_LIBS = LIBS_M3 + LIBS_M4 + LIBS_T1A + LIBS_T2 + LIBS_T1B + LIBS_SPECIAL
+
 # M9 downgrades to include-only (plan §2 note + 2026-08-17 M9 doc §1): pure
 # macro libs (predef: .h only; static_assert: module name is a keyword) and
 # internal-linkage constexpr-object APIs (hof, units) — same consumer rule

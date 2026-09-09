@@ -93,10 +93,16 @@ def feature_name(lib):
 
 # Default feature set = 18-lib closure (plan §3.2). The closure is computed from
 # .deps below and asserted to be closed before writing; this is the candidate list.
+# C5 (2026-09-09, plan .agents/plan/2026-09-09-boost-version-module-promotion.md):
+# `version` joins the default candidates. Before C5, the BOOST_VERSION /
+# BOOST_LIB_VERSION constexprs lived on `boost.core` (M3 re-homing); the move
+# to a dedicated `boost.version` module keeps them visible to every default
+# consumer without depending on `core`. `version` has no .deps edges, so the
+# closure expands by exactly one.
 DEFAULT_CANDIDATES = [
     "any", "algorithm", "chrono", "core", "filesystem", "io", "iterator",
     "json", "mp11", "optional", "range", "regex", "system", "thread",
-    "tuple", "type_traits", "variant", "variant2",
+    "tuple", "type_traits", "variant", "variant2", "version",
 ]
 
 # Compiled libraries: feature sources = .cppm + these TU globs.
@@ -309,7 +315,9 @@ def deps_of(lib):
 def feature_sources(lib):
     """Feature sources for a lib. Compiled include-only libs (log, test — C1)
     ship their library TU globs but no `.cppm`: the module interface (and the
-    CMI it would produce) is gone."""
+    CMI it would produce) is gone. SPECIAL libs (C5: e.g. `version`) ship a
+    `.cppm` and no TU globs — mirror image of C1, treated the same way as a
+    regular header-only module here."""
     srcs = []
     if lib not in COMPILED_INCLUDE_ONLY:
         srcs.append("src/{}.cppm".format(lib))

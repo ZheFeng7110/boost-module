@@ -1,6 +1,6 @@
 # boost-module 总体设计汇总 (2026-09-08 重写版)
 
-> 日期: 2026-09-08 · 状态: 汇总快照 · 分支 `b1.91.0wdev`
+> 日期: 2026-09-08 (C5 2026-09-09 修订: boost.version 模块形式化, 见 §10#10) · 状态: 汇总快照 · 分支 `b1.91.0wdev`
 > 目标上游: **Boost 1.91.0** (`BOOST_VERSION 109100`)
 > 本文档**替代** `.agents/` 下全部旧设计/计划/分析文档 (清单见 §11)。
 > **旧文档最后存在提交: `03f616196468f71ae6bf7f22010777450356d3ec`**
@@ -28,11 +28,10 @@ C++23 named modules 封装, 思路参考 opencv-m: 把 Boost 头文件 API 以�
 boost-module/
 ├── mcpp.toml                 # [package] + [build] + [features] (gen 区勿手改) + [target.*]
 ├── build.mcpp                # 动态生成汇总模块 generated/boost.cppm (gitignored)
-├── src/*.cppm                # 每模块一个接口 (115 个)
+├── src/*.cppm                # 每模块一个接口 (116 个 — 含 C5 SPECIAL: src/version.cppm)
 ├── src/gen_exports/*.inc     # 生成器产物: export using 列表 (committed)
 ├── src/gen_exports/*.deps    # export import 提示 (committed)
 ├── src/boost_system_extras.cpp / boost_thread_extras.cpp   # B' 外移定义库 TU
-├── include/boost-module/macros.hpp   # 旁路头: 仅包级版本宏 (BOOST_VERSION)
 ├── deps/boost/               # vendored 1.91.0 (import_boost.py 导入; boost/boost/ 为唯一 include 根)
 ├── scripts/                  # import_boost / gen_exports / gen_audit / gen_features /
 │                             # reapply_hand_edits + patchs/*.patch (52 个) + curated/*.txt + libs.json
@@ -40,42 +39,48 @@ boost-module/
 └── .github/workflows/tests.yml   # CI 四腿
 ```
 
+注: C5 (2026-09-09) 删除了 `include/boost-module/macros.hpp` 与
+`include/boost-module/` 目录 (旧 M3 旁路头, 见 §10#10); `boost.version`
+模块承担原职责, 默认激活。
+
 关键布局事实 (M1 教训): 官方 tarball 把所有库头统一收在顶层 `boost/boost/`
 汇总 include 根, `libs/<lib>/` 下**没有** `include/`; `deps/boost` 是唯一
 include 根, 库↔头映射经 `libs/<lib>/meta/libraries.json` 或同名目录推断
 (`scripts/libs.json` 固化)。
 
-### 2.2 库分类与计数收口 (2026-09-08 全量复算)
+### 2.2 库分类与计数收口 (2026-09-08 全量复算, 2026-09-09 C5 修订)
 
-实地清点 (仓库 `src/*.cppm` = 115、`scripts/features.lst` = 117、`scripts/libs.json` = 116、
-`tests/*.cpp` = 141、`tests/*.hpp` = 1; `[features].default` = 36):
+实地清点 (仓库 `src/*.cppm` = 116、`scripts/features.lst` = 118、`scripts/libs.json` = 116、
+`tests/*.cpp` = 141、`tests/*.hpp` = 1; `[features].default` = 49):
 
 | 分类 | 数量 | 计入 | 内容 |
 |---|---|---|---|
-| 模块接口 (`.cppm` + feature) | **115** | 115 模块 / 115 feature | `src/*.cppm` 115 个, 与 `features.lst` 模块部分一一对应; T0 26 (M0–M6, C1 除 scope_exit) + T1a 61 (M9 58 + C2 hof/units + C4 三库) + T2 16 (M11 18 − C1 log/test) + T1b 12 (M12) |
+| 模块接口 (`.cppm` + feature) | **116** | 116 模块 / 116 feature | `src/*.cppm` 116 个, 与 `features.lst` 模块部分一一对应; T0 26 (M0–M6, C1 除 scope_exit) + T1a 61 (M9 58 + C2 hof/units + C4 三库) + T2 16 (M11 18 − C1 log/test) + T1b 12 (M12) + **C5 SPECIAL 1 (`version`)** |
 | 编译库 include-only (有 feature 无 cppm) | **2** | 2 feature | log (C1 gcc 消费面降级)、unit_test_framework (C1 test 双形态; libs.json 中仍记 `test` → feature `unit_test_framework` 改名映射) |
 | 纯 include-only (无模块无 feature) | **20** | — | T3 宏驱动 16 (preprocessor / mpl / fusion / proto / spirit / xpressive / typeof / vmd / phoenix / parameter / metaparse / function_types / tti / local_function / msm / foreach; 宏是预处理器 API 永不跨模块边界, M10) + C1/M11 降级 4 (exception (M11)、describe / openmethod / scope_exit (C1)) |
-| **封装可消费总数** | **137** | 115+2+20 | = 115 模块 + 2 编译库 include-only + 20 纯 include-only |
-| **feature 总数** | **117** | — | = 115 模块 feature + log + unit_test_framework; `gen_features.py` 由 libs.json + .deps 生成, 勿手改 |
-| **libs.json 库集** | **116** | — | = 115 模块 + test 占位 (feature 中改名 `unit_test_framework`); `scripts/libs.json` |
+| **封装可消费总数** | **138** | 116+2+20 | = 116 模块 + 2 编译库 include-only + 20 纯 include-only |
+| **feature 总数** | **118** | — | = 116 模块 feature + log + unit_test_framework; `gen_features.py` 由 libs.json + .deps 生成, 勿手改 |
+| **libs.json 库集** | **116** | — | = 115 模块 + test 占位 (feature 中改名 `unit_test_framework`); `version` 不在 libs.json (LIBS_SPECIAL, 不经 gen_exports) |
 | M13 暂缓 (用户决策) | 11 | — | context / fiber / coroutine (asm)、locale (ICU)、mpi、python、parameter_python、graph_parallel、compute (OpenCL)、mysql / redis (OpenSSL) |
 | 非库/边界外 | 若干 | — | conversion (无头 stub)、coroutine2 (依赖 context)、property_map_parallel (无汇总根头)、detail/headers 目录 |
 
-- 默认集 **48 库闭包** (`[features].default`, 全为模块 feature; 闭包 0 跨入
+- 默认集 **49 库闭包** (`[features].default`, 全为模块 feature; 闭包 0 跨入
   log/utf; 2026-09-08 dep_graph 修复 (§10#7) 体引用边使闭包 36 → 48,
+  C5 (2026-09-09) 加入 `version` 后 48 → 49,
   命名 `default` 序列为权威, 见 docs/2026-09-08-dep-graph-two-pass-body-edge-completion.md):
   其余 opt-in (`mcpp build --features <库,...>`);
   全量 `--features all`。
 - **CI A/B 分组** (因 clang 2^31 源位置上限, §7.2#1): A = default + T1a + T2
-  共 **105 feature** (= 103 模块 + log + unit_test_framework; 新默认成员
-  全部 ∈ M3/T1a/T2, A 组计数不变); B = T1b
+  共 **106 feature** (= 104 模块 + log + unit_test_framework; C5 加 `version`
+  ∈ A 组, +1); B = T1b
   **12 feature** (accumulators / asio / beast / geometry / gil / graph / hana /
   interprocess / mqtt5 / multiprecision / polygon / qvm)。
 - **测试** (`tests/` 下 `*.cpp` = **141** + `*.hpp` = **1**, 共 142 文件):
-  - **141 个 `.cpp`** = 48 默认集 smoke + 68 opt-in feature smoke + 20 纯
+  - **141 个 `.cpp`** = 49 默认集 smoke + 67 opt-in feature smoke + 20 纯
     include-only smoke + 5 辅助 (`test_included.cpp` included 形态、`test_utf.cpp`
-    utf 编译形态、`hof_include.cpp`/`units_include.cpp` 包含形态对照、`macros.cpp`
-    旁路头);
+    utf 编译形态、`hof_include.cpp`/`units_include.cpp` 包含形态对照、
+    **C5: `version.cpp`** 取代了已删除的 `macros.cpp` 旁路头 smoke; 文件数
+    不变 —— 删 1 加 1, 总数 141);
   - `test_assert.hpp` 1 个共享头, 非独立测试。
   - 本地 llvm/msvc 默认集 **141/141** 通过; opt-in 定点全绿; CI A/B 全量门禁。
 - CI 四腿全绿: windows-llvm-msvc / linux-gcc / linux-llvm / macos-llvm。
@@ -218,13 +223,27 @@ boost.boost = { path = "..", default-features = false, features = ["optional", "
 boost.boost = { path = "..", features = ["all"] }                          # 全量 (clang 下超单 TU 上限, 应逐库 import)
 ```
 
-### 4.3 宏 re-homing 与旁路头
+### 4.3 版本常量 (`boost.version`, C5)
 
-- core.cppm 导出 `boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION` constexpr
-  (拼写保持); `include/boost-module/macros.hpp` 仅承载包级版本宏。
-- **同一 TU 内宏定义与 re-homed 拼写互斥** (宏吞拼写), 二选一。
-- 旁路头**不逐库扩展** (与各模块 GMF include 集不相交约束, M0 §5); T3 宏
-  API 一律 include 上游头。
+- `src/version.cppm` (`LIBS_SPECIAL`, C5 2026-09-09) 导出
+  `boost::BOOST_VERSION` (int) / `boost::BOOST_LIB_VERSION` (const char*) constexpr
+  (拼写保持, 取值来自上游 `<boost/version.hpp>`, **模块 TU 内 `#undef` 了同名
+  对象宏**, 防止它们污染 import 该模块的消费者 TU)。
+- 默认集 (`DEFAULT_CANDIDATES`) 含 `version`; `import boost;` 即可用
+  `boost::BOOST_VERSION`, 无需单独 import。
+- **同一 TU 内宏定义与模块拼写互斥** (宏吞拼写), 二选一:
+  - 模块拼写: `import boost.version; static_assert(boost::BOOST_VERSION >= 109100);`
+  - 宏拼写: `#include <boost/version.hpp>` 然后
+    `#if BOOST_VERSION >= 109100` —— 宏来源由消费者自备, 不再由本包提供。
+  - 互斥原因: 模块 TU 已 `#undef` 了 `BOOST_VERSION` / `BOOST_LIB_VERSION`
+    对象宏, 但**消费者 TU 仍可自行定义** (例如 `#include <boost/version.hpp>`);
+    一旦宏被定义, 它会展开 `boost::BOOST_VERSION` 拼写为 `boost::109100` 而失败。
+- 历史: M3 final form 把 `BOOST_VERSION` / `BOOST_LIB_VERSION` 常量 re-home 到
+  `boost.core` 模块, 并提供 `include/boost-module/macros.hpp` 旁路头; C5 删除了
+  旁路头 (冗余, 上游头自包含) 并把常量从 `core` 移到独立的 `boost.version` 模块。
+  详见 .agents/docs/2026-09-09-boost-version-module.md。
+- 旁路头**已退役**, 不再存在 `include/boost-module/` 目录; T3 宏 API 仍
+  一律 include 上游头。
 
 ## 5. 里程碑史与关键决策 (速览)
 
@@ -246,7 +265,8 @@ boost.boost = { path = "..", features = ["all"] }                          # 全
 | C2 | hof/units 重新模块化 | vendored 宏改造 (`BOOST_HOF_STATIC_*`/`BOOST_UNITS_STATIC_CONSTANT` → `inline constexpr`) 使对象获外链; units 1355 / hof 353 实体; gcc 无需混用守卫 |
 | C3 | 文档/计数同步 | rollup/README/M9/M10/M11 补记 |
 | C4 (+C4.1) | bind/lambda/lambda2 重新模块化 | T3 宏面误判纠正; lambda 占位符 TU-local → inline constexpr (vendored 3 处); bimap 的 boost.iterator 边丢失 → 定点钉定 (全局修法两案否决); C4.1: gcc 16 重复符号 (constant_null_type CMI 重复发射) → inline constexpr |
-| M13 | 外部依赖/asm 11 库 | **用户决策暂缓 (2026-09-05), 持续暂缓 (2026-09-08)** |
+| C5 | `boost.version` 模块形式化 + `macros.hpp` 移除 + core 去重 | `src/version.cppm` 手写特例转 LIBS_SPECIAL (新 tier, `boost_common.py`), 经 gen_features.py 流程; `include/boost-module/macros.hpp` 与 `tests/macros.cpp` 删除; `core.cppm` 内冗余常量移除; 默认闭包 48 → 49; 详见 plan/2026-09-09-boost-version-module-promotion.md + docs/2026-09-09-boost-version-module.md |
+| M13 | 外部依赖/asm 11 库 | **用户决策暂缓 (2026-09-05), 持续暂缓 (2026-09-08, 2026-09-09 维持)** |
 | M14 | 发布 | **下一步: 发布预览版 (2026-09-08 决策, 见 plan/2026-09-08-release-preview-plan.md)** |
 
 用户历史决策 (2026-08-13): 动态汇总模块 / 精简核心默认集 / 宏驱动库
@@ -404,8 +424,9 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    修订 (实为 5 项失败) 矛盾; M10 文档 include-only "23 库" 漏数 exception
    (实 24, C1 前) —— 均为过程文档记录不实, 已由后继文档勘误。
 4. **默认闭包数字演变散落**: 18 (M8) → 31 (M9/M10) → 34 (M11) → 36 (M12)
-   → C1 计划预估 35 实际 36 (functional 移出) → **48** (2026-09-08 dep_graph
-   修复, 体引用边补全使闭包扩张, 用户决策接受; CI A 组不受影响)。
+   → C1 计划预估 35 实际 36 (functional 移出) → 48 (2026-09-08 dep_graph
+   修复, 体引用边补全使闭包扩张, 用户决策接受; CI A 组不受影响) →
+   **49** (2026-09-09 C5 加入 `boost.version`, 无 implies, 闭包 +1)。
    今后以 `gen_features.py` 输出为唯一权威。
 5. **hof/units gcc 混用守卫**: C1 计划预设需要 gcc 侧 ODR 守卫, CI 实测
    不需要并已移除 —— 已解, 但说明"宏面大 ⇒ 会撞 ODR"的推断不可靠
@@ -424,10 +445,28 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    bimap 钉边删除, 边由生成器自然再生。
 8. **M13/M14 前置关系**: 原计划 M14 发布以"剩余库全量接入"为前置; 2026-09-05
    M13 被用户决策暂缓, 2026-09-08 进一步决策**直接发布预览版** —— 发布门槛
-   由"全量接入"改为"当前 115 模块 + 已知限制披露", 本决策以此为准。
+   由"全量接入"改为"当前 115 模块 + 已知限制披露", 2026-09-09 维持并同步
+   C5 修订 (116 模块 + 已知限制披露)。
 9. **T3 名单冻结 vs 判定标准**: M10 宣布 T3 名单冻结, C4 即除名三库;
    "冻结"应以实体面复核为准而非时间点 —— 新库进入 include-only 的判定流程
    (宏面 + 实体面双验) 建议固化为标准操作, 待确认。
+10. **`boost.version` 模块 + `macros.hpp` 旁路头 (C5 2026-09-09, 已定并实施)**:
+    原 `src/version.cppm` 是手写特例 (无 .inc / 无 .deps / 不在 libs.json /
+    不进 TARGET_LIBS), 导致 `import boost;` 聚合拿不到 `boost::BOOST_VERSION`
+    (build.mcpp 遍历 features.lst, 未登记即跳过), 且与 `core.cppm` 内的
+    re-home 常量同名重复。决策:
+    - 新增 `LIBS_SPECIAL` tier (`boost_common.py`), 处理"模块形式但不经
+      gen_exports"的库; 走 gen_features.py 流程 (sources = .cppm, 无 TU
+      globs, deps_of() 缺失 .deps 返回空集)。
+    - `version` 加入 `DEFAULT_CANDIDATES`, 默认闭包 48 → 49, 模块接口
+      115 → 116, feature 117 → 118。
+    - 删除 `include/boost-module/macros.hpp` 旁路头 (整个目录), 删除
+      `tests/macros.cpp`, 移除 `core.cppm` 内 `BOOST_VERSION` /
+      `BOOST_LIB_VERSION` 重复常量。
+    - 宏形式 (`#if BOOST_VERSION`) 由消费者自行 `#include <boost/version.hpp>`
+      解决; 同一 TU 内宏与模块拼写仍互斥 (宏吞拼写), 与 M3 final form 一致。
+    详见 plan/2026-09-09-boost-version-module-promotion.md 与
+    docs/2026-09-09-boost-version-module.md。
 
 ## 11. 被本文替代的旧文档 (最后存在提交 `03f616196468f71ae6bf7f22010777450356d3ec`)
 

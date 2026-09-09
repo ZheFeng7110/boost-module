@@ -31,6 +31,7 @@
 | M14 | 发布 (mcpp-index 薄层 + 架构文档 + 发布流程) | ⏳ |
 | C1–C3 | 消费者使用方式重分类 (五库降级 + hof/units 重新模块化) | ✅ |
 | C4 | bind/lambda/lambda2 重新模块化 (T3 宏面误判纠正) + dep_graph 走查修复 | ✅ |
+| C5 | `boost.version` 模块形式化 + `include/boost-module/macros.hpp` 旁路头移除 | ✅ |
 
 > 里程碑 M7 之后见[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md):
 > 全库 (155 库) 接入 + mcpp `[features]` 按库选择性构建 (`default-features = false` 自选,
@@ -40,18 +41,22 @@
 ## 按库选择性构建 (M8 mcpp features + M9 全量接入)
 
 每个库对应一个 feature（`scripts/gen_features.py` 生成，勿手改）：
-当前共 **117 个 feature** —— 115 个模块 feature（T0 26 + T1a 61 + T2 16 +
-T1b 12）+ 2 个**无模块 feature**（log、unit_test_framework，见下节）。
+当前共 **118 个 feature** —— 116 个模块 feature（T0 26 + T1a 61 + T2 16 +
+T1b 12 + C5 SPECIAL 1: version）+ 2 个**无模块 feature**（log、unit_test_framework，
+见下节）。
 describe/openmethod/scope_exit/log/test 已降级 include-only（C1, 2026-09-06），
 hof/units 已于 C2 宏改造后重新模块化；bind/lambda/lambda2 已于 C4 重新模块化
-（T3 宏面误判纠正, 2026-09-07）；static_assert/predef/exception 等
-保持 include-only（详见各设计文档）。
+（T3 宏面误判纠正, 2026-09-07）；`boost.version` 于 C5 (2026-09-09) 独立成
+LIBS_SPECIAL 模块（`src/version.cppm` 手写, 不走 gen_exports.py, 仅
+`boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION` 两个 constexpr 常量,
+默认激活）；
+static_assert/predef/exception 等保持 include-only（详见各设计文档）。
 
-- **默认集** = 36 库闭包（`[features].default`，随模块 import 边自动增长）：
-  `mcpp build` / `mcpp test` 覆盖核心面（18 个原核心库 + config/assert/
-  utility/move 等基建库）。
+- **默认集** = 49 库闭包（`[features].default`，随模块 import 边自动增长）：
+  `mcpp build` / `mcpp test` 覆盖核心面（19 个原核心库 + config/assert/
+  utility/move 等基建库 + `boost.version`）。
 - **opt-in 库**：其余 feature 需显式激活：`mcpp build --features <库,...>`。
-- **全量**：`mcpp build --features all`（全部 117 个 feature 编译）。
+- **全量**：`mcpp build --features all`（全部 118 个 feature 编译）。
 
 消费者侧（path dep 用法）：
 
@@ -138,6 +143,27 @@ int main(int argc, char* argv[]) {
 BOOST_AUTO_TEST_CASE(t) { BOOST_TEST(1 + 1 == 2); }
 ```
 
+## 版本常量 (`boost.version`)
+
+```cpp
+import boost.version;
+static_assert(boost::BOOST_VERSION == 109100);
+static_assert(boost::BOOST_LIB_VERSION[0] == '1');
+```
+
+- 模块 `boost.version` (`src/version.cppm`, C5 2026-09-09 新增) 从上游
+  `<boost/version.hpp>` 取值, 以 `inline constexpr int BOOST_VERSION` /
+  `inline constexpr const char* BOOST_LIB_VERSION` 在 `boost::` 命名空间
+  导出 (拼写保持); 同时 `#undef` 掉模块 TU 内的对象宏, 防止它们污染
+  import 该模块的消费者 TU。
+- 在默认集内, `import boost;` 已自动 re-export; 单库 import 用
+  `import boost.version;`。
+- 宏形式 (`#if BOOST_VERSION >= 109100`) 用户自行
+  `#include <boost/version.hpp>` —— 上游头自带 include guard, 与本包无
+  任何命名空间冲突; 与 `import boost.version;` **同一 TU 互斥** (宏会
+  展开 `boost::BOOST_VERSION` → `boost::109100`, 同 M3 final form 的
+  "二选一"原则)。
+
 用法 (纯 include-only 库可与模块 import 同 TU 混用,标准允许):
 
 ```cpp
@@ -149,9 +175,8 @@ static_assert(BOOST_PP_CAT(1, 2) == 12);
 BOOST_FOREACH (int x, vec) { /* ... */ }
 ```
 
-`include/boost-module/macros.hpp` 旁路头仅承载包级版本宏 (BOOST_VERSION),
-不逐库扩展宏面 —— T3 宏 API 一律 include 上游头获取。
-详见[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md)。
+详见[总体设计汇总](.agents/docs/2026-09-08-consolidated-design.md)
+和 [boost.version 模块设计](.agents/docs/2026-09-09-boost-version-module.md)。
 
 ## 辅助脚本
 
@@ -189,9 +214,10 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
   （`export import` 提示）、`src/<lib>.cppm` 草稿。
 - `scripts/gen_features.py` — 由 `libs.json` + `src/gen_exports/*.deps` 生成
   `mcpp.toml` 的 `[features]` 块（每库一个 feature，`sources` = 该库 `.cppm` + 编译库
-  TU globs；log/unit_test_framework 为无模块 feature，仅库 TU，C1）与
-  `scripts/features.lst`（build.mcpp 消费）。
-  默认集 = 36 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
+  TU globs；log/unit_test_framework 为无模块 feature，仅库 TU，C1；
+  `boost.version` 为 LIBS_SPECIAL 形态, 有 `.cppm` 无 TU globs / 无 `.deps`, C5）
+  与 `scripts/features.lst`（build.mcpp 消费）。
+  默认集 = 49 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单；
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
