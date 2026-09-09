@@ -37,14 +37,188 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import sys
+import time
 from collections import deque
 from pathlib import Path
 
 import boost_common as bc
 
 ci = None
+
+
+# ---------------------------------------------------------------------------
+# caching (incremental skip + clang++ gate verdicts)
+# ---------------------------------------------------------------------------
+
+_CODE_HASH = None
+
+
+def _code_hash():
+    """Hash of the generator sources — any logic change invalidates caches."""
+    global _CODE_HASH
+    if _CODE_HASH is None:
+        h = hashlib.sha256()
+        for p in (Path(__file__).resolve(),
+                  (bc.SCRIPTS / "boost_common.py").resolve()):
+            h.update(p.name.encode("utf-8"))
+            h.update(p.read_bytes())
+        _CODE_HASH = h.hexdigest()
+    return _CODE_HASH
+
+
+_CLANG_VERSION = None
+
+
+def _clang_version():
+    global _CLANG_VERSION
+    if _CLANG_VERSION is None:
+        import subprocess
+        r = subprocess.run(["clang++", "--version"], capture_output=True,
+                           text=True)
+        _CLANG_VERSION = (r.stdout or r.stderr).splitlines()[0] \
+            if (r.stdout or r.stderr) else "unknown"
+    return _CLANG_VERSION
+
+
+def _initial_gfm(lib, gfm_headers):
+    """Include set _parse_bundle starts from (GMF override applied)."""
+    if lib in GMF_OVERRIDE:
+        return [bc.DEPS / h for h in GMF_OVERRIDE[lib]]
+    return list(gfm_headers)
+
+
+def _bundle_text(gfm):
+    return "\n".join("#include <{}>".format(
+        h.relative_to(bc.DEPS).as_posix()) for h in gfm) + "\n"
+
+
+_FILE_HASH = {}
+_INC_CACHE = {}
+_HDR_INFO = {}
+
+
+def _file_hash(path):
+    h = _FILE_HASH.get(path)
+    if h is None:
+        try:
+            h = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError:
+            h = "missing"
+        _FILE_HASH[path] = h
+    return h
+
+
+def _boost_includes(path):
+    incs = _INC_CACHE.get(path)
+    if incs is None:
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            text = ""
+        incs = _INC_CACHE[path] = [m.group(1)
+                                   for m in bc._INC_RE.finditer(text)]
+    return incs
+
+
+def _norm(path):
+    """Memoized normcase/abspath — Path.resolve() is a filesystem syscall on
+    Windows and is prohibitively slow at closure-walk volume."""
+    key = str(path)
+    v = _HDR_INFO.get("n:" + key)
+    if v is None:
+        try:
+            v = str(path.resolve()).lower()
+        except OSError:
+            v = key.lower()
+        _HDR_INFO["n:" + key] = v
+    return v
+
+
+def _hdr_info(path):
+    """(abspath, rel, content-hash, [include target Paths]) per header, all
+    memoized — the closure walk below is then a pure graph traversal."""
+    key = _norm(path)
+    info = _HDR_INFO.get(key)
+    if info is None:
+        p = Path(key)
+        try:
+            rel = p.relative_to(bc.DEPS).as_posix()
+        except ValueError:
+            rel = p.as_posix()
+        h = _file_hash(p)
+        incs = []
+        for r in _boost_includes(p):
+            ip = bc.BOOST_ROOT.parent / r
+            ikey = str(ip)
+            ex = _HDR_INFO.get("e:" + ikey)
+            if ex is None:
+                ex = _HDR_INFO["e:" + ikey] = ip.is_file()
+            if ex:
+                incs.append(ip)
+        info = _HDR_INFO[key] = (rel, h, incs)
+    return (key,) + info
+
+
+def _closure_hash(lib, gfm):
+    """Content hash over every boost header transitively reachable from the
+    bundle's include set — header edits anywhere in the closure invalidate
+    the caches. All per-file work is memoized (see _hdr_info)."""
+    h = hashlib.sha256()
+    h.update("lib:{}\n".format(lib).encode())
+    seen = set()
+    stack = [list(gfm)]
+    while stack:
+        for f in stack.pop():
+            key, rel, digest, incs = _hdr_info(f)
+            if key in seen:
+                continue
+            seen.add(key)
+            h.update("{} {}\n".format(rel, digest).encode())
+            if incs:
+                stack.append(incs)
+    return h.hexdigest()
+
+
+def _skip_key(lib, gfm_headers, upstream_keys, libs, full_closure,
+              no_body_deps):
+    """Incremental-skip cache key: everything the .inc/.deps output for `lib`
+    deterministically depends on, plus the keys of its upstream libs (so any
+    upstream regeneration invalidates downstream)."""
+    h = hashlib.sha256()
+    h.update(b"code:" + _code_hash().encode())
+    h.update(b"bundle:" + _bundle_text(
+        _initial_gfm(lib, gfm_headers)).encode())
+    h.update(b"closure:" + _closure_hash(lib, gfm_headers).encode())
+    h.update(b"extra:" + ",".join(EXTRA_DEFINES.get(lib, ())).encode())
+    h.update(b"clang_args:" + " ".join(bc.CLANG_ARGS).encode())
+    curated = bc.CURATED_DIR / (lib + ".txt")
+    if curated.exists():
+        h.update(b"curated:" + curated.read_bytes())
+    h.update(b"full_closure:" + str(full_closure).encode())
+    h.update(b"no_body_deps:" + str(no_body_deps).encode())
+    # The libs subset shapes first-wins claiming, so it is part of the key.
+    h.update(b"libs:" + ",".join(sorted(libs)).encode())
+    for u in sorted(upstream_keys):
+        h.update("up:{}:{}\n".format(u, upstream_keys[u]).encode())
+    return h.hexdigest()
+
+
+def _load_json(path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _artifacts_ok(out_dir, lib, sk):
+    """A cache hit is only usable when the cached outputs still exist."""
+    gen = out_dir / "src" / "gen_exports"
+    if not (gen / (lib + ".inc")).exists():
+        return False
+    return (gen / (lib + ".deps")).exists() == bool(sk.get("deps_present"))
 
 
 # ---------------------------------------------------------------------------
@@ -1041,6 +1215,9 @@ def main() -> int:
                     help="also draft src/<lib>.cppm (M3 owns final form)")
     ap.add_argument("--no-body-deps", action="store_true",
                     help="disable the pass-2 body-reference .deps completion")
+    ap.add_argument("--no-cache", action="store_true",
+                    help="disable the incremental-skip and gate caches "
+                         "(full regeneration)")
     args = ap.parse_args()
 
     if args.scan:
@@ -1061,22 +1238,65 @@ def main() -> int:
             print("error: unknown library '{}'".format(lib), file=sys.stderr)
             return 1
 
-    order = bc.topo_order()
+    use_cache = not args.no_cache
+    graph = bc.dep_graph()
+    order = bc.topo_order(graph)
     print("processing order: {}".format(" -> ".join(order)))
+
+    # Incremental-skip keys, computed dependencies-first (topo order) so each
+    # lib's key can fold in its upstream keys. A lib in an include cycle
+    # (unkeyable upstream) is never cacheable — conservative.
+    libs = list(args.libs) if args.libs else list(bc.TARGET_LIBS)
+    gfm_memo = {}
+    lib_keys = {}
+    for lib in order:
+        uk = {}
+        for u in sorted(graph.get(lib, ())):
+            ku = lib_keys.get(u)
+            if ku is None:
+                uk = None
+                break
+            uk[u] = ku
+        if uk is None:
+            lib_keys[lib] = None
+            continue
+        gfm_memo[lib] = bc.gfm_headers_of(lib)
+        lib_keys[lib] = _skip_key(lib, gfm_memo[lib], uk, libs,
+                                  args.full_closure, args.no_body_deps)
 
     claimed = {}
     claimed_inject = {}
     summary = {}
     body_all = {}            # lib -> {home: set(usr)} pass-2 candidates
     gfm_by_lib = {}          # lib -> gate-pruned GFM (for post-merge emit_cppm)
+    cache_payloads = {}      # lib -> skip.json payload (written after pass 2)
     for lib in order:
         if lib not in libs:
             continue
+        key = lib_keys[lib]
+        sk = _load_json(bc.CACHE_DIR / (lib + ".skip.json")) \
+            if use_cache and key else None
+        if sk is not None and sk.get("key") == key and \
+                _artifacts_ok(args.out, lib, sk):
+            # Cache hit: replay this lib's claims so downstream misses see the
+            # same first-wins state a full run would produce.
+            for usr, owner in sk.get("claims", []):
+                claimed.setdefault(usr, owner)
+            for q, owner in sk.get("inject_claims", []):
+                claimed_inject.setdefault(q, owner)
+            gfm_by_lib[lib] = [bc.DEPS / rel for rel in sk["gfm"]]
+            summary[lib] = sk["summary"]
+            print("skipped {} (cache hit, exported={})".format(
+                lib, sk["summary"].get("exported")), flush=True)
+            continue
+        t0 = time.time()
         headers = bc.headers_of(lib)
-        gfm_headers = bc.gfm_headers_of(lib)
+        gfm_headers = gfm_memo.get(lib)
+        if gfm_headers is None:
+            gfm_headers = gfm_memo[lib] = bc.gfm_headers_of(lib)
         print("parsing {} ({} headers, {} in GFM)...".format(
             lib, len(headers), len(gfm_headers)), flush=True)
-        tu, gfm_final = _parse_bundle(lib, gfm_headers)
+        tu, gfm_final = _parse_bundle(lib, gfm_headers, use_cache)
         if tu is None:
             print("error: parse failed for {}".format(lib), file=sys.stderr)
             return 1
@@ -1109,9 +1329,24 @@ def main() -> int:
         if body_deps:
             summary[lib]["body_deps"] = {h: sorted(v)
                                          for h, v in body_deps.items()}
-        print("  candidates={} closure={} exported={} deps={} body-deps={}"
-              .format(len(cands), len(records), exports, sorted(deps) or "-",
-                      ", ".join(sorted(body_deps)) or "-"))
+        print("  candidates={} closure={} exported={} deps={} body-deps={} "
+              "({:.1f}s)".format(
+                  len(cands), len(records), exports, sorted(deps) or "-",
+                  ", ".join(sorted(body_deps)) or "-", time.time() - t0),
+              flush=True)
+        if use_cache and key:
+            cache_payloads[lib] = {
+                "key": key,
+                "gfm": [h.relative_to(bc.DEPS).as_posix()
+                        for h in gfm_final],
+                "summary": summary[lib],
+                # First-wins claims contributed by this lib (replayed with
+                # setdefault in topo order on a cache hit).
+                "claims": [[rec["usr"], lib] for rec in records.values()],
+                "inject_claims": [[q, owner]
+                                  for q, owner in claimed_inject.items()
+                                  if owner == lib],
+            }
 
     if not (args.full_closure or args.no_body_deps):
         print("pass 2: body-reference .deps completion...")
@@ -1120,6 +1355,26 @@ def main() -> int:
             print("  no edges to add")
     else:
         added = {}
+
+    if use_cache and cache_payloads:
+        bc.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        if added:
+            # pass-2 rewrote .deps files — every cached key is stale; drop the
+            # skip cache so the next run regenerates (gate cache stays valid).
+            n = 0
+            for p in bc.CACHE_DIR.glob("*.skip.json"):
+                p.unlink()
+                n += 1
+            if n:
+                print("  pass-2 added edges: cleared {} skip-cache entries"
+                      .format(n))
+        else:
+            for lib, payload in cache_payloads.items():
+                payload["deps_present"] = (args.out / "src" / "gen_exports" /
+                                           (lib + ".deps")).exists()
+                (bc.CACHE_DIR / (lib + ".skip.json")).write_text(
+                    json.dumps(payload, sort_keys=True) + "\n",
+                    encoding="utf-8")
 
     # .cppm drafts are emitted after the pass-2 merge so their export-import
     # block reflects the completed .deps (emit_cppm reads the .deps file).
@@ -1137,9 +1392,16 @@ def main() -> int:
     return 0
 
 
-def _parse_bundle(lib, headers):
+def _parse_bundle(lib, headers, use_cache=True):
     """One TU including the GFM headers (like the future .cppm GMF), gated by
     the real clang++ driver.
+
+    The bundle TU lives in scripts/_gen_exports-cache/bundles/ (gitignored).
+
+    The clang++ gate is cached: its verdict is keyed on the initial bundle
+    content + gate command line + clang version, so an unchanged bundle skips
+    the (up to 6-round) syntax-check loop entirely and replays the pruned GFM
+    set. The libclang parse itself always runs (the AST is not cached).
 
     libclang's missing-include reporting is unreliable once an include chain
     gets long (verified: a fatal 'file not found' surfaced for a bare header
@@ -1155,18 +1417,14 @@ def _parse_bundle(lib, headers):
     import subprocess
     _ci = bc.get_ci()
     idx = _ci.Index.create()
-    bundle = Path(bc.ROOT / "target" / "gen" / "bundles" /
-                  (lib + ".cpp")).resolve()
+    bundle = (bc.CACHE_DIR / "bundles" / (lib + ".cpp")).resolve()
     bundle.parent.mkdir(parents=True, exist_ok=True)
     gfm = list(headers)
     if lib in GMF_OVERRIDE:
         gfm = [bc.DEPS / h for h in GMF_OVERRIDE[lib]]
 
     def write_bundle():
-        bundle.write_text(
-            "\n".join("#include <{}>".format(
-                h.relative_to(bc.DEPS).as_posix()) for h in gfm) + "\n",
-            encoding="utf-8")
+        bundle.write_text(_bundle_text(gfm), encoding="utf-8")
 
     extra = ["-D" + d for d in EXTRA_DEFINES.get(lib, ())]
 
@@ -1177,33 +1435,73 @@ def _parse_bundle(lib, headers):
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
 
-    for attempt in range(6):
-        write_bundle()
-        r = gate()
-        if r.returncode == 0:
-            break
-        offenders = set()
-        for line in r.stderr.splitlines():
-            head = line.split(":")[0].strip().replace("\\", "/")
-            if not head.endswith(".hpp"):
-                continue
-            for h in gfm:
-                if h.relative_to(bc.DEPS).as_posix() in head:
-                    offenders.add(h)
-        if not offenders:
-            print("    clang++ gate FAILED for {}:".format(lib))
-            for line in r.stderr.splitlines()[:8]:
+    # Gate cache: verdict keyed on the INITIAL bundle text (the pruning
+    # outcome is deterministic), the gate command line and the clang version.
+    gh = hashlib.sha256()
+    gh.update(b"bundle:" + _bundle_text(gfm).encode())
+    gh.update(b"closure:" + _closure_hash(lib, gfm).encode())
+    gh.update(b"extra:" + ",".join(extra).encode())
+    gh.update(b"gate:clang++ -std=c++23 -fsyntax-only -w "
+              b"--target=x86_64-w64-mingw32 -DBOOST_ALL_NO_LIB -Ideps/boost")
+    gh.update(b"clang:" + _clang_version().encode())
+    gkey = gh.hexdigest()
+    gate_cache = bc.CACHE_DIR / (lib + ".gate.json")
+    cached_gate = _load_json(gate_cache) if use_cache else None
+    if cached_gate is not None and cached_gate.get("key") == gkey:
+        if not cached_gate.get("ok"):
+            print("    clang++ gate FAILED for {} (cached):".format(lib))
+            for line in cached_gate.get("stderr", [])[:8]:
                 print("      {}".format(line.strip()))
             return None
-        for h in sorted(offenders, key=lambda p: p.as_posix()):
-            print("    gate pruned from GFM: {}".format(
-                h.relative_to(bc.DEPS).as_posix()))
-            gfm.remove(h)
+        gfm = [bc.DEPS / rel for rel in cached_gate["gfm"]]
+        write_bundle()
     else:
-        print("    clang++ gate FAILED for {} (still failing after pruning):".format(lib))
-        for line in r.stderr.splitlines()[:8]:
-            print("      {}".format(line.strip()))
-        return None
+        cached_gate = None
+        for attempt in range(6):
+            write_bundle()
+            r = gate()
+            if r.returncode == 0:
+                break
+            offenders = set()
+            for line in r.stderr.splitlines():
+                head = line.split(":")[0].strip().replace("\\", "/")
+                if not head.endswith(".hpp"):
+                    continue
+                for h in gfm:
+                    if h.relative_to(bc.DEPS).as_posix() in head:
+                        offenders.add(h)
+            if not offenders:
+                print("    clang++ gate FAILED for {}:".format(lib))
+                for line in r.stderr.splitlines()[:8]:
+                    print("      {}".format(line.strip()))
+                if use_cache:
+                    bc.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                    gate_cache.write_text(json.dumps(
+                        {"key": gkey, "ok": False,
+                         "stderr": r.stderr.splitlines()[:8]}),
+                        encoding="utf-8")
+                return None
+            for h in sorted(offenders, key=lambda p: p.as_posix()):
+                print("    gate pruned from GFM: {}".format(
+                    h.relative_to(bc.DEPS).as_posix()))
+                gfm.remove(h)
+        else:
+            print("    clang++ gate FAILED for {} (still failing after pruning):".format(lib))
+            for line in r.stderr.splitlines()[:8]:
+                print("      {}".format(line.strip()))
+            if use_cache:
+                bc.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                gate_cache.write_text(json.dumps(
+                    {"key": gkey, "ok": False,
+                     "stderr": r.stderr.splitlines()[:8]}),
+                    encoding="utf-8")
+            return None
+        if use_cache:
+            bc.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            gate_cache.write_text(json.dumps(
+                {"key": gkey, "ok": True,
+                 "gfm": [h.relative_to(bc.DEPS).as_posix() for h in gfm]}),
+                encoding="utf-8")
 
     tu = idx.parse(str(bundle), args=bc.CLANG_ARGS + extra,
                    options=_ci.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)

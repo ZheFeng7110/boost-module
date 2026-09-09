@@ -6,3 +6,5 @@ generated/
 
 **/__pycache__/
 **/compile_commands.json
+
+scripts/_gen_exports-cache/

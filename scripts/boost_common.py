@@ -26,6 +26,9 @@ SCRIPTS = ROOT / "scripts"
 LIBS_JSON = SCRIPTS / "libs.json"
 CURATED_DIR = SCRIPTS / "curated"
 GEN_DIR = ROOT / "src" / "gen_exports"
+# gitignored scratch area for generator caches (gate verdicts, incremental-skip
+# keys, bundle TUs) — see gen_exports.py.
+CACHE_DIR = SCRIPTS / "_gen_exports-cache"
 AUDIT_DIR = ROOT / "target" / "gen" / "audit"
 
 # M3 header-only libraries, then M4 compiled libraries (plan order), then the
@@ -592,9 +595,10 @@ def dep_graph(headers_by_lib=None):
     return graph
 
 
-def topo_order():
+def topo_order(graph=None):
     """Dependencies first; cycles broken by TARGET_LIBS stable order."""
-    graph = dep_graph()
+    if graph is None:
+        graph = dep_graph()
     order, done = [], set()
 
     def visit(lib, stack):

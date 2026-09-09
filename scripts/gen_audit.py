@@ -204,7 +204,11 @@ def _is_explicit_specialization(cursor, tu):
 
 def audit_lib(lib, headers, out_dir):
     idx = ci.Index.create()
-    bundle = Path(bc.ROOT / "target" / "gen" / "bundles" / (lib + ".cpp"))
+    # gen_exports.py writes bundle TUs into its (gitignored) cache dir;
+    # fall back to the historical location when only old bundles exist.
+    bundle = bc.CACHE_DIR / "bundles" / (lib + ".cpp")
+    if not bundle.exists():
+        bundle = Path(bc.ROOT / "target" / "gen" / "bundles" / (lib + ".cpp"))
     tu = idx.parse(str(bundle), args=bc.CLANG_ARGS,
                    options=ci.TranslationUnit.PARSE_SKIP_FUNCTION_BODIES |
                            ci.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
