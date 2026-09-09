@@ -166,8 +166,14 @@ jobs:
         shell: bash
         run: mcpp test --features "$BOOST_GROUP_B"
 
-      - name: Build & run example (import boost;)
+      # examples/ 是一个 workspace (members: default_usage, git_dep_usage),
+      # 用 `mcpp run -p <member>` 逐个构建并运行各个 example。
+      - name: Build & run example (default_usage)
         shell: bash
-        run: |
-          cd examples
-          mcpp run
+        run: mcpp run -p default_usage
+        working-directory: examples
+
+      - name: Build & run example (git_dep_usage)
+        shell: bash
+        run: mcpp run -p git_dep_usage
+        working-directory: examples
