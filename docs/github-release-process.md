@@ -1,8 +1,9 @@
 # GitHub Release 发布流程 (runbook)
 
-> 日期: 2026-09-09 · 适用: 预览版及后续所有版本 · 版本命名 `b<boost版本>w<封装版本>`
-> 首个适用版本: `b1.91.0w0.0.0-preview` (T4 收口, 见
-> [发布预览版计划](../.agents/plan/2026-09-08-release-preview-plan.md))
+> 适用于任意版本的发布, 与具体版本无关。
+> 版本命名: `b<boost版本>w<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
+> (如 `b1.91.0w0.0.0-preview`、`b1.91.0w0.0.0`)。
+> `<version>` 指同一字符串, 用于 release notes 文件名与 CHANGELOG 条目。
 
 ## 0. 前置条件 (发布门槛)
 
@@ -17,7 +18,7 @@
       数字一致。
 - [ ] `docs/release_notes/<version>.md` 已就绪 (内容清单 / 已知限制 /
       报告问题指引), `CHANGELOG.md` 已有对应版本条目。
-- [ ] 用户确认可以打 tag (预览版流程曾约定"先不打 tag")。
+- [ ] 用户确认可以打 tag。
 
 ## 1. 干净 checkout 下 tag 构建演练 (打 tag 前必须)
 
@@ -30,7 +31,7 @@ git checkout <待发布 commit>
 
 # 本地腿 (llvm/msvc 默认) 全量验证
 mcpp build
-mcpp test                 # 默认集 smoke 全绿 (当前口径 141)
+mcpp test                 # 默认集 smoke 全绿
 mcpp run -p default_usage # examples
 ```
 
@@ -39,9 +40,9 @@ mcpp run -p default_usage # examples
 ## 2. 打 tag
 
 ```bash
-# 在开发分支上 (b1.91.0wdev), 待发布 commit 处
-git tag -a b1.91.0w0.0.0-preview -m "Preview release: Boost 1.91.0 C++23 named modules wrapper v0.0.0"
-git push origin b1.91.0w0.0.0-preview
+# 在开发分支上, 待发布 commit 处
+git tag -a <tag> -m "<版本说明一句话, 如 Boost X.Y.Z C++23 named modules wrapper vX.Y.Z>"
+git push origin <tag>
 ```
 
 - 一律用 **annotated tag** (携带 tagger / 日期 / message)。
@@ -52,13 +53,13 @@ git push origin b1.91.0w0.0.0-preview
 ## 3. 创建 GitHub Release
 
 ```bash
-gh release create b1.91.0w0.0.0-preview \
-  --title "b1.91.0w0.0.0-preview" \
-  --notes-file docs/release_notes/b1.91.0w0.0.0-preview.md \
+gh release create <tag> \
+  --title "<tag>" \
+  --notes-file docs/release_notes/<version>.md \
   --prerelease          # 预览版必须; 正式版去掉本项
 ```
 
-- 正文直接复用 `docs/release_notes/<version>.md` (预览版发布后可在
+- 正文直接复用 `docs/release_notes/<version>.md` (发布后可在
   GitHub 界面微调措辞, 但仓库内文件仍是权威版本)。
 - **不上传二进制附件**: 本项目是源码包, 消费者经 git dep / (未来)
   mcpp package index 获取; Source code (zip/tar.gz) 由 GitHub 自动生成。
@@ -73,13 +74,13 @@ gh release create b1.91.0w0.0.0-preview \
       (如 GitHub 界面改过措辞, 回同步到仓库内文件)。
 - [ ] 开发分支 README / architecture.md 中的示例 tag 更新为新 tag
       (仅当下一次版本仍是预览口径; 正式版发布时另走 T3 registry 对接)。
-- [ ] 计划文档勾选对应任务项。
+- [ ] 相关计划文档勾选对应任务项 (如有)。
 
-## 5. 正式版差异 (相对预览版流程)
+## 5. 预览版与正式版差异
 
 | 项 | 预览版 | 正式版 |
 |---|---|---|
 | `--prerelease` | 加 | 不加 |
-| tag 后缀 | `-preview` | 无 (`b1.91.0w0.0.0`) |
+| tag 后缀 | `-preview` | 无 (如 `b1.91.0w0.0.0`) |
 | mcpp package index (T3) | 不上架 | boost.lua 对接 + registry 消费 probe 必做 |
 | 已知限制披露 | 全量 | 缩减为仍有效的条目 |
