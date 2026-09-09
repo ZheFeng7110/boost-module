@@ -76,6 +76,11 @@
       `docs/release_notes/b1.91.0w0.0.0-preview.md`; architecture.md 的
       示例 tag 同步修正为 `-preview` 后缀并修 "prelease" 拼写)。
 
+- [ ] Tag + GitHub Release 流程 (用户指示暂缓: 先不打 tag, 待后续执行);
+      流程 runbook 已编写 (可复用流程文档):
+      [`docs/github-release-process.md`](../../docs/github-release-process.md);
+      干净 checkout 下 tag 构建演练待执行。
+
 ### T5 — 仓库文档收口
 
 - [ ] README "相关文档" 与文内旧链接全部指向新汇总设计/计划文档

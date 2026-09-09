@@ -2,7 +2,7 @@
 
 > 日期: 2026-09-09 · 适用: 预览版及后续所有版本 · 版本命名 `b<boost版本>w<封装版本>`
 > 首个适用版本: `b1.91.0w0.0.0-preview` (T4 收口, 见
-> [发布预览版计划](../plan/2026-09-08-release-preview-plan.md))
+> [发布预览版计划](../.agents/plan/2026-09-08-release-preview-plan.md))
 
 ## 0. 前置条件 (发布门槛)
 
@@ -33,10 +33,6 @@ mcpp build
 mcpp test                 # 默认集 smoke 全绿 (当前口径 141)
 mcpp run -p default_usage # examples
 ```
-
-可选增强 (模拟 git-dep 消费者): 新建临时工程, 依赖声明指向
-**本地 clone 路径** 的 path-dep, 分别验证 默认集 /
-`default-features=false` + 自选 features 两种配置能 build+run。
 
 任一步失败 → 回到开发分支修复后重跑演练, **不得带病打 tag**。
 
