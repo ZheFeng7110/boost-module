@@ -10,8 +10,29 @@
 - 编译器: clang 22 / gcc 16 (MinGW-w64), 与 opencv-m 一致的双编译器 CI 路线
 - 仓库结构: `deps/boost/` (vendored 源码) + `src/*.cppm` + `src/gen_exports/*.inc` (生成器产物) + `scripts/` (辅助脚本) + `tests/`、`examples/`
 
-项目架构文档: [`docs/architecture.md`](docs/architecture.md)
-用户使用文档: [`docs/usage.md`](docs/usage.md)
+## 使用方式
+
+```toml
+# 默认: 49 库闭包
+[dependencies]
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+
+# 只选若干库 (default-features = false 关闭默认集)
+[dependencies.boost.boost]
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "b1.91.0w0.0.0-preview"
+default-features = false
+features = ["optional", "json"]
+
+# 全量
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+```
+
+后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
+
+详细使用说明见用户使用文档: [`docs/usage.md`](docs/usage.md)
+
+供开发者参考的项目架构文档: [`docs/architecture.md`](docs/architecture.md)
 
 ## 分支与 Tag 命名
 
@@ -27,6 +48,8 @@
 Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`，例如 **`b1.91.0w0.0.0`**
 表示 Boost v1.91.0、模块封装版本 0.0.0。
 
+修订记录: [`CHANGELOG.md`](CHANGELOG.md) | 详细发布记录: [`docs/release_notes/`](docs/release_notes)
+
 ## 许可证
 
 模块封装部分采用 [BSL (Boost Software License)](./LICENSE)。
@@ -34,8 +57,3 @@ Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`�
 仓库内其他第三方库保留各自的原始许可：
 - Boost - [BSL (Boost Software License)](deps/boost/LICENSE_1_0.txt)
 - libclang - [Apache License v2.0 with LLVM Exceptions](https://llvm.org/docs/DeveloperPolicy.html#new-llvm-project-license-framework)
-
-## 相关文档
-
-- 总体设计汇总（替代全部旧设计/计划文档）: [`.agents/docs/2026-09-08-consolidated-design.md`](.agents/docs/2026-09-08-consolidated-design.md)
-- 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](.agents/plan/2026-09-08-release-preview-plan.md)

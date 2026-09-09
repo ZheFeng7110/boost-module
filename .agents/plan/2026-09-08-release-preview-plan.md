@@ -67,12 +67,14 @@
 
 ### T4 — 发布物料
 
-- [ ] `CHANGELOG.md` 首版: 里程碑史速览 (M0–M12, C1–C4.1) + 当前计数。
-- [ ] Release notes: 内容清单、已知限制 (设计汇总 §7 全量披露)、消费者
+- [x] `CHANGELOG.md` 首版: 里程碑史速览 (M0–M12, C1–C4.1) + 当前计数
+      (2026-09-09: 落地, 含 C5; §5#1 待定项已定 → 版本名采用
+      `b1.91.0w0.0.0-preview` 后缀)。
+- [x] Release notes: 内容清单、已知限制 (设计汇总 §7 全量披露)、消费者
       陷阱要点 (§8 精选)、报告问题指引 (gcc 16 缺陷家族属编译器 bug,
-      需引导用户区分)。
-- [ ] Tag `b1.91.0w0.0.0` + GitHub Release 流程; 干净 checkout 下
-      tag 构建演练。
+      需引导用户区分) (2026-09-09:
+      `docs/release_notes/b1.91.0w0.0.0-preview.md`; architecture.md 的
+      示例 tag 同步修正为 `-preview` 后缀并修 "prelease" 拼写)。
 
 ### T5 — 仓库文档收口
 
@@ -107,7 +109,8 @@
 
 ## 5. 待定项 (实施中向用户确认)
 
-1. tag 是否加 preview 后缀 (`b1.91.0w0.0.0` vs `b1.91.0w0.0.0-preview`)。
+1. ~~tag 是否加 preview 后缀~~ — **已定 (2026-09-09)**: 采用
+   `b1.91.0w0.0.0-preview`。
 2. boost.lua 由 gen_features.py 自动生成还是手写同步 (防漂移 vs 简单)。
 3. ~~release notes 中 `--features all` 的表述口径~~ — 已定 (2026-09-08):
    推荐逐库 import (设计汇总 §10#6)。
