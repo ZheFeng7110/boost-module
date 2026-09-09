@@ -4,8 +4,9 @@
 > 背景: `.agents/` 旧计划/设计文档已由
 > `docs/2026-09-08-consolidated-design.md` 汇总替代
 > (旧文档最后存在提交 `03f616196468f71ae6bf7f22010777450356d3ec`)。
-> 当前状态: 115 模块 / 117 feature / 默认 36 库闭包 / 封装 139 库 /
-> 测试默认集 141/141 / CI 四腿 (A/B 两组门禁)。
+> 当前状态 (2026-09-09 C5 后复核): 116 模块 / 118 feature / 默认 49 闭包 /
+> 封装 139 库 / 测试默认集 141/141 / CI 四腿 (A/B 两组门禁)。
+> (计划编写时的 115/117/36 为 C5 `boost.version` 提升前旧口径。)
 
 ## 0. 用户决策 (2026-09-08)
 
@@ -28,13 +29,18 @@
 
 ### T1 — 发布前置核查 (收口)
 
-- [ ] HEAD (`03f616196468f71ae6bf7f22010777450356d3ec` 之后) CI 四腿全绿确认
+- [x] HEAD (`03f616196468f71ae6bf7f22010777450356d3ec` 之后) CI 四腿全绿确认
       (C4.1 linux-gcc 修复后的 push)。
-- [ ] `gen_features.py --check` + 默认集/计数核对: 115 模块 / 117 feature /
-      闭包 36 / 测试 141。
-- [ ] `reapply_hand_edits.py` 幂等复跑零改动; 52 个 patch 反向检查通过。
-- [ ] mcpp pinned 2026.8.29.1 维持现状 (dyld 缺陷已由上游修复且 pinned 不受
-      影响 —— 不降级即不会再遇到, 设计汇总 §10#1 已澄清, 无需追查版本号)。
+- [x] `gen_features.py --check` 通过, 重生成零 diff; 计数复核 (2026-09-09):
+      116 模块 / 118 feature / 默认闭包 49 / 测试 .cpp 141 (原目标 115/117/36
+      为 C5 前旧口径, 见文件头注)。
+- [x] `reapply_hand_edits.py` 幂等复跑零改动; 55 个 patch 全部反向检查通过。
+      修复: 提交 `551616c4` (生成文件 ASCII-only 风格化) 将头部行 em-dash 改为
+      `-` 后, cobalt/json/stacktrace/winapi/safe_numerics_src 五个 patch 的
+      上下文行未同步, 反向检查失败 —— 已把 patch 头部行同步为 ASCII。
+- [x] mcpp pinned 维持现状 (现为 `2026.9.6.3`, 计划编写后已由 `2026.8.29.1`
+      升级, commit `450258be`; dyld 缺陷已由上游修复且 pinned 不受影响 ——
+      不降级即不会再遇到, 设计汇总 §10#1 已澄清)。
 
 ### T2 — docs/architecture.md (架构文档, M14 原定产物)
 
