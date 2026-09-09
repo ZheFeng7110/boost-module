@@ -1,86 +1,93 @@
-# GitHub Release 发布流程 (runbook)
+# GitHub Release Process (runbook)
 
-> 适用于任意版本的发布, 与具体版本无关。
-> 版本命名: `b<boost版本>w<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
-> (如 `b1.91.0w0.0.0-preview`、`b1.91.0w0.0.0`)。
-> `<version>` 指同一字符串, 用于 release notes 文件名与 CHANGELOG 条目。
+> Applies to releases of any version; independent of a specific release.
+> Version naming: `b<boost version>w<wrapper version>`; below, `<tag>` denotes the tag name
+> of the release being published (e.g. `b1.91.0w0.0.0-preview`, `b1.91.0w0.0.0`).
+> `<version>` refers to the same string, used for the release notes file name and the
+> CHANGELOG entry.
 
-## 0. 前置条件 (发布门槛)
+## 0. Prerequisites (release bar)
 
-- [ ] CI 四腿 (windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64)
-      对待发布 commit 全绿, A/B 两组门禁均通过。
-- [ ] `uv run scripts/gen_features.py --check` 通过 (features 块与
-      features.lst 零漂移)。
-- [ ] `uv run scripts/reapply_hand_edits.py` 幂等复跑零改动
-      (vendored 修补全部可回放)。
-- [ ] 计数复核: `src/*.cppm` = 模块数、`scripts/features.lst` = feature 数、
-      `[features].default` = 默认闭包, 与 CHANGELOG / release notes 中
-      数字一致。
-- [ ] `docs/release_notes/<version>.md` 已就绪 (内容清单 / 已知限制 /
-      报告问题指引), `CHANGELOG.md` 已有对应版本条目。
-- [ ] 用户确认可以打 tag。
+- [ ] All four CI legs (windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64)
+      green for the commit to be released; both A/B gate groups pass.
+- [ ] `uv run scripts/gen_features.py --check` passes (zero drift between the features
+      block and features.lst).
+- [ ] `uv run scripts/reapply_hand_edits.py` re-runs idempotently with zero changes
+      (all vendored patches replay cleanly).
+- [ ] Count review: `src/*.cppm` = module count, `scripts/features.lst` = feature count,
+      `[features].default` = default closure, all consistent with the numbers in the
+      CHANGELOG / release notes.
+- [ ] `docs/release_notes/<version>.md` is ready (contents / known limitations /
+      issue-reporting guidance), and `CHANGELOG.md` has the corresponding version entry.
+- [ ] The user has confirmed that tagging may proceed.
 
-## 1. 干净 checkout 下 tag 构建演练 (打 tag 前必须)
+## 1. Tag-build Drill in a Clean Checkout (mandatory before tagging)
 
-tag 一旦打上就指向不可变快照, 先在临时目录模拟"消费者 clone 后构建":
+Once a tag is set it points to an immutable snapshot; simulate "consumer clones and builds"
+in a temporary directory first:
 
 ```bash
 git clone <repo-url> "$TEMP/boost-module-release-drill"
 cd "$TEMP/boost-module-release-drill"
-git checkout <待发布 commit>
+git checkout <commit to release>
 
-# 本地腿 (llvm/msvc 默认) 全量验证
+# Full local-leg (llvm/msvc defaults) verification
 mcpp build
-mcpp test                 # 默认集 smoke 全绿
+mcpp test                 # default-set smoke all green
 mcpp run -p default_usage # examples
 ```
 
-任一步失败 → 回到开发分支修复后重跑演练, **不得带病打 tag**。
+Any failure → go back to the development branch, fix, and re-run the drill.
+**Never tag a broken state.**
 
-## 2. 打 tag
+## 2. Tagging
 
 ```bash
-# 在开发分支上, 待发布 commit 处
-git tag -a <tag> -m "<版本说明一句话, 如 Boost X.Y.Z C++23 named modules wrapper vX.Y.Z>"
+# On the development branch, at the commit to be released
+git tag -a <tag> -m "<one-line release note, e.g. Boost X.Y.Z C++23 named modules wrapper vX.Y.Z>"
 git push origin <tag>
 ```
 
-- 一律用 **annotated tag** (携带 tagger / 日期 / message)。
-- tag 名与 release notes 文件名、CHANGELOG 条目严格一致。
-- 误打未推送的 tag: `git tag -d <tag>`; 已推送的 tag 原则上**不删除不改写**,
-  需撤回时发新版本并在 release notes 中标注废弃。
+- Always use an **annotated tag** (carries tagger / date / message).
+- The tag name must match the release notes file name and the CHANGELOG entry exactly.
+- Mistakenly created but unpushed tag: `git tag -d <tag>`; pushed tags are in principle
+  **never deleted or rewritten** — to retract, publish a new version and mark the old one
+  deprecated in the release notes.
 
-## 3. 创建 GitHub Release
+## 3. Creating the GitHub Release
 
 ```bash
 gh release create <tag> \
   --title "<tag>" \
   --notes-file docs/release_notes/<version>.md \
-  --prerelease          # 预览版必须; 正式版去掉本项
+  --prerelease          # mandatory for previews; drop for stable releases
 ```
 
-- 正文直接复用 `docs/release_notes/<version>.md` (发布后可在
-  GitHub 界面微调措辞, 但仓库内文件仍是权威版本)。
-- **不上传二进制附件**: 本项目是源码包, 消费者经 git dep / (未来)
-  mcpp package index 获取; Source code (zip/tar.gz) 由 GitHub 自动生成。
-- Release 页面 Topics 标签 (如可用): `cpp` `cpp23` `boost` `modules`。
+- The body reuses `docs/release_notes/<version>.md` directly (wording may be tweaked in the
+  GitHub UI afterwards, but the in-repo file remains authoritative).
+- **No binary attachments**: this project is a source package; consumers get it via git dep
+  / (in the future) the mcpp package index; Source code (zip/tar.gz) is generated
+  automatically by GitHub.
+- Release page topic labels (if available): `cpp` `cpp23` `boost` `modules`.
 
-## 4. 发布后收口
+## 4. Post-release Wrap-up
 
-- [ ] Release 页面可见, notes 渲染正常, 指向的 tag commit 正确。
-- [ ] 消费者 probe: 临时工程以 `git = ... tag = <tag>` 依赖声明走一遍
-      build+run (architecture.md §2.1 的三种配置中至少默认集一种)。
-- [ ] `CHANGELOG.md` 与 `docs/release_notes/` 与实际发布一致
-      (如 GitHub 界面改过措辞, 回同步到仓库内文件)。
-- [ ] 开发分支 README / architecture.md 中的示例 tag 更新为新 tag
-      (仅当下一次版本仍是预览口径; 正式版发布时另走 T3 registry 对接)。
-- [ ] 相关计划文档勾选对应任务项 (如有)。
+- [ ] Release page visible, notes render correctly, tag commit is correct.
+- [ ] Consumer probe: a temporary project with a `git = ... tag = <tag>` dependency
+      declaration goes through build+run (at least the default set of the three
+      configurations in architecture.md §2.1).
+- [ ] `CHANGELOG.md` and `docs/release_notes/` match what was actually released
+      (if wording was changed in the GitHub UI, sync it back to the in-repo files).
+- [ ] Update the example tag in the development-branch README / architecture.md to the new
+      tag (only if the next release is still a preview; a stable release instead proceeds
+      with the T3 registry integration).
+- [ ] Check off the corresponding items in related plan documents (if any).
 
-## 5. 预览版与正式版差异
+## 5. Preview vs. Stable Release Differences
 
-| 项 | 预览版 | 正式版 |
+| Item | Preview | Stable |
 |---|---|---|
-| `--prerelease` | 加 | 不加 |
-| tag 后缀 | `-preview` | 无 (如 `b1.91.0w0.0.0`) |
-| mcpp package index (T3) | 不上架 | boost.lua 对接 + registry 消费 probe 必做 |
-| 已知限制披露 | 全量 | 缩减为仍有效的条目 |
+| `--prerelease` | yes | no |
+| tag suffix | `-preview` | none (e.g. `b1.91.0w0.0.0`) |
+| mcpp package index (T3) | not published | boost.lua integration + registry consumption probe mandatory |
+| Known-limitation disclosure | full list | reduced to still-valid entries |
