@@ -28,6 +28,7 @@ export import boost.thread;
 export import boost.throw_exception;
 export import boost.type_traits;
 export import boost.utility;
+export import boost.version;
 
 #include "gen_exports/wave.inc"
 

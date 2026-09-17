@@ -2,9 +2,10 @@ diff --git a/src/gen_exports/decimal.inc b/src/gen_exports/decimal.inc
 index 217dbd9..5d69be3 100644
 --- a/src/gen_exports/decimal.inc
 +++ b/src/gen_exports/decimal.inc
-@@ -271,8 +271,12 @@ export namespace boost { namespace decimal { namespace detail {
+@@ -271,9 +271,13 @@ export namespace boost { namespace decimal { namespace detail {
    using boost::decimal::detail::beta_impl;
    using boost::decimal::detail::bias;
+   using boost::decimal::detail::bias_v;
    using boost::decimal::detail::buffer_length_exp;
 +#if defined(BOOST_DECIMAL_HAS_INT128)
 +  // M9 platform guard: config.hpp defines the __int128 typedefs only where

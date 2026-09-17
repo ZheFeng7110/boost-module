@@ -141,7 +141,7 @@ hand): 116 module features (T0 26 + T1a 61 + T2 16 + T1b 12 + `version` 1) +
 | `numeric::interval<double>` module surface not instantiable (explicit specialization of default policies) | Include the header file |
 | Anonymous-namespace forwarders not exported: range pipe syntax (`vec \| reversed`), multi_array `boost::extents` | Use the functional form / container-style construction |
 | Internal-linkage constexpr objects not exportable — residual surface: accumulators `extract::*` (use `extract_result<>`), mqtt5 `prop::*` (use `integral_constant`) | Use the alternative spellings |
-| libclang generation blind spots: pfr::tuple_size_v, hana int_c and other variable templates missing (class-template alternative spellings) | Use the alternative spellings |
+| Variable-template initializers are not walked for cross-module `.deps` edges (libclang exposes `VarTemplateDecl` as an opaque `UNEXPOSED_DECL` with no body) | Import the referenced module explicitly if needed |
 
 ### 4.2 gcc 16.1 Defect Family and the Three-Mode Consumption Rule
 

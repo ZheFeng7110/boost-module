@@ -13,3 +13,4 @@ boost.thread
 boost.throw_exception
 boost.type_traits
 boost.utility
+boost.version

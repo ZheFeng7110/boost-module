@@ -341,8 +341,10 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
 1. **clang 源位置 2^31 上限**: `--features all` (117 CMI ~2.98GB) 报
    "ran out of source locations", 无 flag 可调 → CI A/B 分组; 全量消费者
    应逐库 import; gcc 侧同限未测。
-2. libclang 不暴露变量模板 → pfr::tuple_size_v、hana int_c 等缺失 (类模板
-   替代拼写); requires 子句不遍历 → 编译期 smoke 兜底。
+2. 变量模板已导出 (2026-09-17: gen_exports.py 将 libclang 的 UNEXPOSED_DECL
+   识别为变量模板主模板, pfr::tuple_size_v、hana int_c 等已入模块面);
+   残余: 变量模板初始化器不遍历 → 跨模块 `.deps` 边可能缺失; requires 子句
+   不遍历 → 编译期 smoke 兜底。
 3. 显式特化跨库不可导出; boost 命名空间别名到 std 的实体 canonical 不可达
    (curated 兜底)。
 4. 内部链接 constexpr 对象不可导出 — 残余面: accumulators `extract::*`

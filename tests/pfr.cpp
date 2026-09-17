@@ -12,6 +12,7 @@ struct S {
 int main() {
     S s{1, 2.5, "x"};
     static_assert(boost::pfr::tuple_size<S>::value == 3);
+    static_assert(boost::pfr::tuple_size_v<S> == 3);
     assert(boost::pfr::get<0>(s) == 1);
     assert(boost::pfr::get<1>(s) == 2.5);
     assert(boost::pfr::get<2>(s) == "x");

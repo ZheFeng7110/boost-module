@@ -199,6 +199,22 @@ LIBS_INCLUDE_ONLY_M11 = ["exception"]
 # (COMPILED_TU_GLOBS keys, tests/test_utf.cpp naming).
 LIBS_COMPILED_INCLUDE_ONLY = ["log", "test"]
 
+# Target triple for the bundle AST snapshot. The committed .inc files are a
+# mingw-flavor snapshot (platform-specific entities are wrapped in guards by
+# reapply_hand_edits.py), so the default stays x86_64-w64-mingw32. Set
+# BOOST_MODULE_GEN_TARGET (e.g. x86_64-linux-gnu) to snapshot another flavor
+# locally — e.g. on a machine without a mingw sysroot (Windows developers run
+# the generator inside WSL).
+GEN_TARGET = os.environ.get("BOOST_MODULE_GEN_TARGET", "x86_64-w64-mingw32")
+
+# Optional sysroot for cross-target generation (e.g. a locally extracted
+# mingw-w64 tree): BOOST_MODULE_GEN_SYSROOT=/path/to/usr.
+GEN_SYSROOT = os.environ.get("BOOST_MODULE_GEN_SYSROOT", "")
+
+TARGET_ARGS = ["--target=" + GEN_TARGET]
+if GEN_SYSROOT:
+    TARGET_ARGS.append("--sysroot=" + GEN_SYSROOT)
+
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
 # load time: without it libclang cannot find its own builtin headers (e.g.
@@ -208,7 +224,7 @@ LIBS_COMPILED_INCLUDE_ONLY = ["log", "test"]
 CLANG_ARGS = [
     "-std=c++23",
     "-Ideps/boost",
-    "--target=x86_64-w64-mingw32",
+    *TARGET_ARGS,
     "-DBOOST_ALL_NO_LIB",
     "-D_WIN32_WINNT=0x0A00",
     # M11: asio (cobalt/log/process TUs) errors "WinSock.h has already been
@@ -223,11 +239,11 @@ CLANG_ARGS = [
 
 
 def _append_resource_dir():
-    """Locate the libclang.dll's bundled clang resource dir (bin/libclang.dll
-    ↔ ../lib/clang/<ver>/include) and add it to CLANG_ARGS (idempotent).
-    pip's libclang wheel ships no resource dir at all — then the caller must
-    point LIBCLANG_PATH at a full LLVM install; without it parses degrade
-    silently (see CLANG_ARGS note)."""
+    """Locate libclang's bundled clang resource dir (bin/libclang.dll or
+    lib/libclang.so ↔ ../lib/clang/<ver>/include) and add it to CLANG_ARGS
+    (idempotent). pip's libclang wheel ships no resource dir at all — then the
+    caller must point LIBCLANG_PATH at a full LLVM install; without it parses
+    degrade silently (see CLANG_ARGS note)."""
     try:
         import clang.cindex as ci
         # Two loading modes: set_library_path(dir) leaves library_path set,
@@ -236,7 +252,11 @@ def _append_resource_dir():
         if ci.Config.library_file:
             dll = Path(ci.Config.library_file)
         elif ci.Config.library_path:
-            dll = Path(ci.Config.library_path) / "libclang.dll"
+            base = Path(ci.Config.library_path)
+            # linux/macOS name the shared object libclang.so/.dylib; the
+            # resource dir lives next to it (../lib/clang/<ver>/include).
+            cands = sorted(base.glob("libclang.*"))
+            dll = cands[0] if cands else base / "libclang.dll"
         else:
             return
     except Exception:

@@ -1,7 +1,6 @@
 // boost.hana smoke — hana::tuple / integral_constant / algorithms
-// (variable templates like int_c/integral_c are not module-exportable — M9 §6,
-// libclang exposes no variable-template cursors — so the class-template
-// integral_constant spelling is used)
+// (variable templates like int_c/integral_c are exported since the
+// gen_exports.py UNEXPOSED_DECL classifier landed)
 // NB: no `import std;` here — the std::integral_constant base that comes in
 // through the std CMI mismatches the one recorded in the boost.hana CMI and
 // runtime comparisons of integral_constants misbehave (M9 §4 trap variant).
@@ -19,6 +18,10 @@ int main() {
     constexpr auto one = hana::integral_constant<int, 1>{};
     constexpr auto two = hana::integral_constant<int, 2>{};
     static_assert(decltype(one + two)::value == 3);
+
+    // variable-template spellings (int_c / integral_c), now module-exported
+    static_assert(decltype(hana::int_c<1>)::value == 1);
+    static_assert(decltype(hana::integral_c<int, 5>)::value == 5);
 
     constexpr auto xs = hana::make_tuple(hana::integral_constant<int, 2>{},
                                          hana::integral_constant<int, 1>{},

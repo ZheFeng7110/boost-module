@@ -123,6 +123,7 @@ export import boost.tuple;
 export import boost.type_traits;
 export import boost.unordered;
 export import boost.utility;
+export import boost.version;
 
 #include "gen_exports/graph.inc"
 

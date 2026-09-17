@@ -29,6 +29,7 @@ export import boost.smart_ptr;
 export import boost.system;
 export import boost.throw_exception;
 export import boost.type_traits;
+export import boost.version;
 
 #include "gen_exports/outcome.inc"
 

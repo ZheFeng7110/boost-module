@@ -287,8 +287,78 @@ def _kind_name(cursor):
         return "UNKNOWN"
 
 
-def is_export_kind(cursor):
-    return _kind_name(cursor) in EXPORT_KINDS
+# libclang has no cursor kind for variable templates: `VarTemplateDecl` (and
+# its partial/explicit specializations) surfaces as UNEXPOSED_DECL, with a
+# valid USR and EXTERNAL linkage, and without a visible child VarDecl. The
+# primary template is recognized from its token stream and exported under this
+# synthetic kind; partial/explicit specializations are not exported separately
+# (a using-declaration of the primary name makes them all reachable).
+#
+# NB: under libclang error recovery a function template can also be reported as
+# UNEXPOSED_DECL with a truncated extent (no parameter list), so it can be
+# misread as a variable template. The resulting using-declaration is redundant
+# (emit_inc dedups by qualified name) and harmless; internal-linkage targets
+# are still rejected by bc.linkage_ok.
+VAR_TEMPLATE_KIND = "VAR_TEMPLATE_DECL"
+
+_VT_CLASS = {}          # usr -> "primary" | "partial" | "explicit" | None
+
+
+def _classify_var_template(cursor, tu):
+    """'primary' | 'partial' | 'explicit' | None for an UNEXPOSED_DECL token
+    stream. Explicit specializations are `template <> ...`; partial ones carry
+    a `<...>` argument list right after the declared name."""
+    toks = [t.spelling for t in bc.tokens_of(tu, cursor)]
+    if len(toks) < 2 or toks[0] != "template" or toks[1] != "<":
+        return None
+    if len(toks) >= 3 and toks[2] in (">", ">>"):
+        return "explicit"
+    depth, i = 0, 1
+    while i < len(toks):
+        if toks[i] == "<":
+            depth += 1
+        elif toks[i] in (">", ">>"):
+            depth -= 1
+        if depth == 0:
+            break
+        i += 1
+    j = i + 1
+    while j < len(toks) and toks[j] != cursor.spelling:
+        j += 1
+    if j + 1 < len(toks) and toks[j + 1] == "<":
+        return "partial"
+    return "primary"
+
+
+def _var_template_class(cursor, tu):
+    """Memoized classification of an UNEXPOSED_DECL as a variable template."""
+    if _kind_name(cursor) != "UNEXPOSED_DECL" or not cursor.spelling:
+        return None
+    usr = bc.usr_of(cursor)
+    if usr and usr in _VT_CLASS:
+        return _VT_CLASS[usr]
+    result = _classify_var_template(cursor, tu)
+    if usr:
+        _VT_CLASS[usr] = result
+    return result
+
+
+def _is_boost_var_template(cursor, tu):
+    """Cheap pre-filter (boost namespace) before token classification — the
+    std headers are full of variable templates (is_void_v, conjunction_v, ...)
+    that must not be indexed or tokenized."""
+    if _kind_name(cursor) != "UNEXPOSED_DECL" or not cursor.spelling:
+        return False
+    chain = bc.namespace_chain(cursor)
+    if not chain or chain[0] != "boost":
+        return False
+    return _var_template_class(cursor, tu) == "primary"
+
+
+def is_export_kind(cursor, tu=None):
+    if _kind_name(cursor) in EXPORT_KINDS:
+        return True
+    return tu is not None and _var_template_class(cursor, tu) == "primary"
 
 
 def entity_record(cursor, home):
@@ -364,10 +434,11 @@ def build_usr_index(tu):
     (which made json/url generation quadratic). FRIEND_DECL subtrees are
     skipped: friend functions are re-exported through their class by ADL and
     cannot be using-exported."""
+    _VT_CLASS.clear()          # per-TU memo (error recovery is TU-specific)
     idx = {}
 
     def rec(cursor):
-        if _kind_name(cursor) in DECL_KINDS:
+        if _kind_name(cursor) in DECL_KINDS or _is_boost_var_template(cursor, tu):
             key = _index_key(cursor)
             if key and key not in idx:
                 idx[key] = cursor
@@ -404,7 +475,7 @@ def collect_candidates(lib, tu, file_to_lib, usr_index):
     found = {}
 
     def visit(cursor):
-        if not is_export_kind(cursor):
+        if not is_export_kind(cursor, tu):
             return
         f = bc.cursor_file(cursor)
         if f is None:
@@ -468,7 +539,10 @@ def collect_candidates(lib, tu, file_to_lib, usr_index):
         if not usr or usr in found:
             return
         # Prefer the first (definition) declaration seen per entity.
-        found[usr] = entity_record(cursor, home)
+        rec = entity_record(cursor, home)
+        if _kind_name(cursor) == "UNEXPOSED_DECL":
+            rec["kind"] = VAR_TEMPLATE_KIND
+        found[usr] = rec
 
     for usr, cursor in usr_index.items():
         visit(cursor)
@@ -617,7 +691,7 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
     directives = []          # (target_chain, inject_prefix) pairs
     qname_cursors = {}
     for usr, cursor in usr_index.items():
-        if not is_export_kind(cursor):
+        if not is_export_kind(cursor, tu):
             continue
         qn = bc.qualified_name(cursor)
         if qn:
@@ -683,7 +757,7 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
             directives.append((tgt.split("::"), "::".join(parts), f))
     for tgt_chain, prefix, df in directives:
         for usr, cursor in usr_index.items():
-            if not is_export_kind(cursor):
+            if not is_export_kind(cursor, tu):
                 continue
             try:
                 chain = bc.namespace_chain(cursor)
@@ -709,7 +783,7 @@ def collect_injections(tu, lib, file_to_lib, claimed, usr_index):
     return out
 
 
-def collect_curated(lib, claimed, usr_index=None):
+def collect_curated(lib, claimed, usr_index=None, tu=None):
     """scripts/curated/<lib>.txt — hand-written blind-spot overrides (M2 §2.3,
     read-out implemented in M3). One qualified name per line; lines starting
     with '#' are comments. Records are emitted exactly like using-injections
@@ -747,7 +821,7 @@ def collect_curated(lib, claimed, usr_index=None):
             continue
         if usr_index is not None:
             found = any(
-                is_export_kind(c) and bc.qualified_name(c) == q
+                is_export_kind(c, tu) and bc.qualified_name(c) == q
                 for usr, c in usr_index.items())
             if not found:
                 print("    curated skip (not in TU): {}".format(q))
@@ -965,8 +1039,8 @@ def emit_inc(lib, records, out_dir, full_closure, claimed, extra_deps=()):
 
     lines = [
         "// GENERATED by scripts/gen_exports.py - DO NOT EDIT",
-        "// lib={} boost=1.91.0 target=x86_64-w64-mingw32 entities={}".format(
-            lib, len(exports)),
+        "// lib={} boost=1.91.0 target={} entities={}".format(
+            lib, bc.GEN_TARGET, len(exports)),
         "",
     ]
     for key in sorted(groups):
@@ -1273,6 +1347,11 @@ def main() -> int:
     for lib in order:
         if lib not in libs:
             continue
+        if lib in bc.LIBS_SPECIAL:
+            # hand-maintained module (boost.version): no bundle, no .inc, no
+            # .cppm draft — regenerating would clobber src/version.cppm and
+            # emit an unused gen_exports/version.inc.
+            continue
         key = lib_keys[lib]
         sk = _load_json(bc.CACHE_DIR / (lib + ".skip.json")) \
             if use_cache and key else None
@@ -1304,7 +1383,7 @@ def main() -> int:
         cands = collect_candidates(lib, tu, _FILE_TO_LIB, usr_index)
         injects = collect_injections(tu, lib, _FILE_TO_LIB, claimed_inject,
                                      usr_index)
-        curated = collect_curated(lib, claimed_inject, usr_index)
+        curated = collect_curated(lib, claimed_inject, usr_index, tu)
         records = closure_from(dict(cands, **injects, **curated), tu, usr_index)
         if args.full_closure:
             claimed.clear()
@@ -1325,7 +1404,10 @@ def main() -> int:
         summary[lib] = {"candidates": len(cands),
                         "closure": len(records),
                         "exported": exports,
-                        "deps": sorted(deps)}
+                        "deps": sorted(deps),
+                        "var_templates": sorted(
+                            r["qname"] for r in records.values()
+                            if r.get("kind") == VAR_TEMPLATE_KIND)}
         if body_deps:
             summary[lib]["body_deps"] = {h: sorted(v)
                                          for h, v in body_deps.items()}
@@ -1430,7 +1512,7 @@ def _parse_bundle(lib, headers, use_cache=True):
 
     def gate():
         r = subprocess.run(["clang++", "-std=c++23", "-fsyntax-only", "-w",
-                            "--target=x86_64-w64-mingw32", "-DBOOST_ALL_NO_LIB",
+                            *bc.TARGET_ARGS, "-DBOOST_ALL_NO_LIB",
                             "-Ideps/boost"] + extra + [str(bundle)],
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
@@ -1441,8 +1523,9 @@ def _parse_bundle(lib, headers, use_cache=True):
     gh.update(b"bundle:" + _bundle_text(gfm).encode())
     gh.update(b"closure:" + _closure_hash(lib, gfm).encode())
     gh.update(b"extra:" + ",".join(extra).encode())
-    gh.update(b"gate:clang++ -std=c++23 -fsyntax-only -w "
-              b"--target=x86_64-w64-mingw32 -DBOOST_ALL_NO_LIB -Ideps/boost")
+    gh.update(("gate:clang++ -std=c++23 -fsyntax-only -w {} "
+               "-DBOOST_ALL_NO_LIB -Ideps/boost"
+               .format(" ".join(bc.TARGET_ARGS))).encode())
     gh.update(b"clang:" + _clang_version().encode())
     gkey = gh.hexdigest()
     gate_cache = bc.CACHE_DIR / (lib + ".gate.json")

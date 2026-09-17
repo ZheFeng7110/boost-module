@@ -29,3 +29,4 @@ boost.tuple
 boost.type_traits
 boost.unordered
 boost.utility
+boost.version

@@ -129,7 +129,7 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 | `numeric::interval<double>` 模块面不可实例化 (默认 policies 显式特化) | include 头文件 |
 | 匿名命名空间 forwarder 不导出: range pipe 语法 (`vec \| reversed`)、multi_array `boost::extents` | 用函数形式/容器式构造 |
 | 内部链接 constexpr 对象不可导出 — 残余面: accumulators `extract::*` (用 `extract_result<>`)、mqtt5 `prop::*` (用 `integral_constant`) | 按替代拼写 |
-| libclang 生成盲点: pfr::tuple_size_v、hana int_c 等变量模板缺失 (类模板替代拼写) | 按替代拼写 |
+| 变量模板初始化器不参与跨模块 `.deps` 边推导 (libclang 将 `VarTemplateDecl` 暴露为无 body 的 `UNEXPOSED_DECL`) | 需要时显式 import 被引用模块 |
 
 ### 4.2 gcc 16.1 缺陷家族与消费三分规则
 
