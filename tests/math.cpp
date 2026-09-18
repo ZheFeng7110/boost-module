@@ -15,5 +15,7 @@ int main() {
     assert(p > 0.0 && p < 1.0);
 
     assert(boost::math::isfinite(pi));
+    static_assert(boost::math::is_arithmetic_v<int>);
+    static_assert(!boost::math::is_arithmetic_v<std::string>);
     return 0;
 }

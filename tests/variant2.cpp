@@ -25,5 +25,7 @@ int main() {
         assert(false);
     } catch (boost::variant2::bad_variant_access const&) {
     }
+    static_assert(boost::variant2::variant_size_v<
+                  boost::variant2::variant<int, std::string>> == 2);
     return 0;
 }

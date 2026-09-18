@@ -15,6 +15,7 @@ int main() {
                   int (double, char) const>::value);
     using mf = int (std::string::*)() const;
     static_assert(boost::callable_traits::is_const_member<mf>::value);
+    static_assert(boost::callable_traits::is_const_member_v<mf>);
     static_assert(std::is_same<boost::callable_traits::class_of_t<mf>,
                   std::string>::value);
     return 0;

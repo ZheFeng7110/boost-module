@@ -44,5 +44,10 @@ int main() {
     assert(kinds == 5);
     c.erase(c.begin(), c.end());
     assert(c.empty());
+#if !defined(__GNUC__) || defined(__clang__)
+    static_assert(boost::poly_collection::fixed_variant_impl::variant_size_v<
+                  boost::poly_collection::fixed_variant_impl::fixed_variant<
+                      int, char>> == 2);
+#endif
     return 0;
 }

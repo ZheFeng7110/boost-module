@@ -21,5 +21,7 @@ int main() {
     assert(empty.empty());
     boost::any c = b;
     assert(boost::any_cast<std::string>(c) == "xyz");
+    static_assert(std::is_same_v<decltype(boost::anys::in_place_type<int>),
+                  const boost::anys::in_place_type_t<int>>);
     return 0;
 }

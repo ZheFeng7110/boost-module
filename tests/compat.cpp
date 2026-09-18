@@ -12,5 +12,7 @@ int main() {
     assert(fr(4) == 12);
     static_assert(std::is_same<boost::compat::decay_t<const int&>, int>::value);
     static_assert(std::is_same<boost::compat::add_const_t<int>, const int>::value);
+    static_assert(std::is_same_v<decltype(boost::compat::nontype<42>),
+                  const boost::compat::nontype_t<42>>);
     return 0;
 }

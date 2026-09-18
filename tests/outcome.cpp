@@ -16,5 +16,6 @@ int main() {
     assert(oc.has_value() && oc.value() == 9);
     o::result<void> e = o::success();
     assert(e.has_value());
+    static_assert(o::trait::is_error_code_available_v<std::error_code>);
     return 0;
 }

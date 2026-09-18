@@ -98,6 +98,14 @@ body walk 都看不到），因此初始化器内引用的跨模块类型不会�
   hana 同法验证 `int_c`/`integral_c`。
 - 全量重生成（mingw + 本地解包 sysroot）后 `reapply_hand_edits.py` 退出 0；
   `.inc` 差异经脚本核对仅为变量模板新增 + parser 命名空间搬移 + 头注释计数。
+- 全量测试覆盖：21 个受影响库的 `tests/*.cpp` 各补一条变量模板断言
+  （align/any/asio/callable_traits/cobalt/compat/container/decimal/geometry/
+  hof/math/mqtt5/multiprecision/outcome/parser/poly_collection/type_traits/
+  unordered/variant2，pfr/hana 已于首轮覆盖）。每条断言先用对应 Boost 头
+  做 `-fsyntax-only` 校验语义，再用 clang `--precompile` 构建模块闭包 + 消费者
+  做端到端验证；asio/cobalt/container/outcome/parser/poly_collection 等含编译
+  TU 的库消费者仅做 `-fsyntax-only`（链接由 CI 覆盖），hof 的 `if_c` 断言额外
+  编译运行通过。
 
 ## 7. 涉及文件
 

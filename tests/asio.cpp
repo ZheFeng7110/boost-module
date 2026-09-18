@@ -19,5 +19,7 @@ int main() {
     io.run();
     assert(ran);
     assert(expired);
+    static_assert(boost::asio::execution::is_executor_v<
+                  boost::asio::io_context::executor_type>);
     return 0;
 }

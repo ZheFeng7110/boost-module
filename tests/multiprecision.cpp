@@ -27,5 +27,7 @@ int main() {
     mp::cpp_rational r(3, 8);
     mp::cpp_rational s(1, 8);
     assert((r + s) == mp::cpp_rational(1, 2));
+    static_assert(mp::detail::is_integral_v<int>);
+    static_assert(mp::detail::is_unsigned_v<unsigned>);
     return 0;
 }

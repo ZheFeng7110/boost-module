@@ -7,6 +7,7 @@ int main() {
     namespace bg = boost::geometry;
     using point_t = bg::model::point<double, 2, bg::cs::cartesian>;
     using poly_t = bg::model::polygon<point_t>;
+    static_assert(bg::dimension_v<point_t> == 2);
 
     point_t a{0.0, 0.0};
     point_t b{3.0, 4.0};

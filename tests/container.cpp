@@ -25,5 +25,9 @@ int main() {
     assert(cv[0] == 1 && cv[1] == 2);
 
     boost::container::pmr::set_default_resource(def);
+    static_assert(boost::container::uses_allocator_v<
+                  boost::container::vector<int, std::allocator<int>>,
+                  std::allocator<int>>);
+    static_assert(!boost::container::uses_allocator_v<int, std::allocator<int>>);
     return 0;
 }

@@ -3,6 +3,11 @@
 import std;
 import boost.type_traits;
 
+template <class T> using has_value_type = typename T::value_type;
+
+static_assert(boost::is_detected_v<has_value_type, std::vector<int>>);
+static_assert(!boost::is_detected_v<has_value_type, int>);
+
 int main() {
     static_assert(boost::is_integral<int>::value);
     static_assert(!boost::is_integral<float>::value);

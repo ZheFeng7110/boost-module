@@ -20,5 +20,7 @@ int main() {
     assert(props[session_expiry{}] == std::optional<std::uint32_t>(60));
 
     static_assert(m5::log_level::error == m5::log_level{1});
+    static_assert(!m5::prop::name_v<
+                  m5::prop::property_type::session_expiry_interval_t>.empty());
     return 0;
 }

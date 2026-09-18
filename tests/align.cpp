@@ -15,6 +15,7 @@ int main() {
     assert(boost::alignment::align_up<std::size_t>(13, 8) == 16);
     assert(boost::alignment::align_down<std::size_t>(13, 8) == 8);
     assert(boost::alignment::alignment_of<double>::value >= 4);
+    static_assert(boost::alignment::alignment_of_v<double> == alignof(double));
     assert(boost::alignment::is_aligned(buf + 8, 8));
     return 0;
 }

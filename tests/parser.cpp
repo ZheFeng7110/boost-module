@@ -36,6 +36,8 @@ int main() {
     assert(!r4);
     auto r5 = bp::parse("hello", bp::string("hello"));
     assert(r5 && *r5 == "hello");
+    static_assert(bp::enable_optional<std::optional<int>>);
+    static_assert(!bp::enable_optional<int>);
 #else
     (void)parser_link_smoke;
 #endif

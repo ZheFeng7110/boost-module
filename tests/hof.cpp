@@ -10,6 +10,7 @@
 // stays include-side and is covered in tests/hof_include.cpp.
 #include "test_assert.hpp"
 #include <cassert>
+#include <type_traits>
 import boost.hof;
 
 int main() {
@@ -19,5 +20,8 @@ int main() {
     assert(sum(2, 3) == 5);
     assert(boost::hof::always(42)(1, 2) == 42);
     assert(boost::hof::pipable(boost::hof::identity)(7) == 7);
+    static_assert(!std::is_same_v<decltype(boost::hof::arg_c<1>),
+                                  decltype(boost::hof::arg_c<2>)>);
+    assert(boost::hof::if_c<true>([](int x) { return x + 1; })(4) == 5);
     return 0;
 }

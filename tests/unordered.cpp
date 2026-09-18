@@ -22,5 +22,7 @@ int main() {
     assert(s.count(1) == 1 && s.count(3) == 0);
     assert(s.erase(2) == 1);
     assert(s.load_factor() > 0.0f);
+    static_assert(boost::unordered::detail::is_allocator_v<std::allocator<int>>);
+    static_assert(boost::unordered::detail::is_hash_v<std::hash<int>>);
     return 0;
 }

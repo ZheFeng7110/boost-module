@@ -16,5 +16,7 @@ boost::cobalt::task<int> answer() { co_return 42; }
 
 int main() {
     assert(boost::cobalt::run(answer()) == 42);
+    static_assert(boost::cobalt::detail::variadic_has<int, double, int>);
+    static_assert(!boost::cobalt::detail::variadic_has<int, double, char>);
     return 0;
 }

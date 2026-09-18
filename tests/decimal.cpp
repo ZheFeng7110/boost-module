@@ -14,5 +14,7 @@ int main() {
     assert(d + boost::decimal::decimal64_t(0.5) == boost::decimal::decimal64_t(3.5));
     assert(boost::decimal::abs(boost::decimal::decimal32_t(-7)) == boost::decimal::decimal32_t(7));
     assert(boost::decimal::isnan(boost::decimal::decimal32_t(1.0)) == false);
+    static_assert(boost::decimal::detail::decimal_val_v<
+                  boost::decimal::decimal32_t> > 0);
     return 0;
 }
