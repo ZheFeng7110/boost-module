@@ -517,12 +517,9 @@ export namespace boost { namespace parser { namespace detail { namespace numeric
 export namespace boost { namespace parser { namespace detail { namespace numeric {
   using boost::parser::detail::numeric::parse_int;
   using boost::parser::detail::numeric::parse_real;
+  using boost::parser::detail::numeric::use_charconv_int;
+  using boost::parser::detail::numeric::use_charconv_real;
 }}}}
-
-export namespace boost { namespace parser { namespace detail { namespace numeric { namespace std_charconv {
-  using boost::parser::detail::numeric::std_charconv::use_charconv_int;
-  using boost::parser::detail::numeric::std_charconv::use_charconv_real;
-}}}}}
 
 export namespace boost { namespace parser { namespace detail { namespace stl_interfaces {
   using boost::parser::detail::stl_interfaces::access;

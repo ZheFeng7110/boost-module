@@ -1,18 +1,22 @@
 diff --git a/src/gen_exports/parser.inc b/src/gen_exports/parser.inc
 --- a/src/gen_exports/parser.inc
 +++ b/src/gen_exports/parser.inc
-@@ -514,9 +514,12 @@
+@@ -514,12 +514,12 @@
    using boost::parser::detail::numeric::unpacks_to_chars;
  }}}}
  
+-export namespace boost { namespace parser { namespace detail { namespace numeric { namespace std_charconv {
+-  using boost::parser::detail::numeric::std_charconv::parse_int;
+-  using boost::parser::detail::numeric::std_charconv::parse_real;
+-  using boost::parser::detail::numeric::std_charconv::use_charconv_int;
+-  using boost::parser::detail::numeric::std_charconv::use_charconv_real;
+-}}}}}
 +export namespace boost { namespace parser { namespace detail { namespace numeric {
 +  using boost::parser::detail::numeric::parse_int;
 +  using boost::parser::detail::numeric::parse_real;
++  using boost::parser::detail::numeric::use_charconv_int;
++  using boost::parser::detail::numeric::use_charconv_real;
 +}}}}
-+
- export namespace boost { namespace parser { namespace detail { namespace numeric { namespace std_charconv {
--  using boost::parser::detail::numeric::std_charconv::parse_int;
--  using boost::parser::detail::numeric::std_charconv::parse_real;
-   using boost::parser::detail::numeric::std_charconv::use_charconv_int;
-   using boost::parser::detail::numeric::std_charconv::use_charconv_real;
- }}}}}
+ 
+ export namespace boost { namespace parser { namespace detail { namespace stl_interfaces {
+   using boost::parser::detail::stl_interfaces::access;
