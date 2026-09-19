@@ -86,9 +86,15 @@ libclang 找不到自带 `stddef.h`，解析降级、声明丢失）。
 
 ## 5. 残余限制
 
-变量模板初始化器不遍历（`UNEXPOSED_DECL` 无子节点，`referenced_types` 与 pass-2
-body walk 都看不到），因此初始化器内引用的跨模块类型不会生成 `.deps` 边；
-需要时消费者显式 `import` 被引用模块。相邻的 "requires 子句不遍历" 不在本次范围。
+变量模板初始化器的跨模块 `.deps` 边已由 A1 (2026-09-19) 部分补全:
+`collect_body_edges` 对本文出集内的变量模板，从**声明起点**重新 tokenize
+（libclang 无子节点、type `INVALID`、extent 在名字后截断），切到顶层 `;`，
+取声明名之后首个 `=` 之后的 token，解析字面全限定 `boost (:: ident)+` 引用，
+再经 `merge_body_edges` 的 direct/transitive/cycle 过滤并入 `.deps`。
+
+仍不覆盖: 宏展开名、相对名（如 `mp11::mp_at_c`，只作命名空间前缀回退）、
+`using` 别名、ADL/依赖名、requires 子句；需要时消费者显式 `import` 被引用
+模块。相邻的 "requires 子句不遍历" 不在本次范围。
 
 ## 6. 验证
 

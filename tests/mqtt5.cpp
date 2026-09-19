@@ -22,5 +22,11 @@ int main() {
     static_assert(m5::log_level::error == m5::log_level{1});
     static_assert(!m5::prop::name_v<
                   m5::prop::property_type::session_expiry_interval_t>.empty());
+
+    // Variable-template instantiation coverage: the initializers of these
+    // traits reference boost::is_detected (boost.type_traits), so using them
+    // exercises the cross-module initializer edge (gen_exports A1).
+    static_assert(!m5::has_at_resolve<m5::noop_logger>);
+    static_assert(!m5::has_at_tcp_connect<m5::noop_logger>);
     return 0;
 }

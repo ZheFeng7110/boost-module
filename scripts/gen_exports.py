@@ -27,7 +27,11 @@ the include-graph extra_deps walk stops at target-owned roots — together
 these lost bimap's boost.iterator edge when lambda became a target lib, C4
 §4.1). Each boost:: entity referenced from an exported body contributes a
 candidate edge to its home lib; edges that are already transitive or would
-close a cycle are dropped, the rest are unioned into <lib>.deps.
+close a cycle are dropped, the rest are unioned into <lib>.deps. Pass 2 also
+re-tokenizes variable-template declarations (libclang hides their initializer
+behind an opaque UNEXPOSED_DECL) and follows literal fully-qualified
+`boost::...` references (A1); macro-expanded / relative / aliased references
+remain uncovered.
 
 Usage:
     python scripts/gen_exports.py --scan            # regenerate scripts/libs.json
@@ -1126,7 +1130,99 @@ def _template_of_instantiation(cursor):
     return None
 
 
-def collect_body_edges(lib, records, claimed, usr_index):
+def _identifier(tok):
+    return bool(tok) and tok.isidentifier()
+
+
+def _qname_cursor_index(usr_index):
+    """{boost::qualified_name: [cursor, ...]} over a TU's decl index — used to
+    resolve textually recovered qualified names (variable-template
+    initializers, which libclang does not expose as an AST subtree)."""
+    idx = {}
+    for cur in usr_index.values():
+        qn = bc.qualified_name(cur)
+        if qn.startswith("boost::"):
+            idx.setdefault(qn, []).append(cur)
+    return idx
+
+
+def _var_template_initializer_qnames(tu, cursor, max_lines=100):
+    """Yield fully-qualified `boost::...` name candidates from a variable
+    template's initializer (A1).
+
+    libclang hides the initializer: the `VarTemplateDecl` surfaces as an
+    UNEXPOSED_DECL with no children, an INVALID type, and (on LLVM 22) an
+    extent that stops right after the declared name. Re-tokenize the
+    declaration from `cursor.extent.start` up to its top-level `;`, take the
+    tokens after the `=` that follows the declared name, and read off
+    `boost (:: ident)+` chains. Literal fully-qualified references only —
+    macro-expanded / relative / aliased names are missed by design.
+    """
+    cf = cursor.location.file           # cindex File (for SourceLocation)
+    if cf is None:
+        return
+    # Tokenize from the declaration start (NOT extent.end): whether libclang
+    # truncates the extent after the name (LLVM 22) or not, we must see the
+    # whole declaration up to its top-level ';'.
+    beg = cursor.extent.start
+    toks, line, col, budget = [], beg.line, beg.column, max_lines
+    while budget > 0:
+        chunk = min(25, budget)
+        try:
+            start = ci.SourceLocation.from_position(tu, cf, line, col)
+            stop = ci.SourceLocation.from_position(tu, cf, line + chunk, 1)
+            toks.extend(t.spelling for t in tu.get_tokens(
+                extent=ci.SourceRange.from_locations(start, stop)))
+        except Exception:
+            return
+        depth, cut = 0, None
+        for i, s in enumerate(toks):
+            if s in ("(", "[", "{"):
+                depth += 1
+            elif s in (")", "]", "}"):
+                depth = depth - 1 if depth else 0
+            elif s == ";" and depth == 0:
+                cut = i
+                break
+        if cut is not None:
+            toks = toks[:cut]
+            break
+        line, col = line + chunk, 1
+        budget -= chunk
+    else:
+        return                  # no statement terminator within the window
+
+    # Keep only the initializer: tokens after the '=' that follows the declared
+    # name (default template arguments sit before the name and are ignored).
+    try:
+        name_i = toks.index(cursor.spelling)
+    except ValueError:
+        return
+    eq_i = None
+    for i in range(name_i + 1, len(toks)):
+        if toks[i] == "=":
+            eq_i = i
+            break
+    if eq_i is None:
+        return
+    toks = toks[eq_i + 1:]
+
+    n = len(toks)
+    i = 0
+    while i < n:
+        if toks[i] == "boost":
+            parts, k = ["boost"], i + 1
+            while k + 1 < n and toks[k] == "::" and _identifier(toks[k + 1]):
+                parts.append(toks[k + 1])
+                k += 2
+            if len(parts) >= 2:
+                yield "::".join(parts)
+            i = k
+        else:
+            i += 1
+
+
+def collect_body_edges(lib, records, claimed, usr_index, tu=None):
     """Pass-2 collection: {home: set(usr)} — other target libraries whose
     entities are referenced from the BODIES of this library's exported
     entities (own + first-wins pulls, exactly the emit_inc export set).
@@ -1153,13 +1249,7 @@ def collect_body_edges(lib, records, claimed, usr_index):
     edges = {}               # home -> set(usr)
     _seen_pairs = set()
 
-    def resolve(ref):
-        try:
-            r = ref.referenced
-        except Exception:
-            return
-        if r is None:
-            return
+    def add_edge(r):
         t = _template_of_instantiation(r)
         if t is not None:
             r = t
@@ -1185,6 +1275,15 @@ def collect_body_edges(lib, records, claimed, usr_index):
             return
         _seen_pairs.add((usr, home))
         edges.setdefault(home, set()).add(usr)
+
+    def resolve(ref):
+        try:
+            r = ref.referenced
+        except Exception:
+            return
+        if r is None:
+            return
+        add_edge(r)
 
     def walk(cursor):
         stack = [cursor]
@@ -1212,6 +1311,32 @@ def collect_body_edges(lib, records, claimed, usr_index):
             d = None
         if d is not None and d != cur:    # out-of-line bodies, class defs
             walk(d)
+
+    # Variable templates: libclang exposes VarTemplateDecl as an opaque
+    # UNEXPOSED_DECL (no children, INVALID type, extent truncated after the
+    # name), so walk(cur) above sees nothing. Re-tokenize the declaration from
+    # its start and resolve literal fully-qualified `boost::...` references in
+    # the initializer (A1). Same export set / filters as the body walk.
+    if tu is not None:
+        qname_cursors = None
+        for rec in records.values():
+            if rec.get("kind") != VAR_TEMPLATE_KIND:
+                continue
+            if rec["home"] != lib and rec["usr"] in claimed:
+                continue                  # claimed elsewhere: not exported here
+            cur = usr_index.get(rec["usr"])
+            if cur is None:
+                continue
+            for qn in _var_template_initializer_qnames(tu, cur):
+                if qname_cursors is None:
+                    qname_cursors = _qname_cursor_index(usr_index)
+                cur_list = qname_cursors.get(qn)
+                while cur_list is None and "::" in qn:
+                    qn = qn.rsplit("::", 1)[0]   # longest-prefix match
+                    cur_list = qname_cursors.get(qn)
+                if not cur_list:
+                    continue
+                add_edge(cur_list[0])
     return edges
 
 
@@ -1395,7 +1520,7 @@ def main() -> int:
         # (own + unclaimed pulls) — must run while `claimed` still holds the
         # pre-emit state emit_inc saw.
         body_deps = {} if (args.full_closure or args.no_body_deps) else \
-            collect_body_edges(lib, records, claimed, usr_index)
+            collect_body_edges(lib, records, claimed, usr_index, tu)
         if body_deps:
             body_all[lib] = body_deps
         gfm_by_lib[lib] = gfm_final
