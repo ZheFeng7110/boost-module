@@ -343,9 +343,11 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    应逐库 import; gcc 侧同限未测。
 2. 变量模板已导出 (2026-09-17: gen_exports.py 将 libclang 的 UNEXPOSED_DECL
    识别为变量模板主模板, pfr::tuple_size_v、hana int_c 等已入模块面);
-   初始化器跨模块 `.deps` 边已按 A1 (2026-09-19) 部分补全: 生成器从声明起点
-   重新 tokenize, 仅跟随字面全限定 `boost::...` 引用, 候选边经既有
-   direct/transitive/cycle 过滤并入; 宏展开/相对/别名引用仍可能缺失;
+   初始化器跨模块 `.deps` 边已按 A1+A2 (2026-09-19) 补全: 生成器从声明起点
+   重新 tokenize, 解析字面全限定 `boost::...` 引用与相对限定名 (按变量模板
+   所在命名空间链 + `boost::` 根做文本名字解析; 命名空间级回退仅接受与家库
+   名对应的命名空间, 避免 `boost::detail` 之类共享命名空间的伪边), 候选边经
+   既有 direct/transitive/cycle 过滤并入; 宏展开/别名/裸非限定名仍可能缺失;
    requires 子句不遍历 → 编译期 smoke 兜底。
 3. 显式特化跨库不可导出; boost 命名空间别名到 std 的实体 canonical 不可达
    (curated 兜底)。

@@ -1,8 +1,8 @@
-# 变量模板初始化器跨模块 `.deps` 边补全 (A1) + 消费者 smoke (D)
+# 变量模板初始化器跨模块 `.deps` 边补全 (A1+A2) + 消费者 smoke (D)
 
-> 日期: 2026-09-19 · 状态: 已实现 · 分支 `b1.91.0wdev`
+> 日期: 2026-09-19 · 状态: 已实现 (A1 提交 6f9ec29c; A2 见下) · 分支 `b1.91.0wdev`
 > 决策来源: 架构文档 §4.1 残余限制; `.agents/docs/2026-09-17-variable-template-export.md`
-> §5; 用户 2026-09-19 选择 A1 + D。
+> §5; 用户 2026-09-19 选择 A1 + D, 随后追加 A2。
 
 ## 1. 问题 (根因复述)
 
@@ -41,6 +41,24 @@
 （注：现行 cache-hit 路径不回填 `body_all`，仅依赖 `.deps` 已含旧边；A1 沿用
 该语义，不额外改动缓存协议。）
 
+## 2b. A2 设计：相对限定名解析
+
+A1 之外，把 token 流里的 `ident (:: ident)+` 链全部收集（不再只认 `boost`），
+并在 `_initializer_lookup_qnames(chain, ns_chain)` 里做文本名字解析：
+
+1. `boost::...` 链按原样（A1）；
+2. 相对链按变量模板所在命名空间链**由内向外**逐级前缀，再到 `boost::` 根、
+   最后全局（模拟 C++ 非限定名查找）；
+3. 每个候选再按最长前缀回退（沿用 A1，覆盖未入 USR 索引的别名模板）；
+4. **命名空间级回退护栏** `_namespace_matches_home`：只有候选命名空间段与解析
+   出的家库名对应 (归一化后相等或互为前缀) 才接受该命名空间游标，避免
+   `boost::detail` 这类共享命名空间被首个声明文件误归到某库而产生伪边
+   （实测该伪边为 `parser/math/outcome -> boost.throw_exception`）。
+5. `add_edge` 返回是否真正加边；调用方按候选顺序取**第一个有效**匹配，从而
+   跳过被护栏/家库过滤的中间命名空间，继续尝试更外层前缀。
+
+D 侧不变。
+
 ## 3. D 设计：消费者 smoke 实例化覆盖
 
 为初始化器可能跨模块的导出变量模板补**实例化**断言（不只是 `using`），使缺边
@@ -50,33 +68,51 @@
 
 ## 4. 验证（结果）
 
-本机无 mingw sysroot，未重生成已提交的 mingw 风味 `.deps`/`.inc`；改为
-host 目标（`x86_64-linux-gnu` + 系统 libstdc++）在 `/tmp` 隔离 out 目录做
-端到端与单元验证：
+A1 阶段本机无 mingw sysroot，先在 host 目标（`x86_64-linux-gnu`）上做单元与
+端到端验证；A2 阶段已安装 `scripts/_deps/mingw64`（fetch_mingw_sysroot.py），
+用完整 LLVM libclang 复现 mingw 风味全量生成。
 
-- `_var_template_initializer_qnames` 正确恢复字面全限定引用：`pfr`（未
-  clobber 前的 bundle）无（`tuple_size` 非限定）、`mqtt5::has_at_resolve`/
-  `has_tls_handshake` → `boost::is_detected`、`math::is_void_v` →
-  `boost::math::is_void`、`geometry::tag_keyword_arg` → `boost::mp11::mp_at_c`。
-- `collect_body_edges('geometry', …)` 对该记录产出 `{'mp11': 1}`（经 qname
-  最长前缀/命名空间回退 + 家库过滤）。
-- host 目标 `gen_exports.py --libs mqtt5 pfr --out /tmp/…` 全流程无异常、
-  pass 2 新增 0 边。
+A1 (host 目标):
+
+- `_var_template_initializer_qnames` 正确恢复字面全限定引用：`mqtt5::
+  has_at_resolve`/`has_tls_handshake` → `boost::is_detected`、`math::is_void_v`
+  → `boost::math::is_void`、`geometry::tag_keyword_arg` → `boost::mp11::mp_at_c`。
+- `collect_body_edges('geometry', …)` 对该记录产出 `{'mp11': 1}`。
 - 全量候选扫描（21 个受影响库）：候选边均落在同库 / 已是直连 / shared /
-  非 target 库，**A1 对当前快照零新增 `.deps` 边**（merge 过滤后），因此本次
-  提交无需改动生成物。
-- `tests/mqtt5.cpp` 新增的实例化断言经头文件 `-fsyntax-only` 校验，并经
+  非 target 库，A1 对当前快照零新增 `.deps` 边。
+
+A2 (mingw sysroot, llvm23 libclang):
+
+- 全量 `gen_exports.py --no-cache` (A2) 与等价的 A1 基线（monkeypatch 只保留
+  `boost::` 链）各跑一次，**pre-merge `body_deps` 完全一致**（逐库逐 home 集合
+  相等），最终 `.deps` 亦逐文件一致 → A2 对当前 Boost 1.91 快照零新增边。
+- A2 未加护栏时曾多出 3 条 `parser/math/outcome -> boost.throw_exception` 伪边
+  （相对 `detail::...` 链回退到共享 `boost::detail` 命名空间）；护栏
+  `_namespace_matches_home` 消除之，且不影响 body walk 的 NAMESPACE_REF 真边。
+- `_initializer_lookup_qnames` 相对链候选顺序与命名空间护栏单测通过
+  （`mp11::mp_at_c` → `boost::geometry::detail::...`/`boost::geometry`/...；
+  `boost::mp11`↔mp11 通过，`boost::detail`↔throw_exception 拒绝）。
+
+其他:
+
+- `tests/mqtt5.cpp` 的实例化断言经头文件 `-fsyntax-only` 校验，并经
   `mcpp test mqtt5 --features mqtt5` 构建运行通过（gcc@16.1.0）。
-- `reapply_hand_edits.py` 退出 0，工作区仅含预期改动。
+- `reapply_hand_edits.py` 退出 0，`gen_features.py --check` 退出 0。
 - 文档措辞已更新：`docs/architecture.md` §4.1、`docs/zh/architecture.md`、
   `.agents/docs/2026-09-08-consolidated-design.md` §7.2#2、
   `.agents/docs/2026-09-17-variable-template-export.md` §5。
 
+> 注：用当前已安装的 mingw sysroot + llvm23 直接全量重生成会带来一批与 A2
+> 无关的历史漂移（如 `align/container_hash/endian/tuple/winapi/atomic/thread`
+> 的旧 `.deps` 边在当前生成器下不再产生，疑似 2026-09-17 之前的降级解析快照）。
+> 因此本次仅提交 A2 代码/测试/文档，未刷新生成物；历史漂移需另行专项核对。
+
 ## 5. 涉及文件
 
-- `scripts/gen_exports.py`（A1）
-- `tests/mqtt5.cpp`（D，视实际边而定）
-- `src/gen_exports/*.deps`、随动的 `src/*.cppm` / `scripts/features.lst` /
-  `mcpp.toml`（若默认闭包变化）
+- `scripts/gen_exports.py`（A1 + A2）
+- `tests/mqtt5.cpp`（D）
 - `docs/architecture.md`、`docs/zh/architecture.md`、
-  `.agents/docs/2026-09-17-variable-template-export.md`
+  `.agents/docs/2026-09-17-variable-template-export.md`、
+  `.agents/docs/2026-09-08-consolidated-design.md`
+- 生成物（`src/gen_exports/*.deps` / `src/*.cppm` / `scripts/features.lst` /
+  `mcpp.toml`）本阶段未变（A1+A2 零新增边）

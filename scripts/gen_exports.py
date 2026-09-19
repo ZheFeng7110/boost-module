@@ -29,8 +29,9 @@ these lost bimap's boost.iterator edge when lambda became a target lib, C4
 candidate edge to its home lib; edges that are already transitive or would
 close a cycle are dropped, the rest are unioned into <lib>.deps. Pass 2 also
 re-tokenizes variable-template declarations (libclang hides their initializer
-behind an opaque UNEXPOSED_DECL) and follows literal fully-qualified
-`boost::...` references (A1); macro-expanded / relative / aliased references
+behind an opaque UNEXPOSED_DECL) and resolves the qualified name chains in the
+initializer — `boost::...` as-is (A1) and relative names against the variable
+template's enclosing namespaces (A2); macro-expanded / aliased references
 remain uncovered.
 
 Usage:
@@ -1146,17 +1147,20 @@ def _qname_cursor_index(usr_index):
     return idx
 
 
-def _var_template_initializer_qnames(tu, cursor, max_lines=100):
-    """Yield fully-qualified `boost::...` name candidates from a variable
-    template's initializer (A1).
+def _var_template_initializer_names(tu, cursor, max_lines=100):
+    """Yield qualified name chains (`a::b::c`) from a variable template's
+    initializer (A1 + A2).
 
     libclang hides the initializer: the `VarTemplateDecl` surfaces as an
-    UNEXPOSED_DECL with no children, an INVALID type, and (on LLVM 22) an
-    extent that stops right after the declared name. Re-tokenize the
+    UNEXPOSED_DECL with no children, an INVALID type, and an extent that stops
+    right after the declared name (LLVM 22/23). Re-tokenize the
     declaration from `cursor.extent.start` up to its top-level `;`, take the
     tokens after the `=` that follows the declared name, and read off
-    `boost (:: ident)+` chains. Literal fully-qualified references only —
-    macro-expanded / relative / aliased names are missed by design.
+    `ident (:: ident)+` chains — both `boost::...` (A1, resolved as-is) and
+    relative names like `mp11::mp_size` (A2, resolved against the variable
+    template's enclosing namespaces). Bare single identifiers are skipped:
+    only qualified chains are unambiguous enough to resolve textually.
+    Macro-expanded / aliased names are still missed by design.
     """
     cf = cursor.location.file           # cindex File (for SourceLocation)
     if cf is None:
@@ -1210,16 +1214,53 @@ def _var_template_initializer_qnames(tu, cursor, max_lines=100):
     n = len(toks)
     i = 0
     while i < n:
-        if toks[i] == "boost":
-            parts, k = ["boost"], i + 1
+        if _identifier(toks[i]) and i + 1 < n and toks[i + 1] == "::":
+            parts, k = [toks[i]], i + 1
             while k + 1 < n and toks[k] == "::" and _identifier(toks[k + 1]):
                 parts.append(toks[k + 1])
                 k += 2
-            if len(parts) >= 2:
-                yield "::".join(parts)
+            yield "::".join(parts)
             i = k
         else:
             i += 1
+
+
+def _namespace_matches_home(qn, home):
+    """Heuristic guard for namespace-level fallback matches: a namespace like
+    `boost::mp11` / `boost::typeindex` corresponds to its home library, while a
+    generic shared namespace (`boost::detail`, ...) may be attributed to any
+    library by its first declaration and must not produce an edge."""
+    parts = qn.split("::")
+    if len(parts) < 2:
+        return False
+    seg = parts[1].replace("_", "").lower()
+    h = home.replace("_", "").lower()
+    return seg == h or seg.startswith(h) or h.startswith(seg)
+
+
+def _initializer_lookup_qnames(chain, ns_chain):
+    """Candidate qualified names for an initializer name chain, most specific
+    first, each with its successive namespace prefixes appended (the textual
+    stand-in for C++ name lookup + the longest-prefix fallback A1 already used
+    for entities libclang does not index, e.g. alias templates).
+
+    `boost::...` chains are looked up as-is. Relative chains are looked up in
+    the variable template's enclosing namespaces, innermost first, then under
+    `boost::` and finally at global scope."""
+    if chain.startswith("boost::"):
+        bases = [chain]
+    else:
+        bases = []
+        for k in range(len(ns_chain), -1, -1):
+            pref = "::".join(ns_chain[:k])
+            bases.append(pref + "::" + chain if pref else chain)
+    for base in bases:
+        qn = base
+        while qn:
+            yield qn
+            if "::" not in qn:
+                break
+            qn = qn.rsplit("::", 1)[0]
 
 
 def collect_body_edges(lib, records, claimed, usr_index, tu=None):
@@ -1249,16 +1290,24 @@ def collect_body_edges(lib, records, claimed, usr_index, tu=None):
     edges = {}               # home -> set(usr)
     _seen_pairs = set()
 
-    def add_edge(r):
+    def add_edge(r, namespace_match=False):
+        """Record an edge to `r`'s home library; True when one was added.
+
+        `namespace_match` is set by the textual var-template lookup: it may
+        fall back from `boost::mp11::mp_at_c` to the `boost::mp11` namespace
+        (alias templates et al. are not indexed), and the same fallback on a
+        shared namespace such as `boost::detail` would attribute an arbitrary
+        home lib. Namespace-REF body edges are unaffected (a referenced
+        namespace is a real reference)."""
         t = _template_of_instantiation(r)
         if t is not None:
             r = t
         r = _promote(r)
         if not bc.qualified_name(r).startswith("boost::"):
-            return
+            return False
         usr = bc.usr_of(r)
         if not usr:
-            return
+            return False
         # The entity may already ride on this module's own face: entities
         # first-claimed HERE (own + unclaimed pulls) are exported by this
         # module, so consumers reach them without an import edge. Only
@@ -1266,15 +1315,19 @@ def collect_body_edges(lib, records, claimed, usr_index, tu=None):
         # the edge.
         rec = records.get(usr)
         if rec is not None and (rec["home"] == lib or usr not in claimed):
-            return
+            return False
         f = bc.cursor_file(r)
         home = bc.home_lib_of_file(f, _FILE_TO_LIB) if f else "shared"
         if home == lib or home == "shared" or home not in bc.TARGET_LIBS:
-            return
+            return False
+        if namespace_match and bc.kind_of(r) == ci.CursorKind.NAMESPACE and \
+                not _namespace_matches_home(bc.qualified_name(r), home):
+            return False
         if (usr, home) in _seen_pairs:
-            return
+            return False
         _seen_pairs.add((usr, home))
         edges.setdefault(home, set()).add(usr)
+        return True
 
     def resolve(ref):
         try:
@@ -1315,8 +1368,11 @@ def collect_body_edges(lib, records, claimed, usr_index, tu=None):
     # Variable templates: libclang exposes VarTemplateDecl as an opaque
     # UNEXPOSED_DECL (no children, INVALID type, extent truncated after the
     # name), so walk(cur) above sees nothing. Re-tokenize the declaration from
-    # its start and resolve literal fully-qualified `boost::...` references in
-    # the initializer (A1). Same export set / filters as the body walk.
+    # its start, read off the qualified name chains in the initializer and
+    # resolve them textually: `boost::...` as-is (A1), relative names against
+    # the variable template's enclosing namespaces (A2). Same export set and
+    # filters as the body walk; add_edge reports success so the first useful
+    # lookup wins and enclosing-namespace false matches are skipped.
     if tu is not None:
         qname_cursors = None
         for rec in records.values():
@@ -1327,16 +1383,14 @@ def collect_body_edges(lib, records, claimed, usr_index, tu=None):
             cur = usr_index.get(rec["usr"])
             if cur is None:
                 continue
-            for qn in _var_template_initializer_qnames(tu, cur):
+            ns_chain = bc.namespace_chain(cur)
+            for chain in _var_template_initializer_names(tu, cur):
                 if qname_cursors is None:
                     qname_cursors = _qname_cursor_index(usr_index)
-                cur_list = qname_cursors.get(qn)
-                while cur_list is None and "::" in qn:
-                    qn = qn.rsplit("::", 1)[0]   # longest-prefix match
+                for qn in _initializer_lookup_qnames(chain, ns_chain):
                     cur_list = qname_cursors.get(qn)
-                if not cur_list:
-                    continue
-                add_edge(cur_list[0])
+                    if cur_list and add_edge(cur_list[0], namespace_match=True):
+                        break
     return edges
 
 
