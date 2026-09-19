@@ -8,3 +8,4 @@ generated/
 **/compile_commands.json
 
 scripts/_gen_exports-cache/
+scripts/_deps/

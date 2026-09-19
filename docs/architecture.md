@@ -190,6 +190,19 @@ to parse the AST of Boost headers). If libclang is not installed, install it fir
 pip install libclang        # or set LIBCLANG_PATH to the libclang.dll of a local LLVM
 ```
 
+`scripts/gen_exports.py` also drives clang with the mingw target triple
+(`x86_64-w64-mingw32`, `boost_common.GEN_TARGET`) to reproduce the committed
+mingw-flavor `src/gen_exports/*.inc` snapshots. The target's headers are fetched
+once by a companion script (WinLibs GCC 16.1.0, pinned URL + sha256) — no MinGW
+toolchain is needed, since the generator only runs `-fsyntax-only`:
+
+```bash
+uv run scripts/fetch_mingw_sysroot.py   # -> scripts/_deps/ (gitignored)
+```
+
+When `BOOST_MODULE_GEN_SYSROOT` is unset, `scripts/boost_common.py` picks up the
+bundled `scripts/_deps/` sysroot automatically for the default mingw target.
+
 Users with [uv](https://docs.astral.sh/uv/) installed need no manual setup — the scripts
 carry PEP 723 inline metadata, and `uv run` automatically creates a temporary environment
 with libclang:
@@ -213,6 +226,9 @@ Script responsibilities:
 - `scripts/import_boost.py` — downloads the official `boost_1_91_0.tar.gz` with a pinned
   SHA-256, trims it, and imports into `deps/boost/` (`boost/boost/` aggregate include root +
   `libs/` etc.).
+- `scripts/fetch_mingw_sysroot.py` — downloads the pinned WinLibs GCC 16.1.0
+  sysroot into `scripts/_deps/` (gitignored) and verifies it with a clang++
+  syntax probe; `boost_common.py` auto-uses it for the mingw generator target.
 - `scripts/gen_exports.py` — enumerates a library's public headers via the libclang AST →
   collects `boost::` external-linkage entities → dependency closure (e.g. filesystem brings
   in system::error_code) → cross-module deduplication (first wins) → produces

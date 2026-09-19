@@ -176,6 +176,19 @@ Boost 头文件的 AST)。未安装 libclang 时需先安装：
 pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libclang.dll
 ```
 
+`scripts/gen_exports.py` 还会以 mingw triple（`x86_64-w64-mingw32`，
+`boost_common.GEN_TARGET`）驱动 clang，以复现已提交的 mingw 风味
+`src/gen_exports/*.inc` 快照。目标头文件由配套脚本一次性下载（WinLibs GCC
+16.1.0，固定 URL + sha256），无需安装 MinGW 工具链 —— 生成器只做
+`-fsyntax-only`：
+
+```bash
+uv run scripts/fetch_mingw_sysroot.py   # 下载到 scripts/_deps/ (gitignored)
+```
+
+未设置 `BOOST_MODULE_GEN_SYSROOT` 时，`scripts/boost_common.py` 会对默认
+mingw target 自动使用 `scripts/_deps/` 下的 sysroot。
+
 安装了 [uv](https://docs.astral.sh/uv/) 的用户无需手动安装 —— 脚本带 PEP 723 内联元数据，
 `uv run` 会自动创建带 libclang 的临时环境：
 
@@ -197,6 +210,9 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 
 - `scripts/import_boost.py` — 下载固定 SHA-256 的官方 `boost_1_91_0.tar.gz`，裁剪后导入
   `deps/boost/`（`boost/boost/` 汇总 include 根 + `libs/` 等）。
+- `scripts/fetch_mingw_sysroot.py` — 下载固定版 WinLibs GCC 16.1.0 sysroot 到
+  `scripts/_deps/`（gitignored），并用 clang++ 语法探针校验；`boost_common.py`
+  对 mingw 生成目标自动使用它。
 - `scripts/gen_exports.py` — libclang AST 枚举库的公共头 → 收集 `boost::` 外部链接实体 →
   依赖闭包（如 filesystem 连带 system::error_code）→ 跨模块去重（first wins）→ 产出
   `src/gen_exports/<lib>.inc`（`export namespace boost { using ...; }` 列表）、`*.deps`

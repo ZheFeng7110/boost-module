@@ -202,14 +202,48 @@ LIBS_COMPILED_INCLUDE_ONLY = ["log", "test"]
 # Target triple for the bundle AST snapshot. The committed .inc files are a
 # mingw-flavor snapshot (platform-specific entities are wrapped in guards by
 # reapply_hand_edits.py), so the default stays x86_64-w64-mingw32. Set
-# BOOST_MODULE_GEN_TARGET (e.g. x86_64-linux-gnu) to snapshot another flavor
-# locally — e.g. on a machine without a mingw sysroot (Windows developers run
-# the generator inside WSL).
-GEN_TARGET = os.environ.get("BOOST_MODULE_GEN_TARGET", "x86_64-w64-mingw32")
+# BOOST_MODULE_GEN_TARGET (e.g. x86_64-linux-gnu) to snapshot another flavor.
+_DEFAULT_GEN_TARGET = "x86_64-w64-mingw32"
+GEN_TARGET = os.environ.get("BOOST_MODULE_GEN_TARGET", _DEFAULT_GEN_TARGET)
 
-# Optional sysroot for cross-target generation (e.g. a locally extracted
-# mingw-w64 tree): BOOST_MODULE_GEN_SYSROOT=/path/to/usr.
-GEN_SYSROOT = os.environ.get("BOOST_MODULE_GEN_SYSROOT", "")
+
+def _looks_like_sysroot(p):
+    return (p / GEN_TARGET / "include" / "windows.h").is_file()
+
+
+def _bundled_sysroot():
+    """Locate the scripts/_deps sysroot bootstrapped by
+    scripts/fetch_mingw_sysroot.py (marker first, then a bounded scan)."""
+    base = SCRIPTS / "_deps"
+    marker = base / "mingw-sysroot.json"
+    if marker.is_file():
+        try:
+            data = json.loads(marker.read_text(encoding="utf-8"))
+            root = ROOT / data["root"]
+            if _looks_like_sysroot(root):
+                return root
+        except Exception:
+            pass
+    for depth in (1, 2, 3):
+        for p in sorted(base.glob("/".join(["*"] * depth))):
+            if p.is_dir() and _looks_like_sysroot(p):
+                return p
+    return None
+
+
+# Sysroot resolution:
+#   1. BOOST_MODULE_GEN_SYSROOT wins when set;
+#   2. otherwise the bundled scripts/_deps sysroot is used for the DEFAULT
+#      mingw triple (a cross/non-mingw target must not inherit it);
+#   3. otherwise no --sysroot is passed.
+_ENV_SYSROOT = os.environ.get("BOOST_MODULE_GEN_SYSROOT", "")
+if _ENV_SYSROOT:
+    GEN_SYSROOT = _ENV_SYSROOT
+elif GEN_TARGET == _DEFAULT_GEN_TARGET:
+    _bundled = _bundled_sysroot()
+    GEN_SYSROOT = str(_bundled) if _bundled else ""
+else:
+    GEN_SYSROOT = ""
 
 TARGET_ARGS = ["--target=" + GEN_TARGET]
 if GEN_SYSROOT:
@@ -287,14 +321,28 @@ def _append_resource_dir():
 _CI = None
 
 
+def _libclang_in(directory):
+    """Path to a libclang shared library in `directory`, or None.
+
+    Accepts the Windows (.dll), Linux (.so[.N]) and macOS (.dylib) names so
+    LIBCLANG_PATH works as a directory on every platform."""
+    for pattern in ("libclang.dll", "libclang.so", "libclang.so.*",
+                    "libclang.dylib"):
+        for p in sorted(directory.glob(pattern)):
+            if p.is_file():
+                return p
+    return None
+
+
 def load_libclang():
     """Import clang.cindex, honouring LIBCLANG_PATH (file or directory form)
-    or LLVM_PATH; falls back to a libclang.dll next to clang.exe on PATH."""
+    or LLVM_PATH; falls back to a libclang next to clang on PATH."""
     import clang.cindex as ci
     env = os.environ.get("LIBCLANG_PATH") or os.environ.get("LLVM_PATH")
     if env:
         p = Path(env)
-        if p.is_dir() and (p / "libclang.dll").is_file():
+        lib = _libclang_in(p) if p.is_dir() else None
+        if lib is not None:
             ci.Config.set_library_path(str(p))
         else:
             ci.Config.set_library_file(env)
@@ -304,17 +352,17 @@ def load_libclang():
         return ci
     except Exception:
         pass
-    # Common dev setup: libclang.dll next to clang.exe on PATH (scoop/LLVM).
+    # Common dev setup: libclang next to clang on PATH (scoop/LLVM, Homebrew).
     import shutil
     exe = shutil.which("clang")
     if exe:
-        dll = Path(exe).resolve().parent / "libclang.dll"
-        if dll.is_file():
-            ci.Config.set_library_file(str(dll))
+        lib = _libclang_in(Path(exe).resolve().parent)
+        if lib is not None:
+            ci.Config.set_library_file(str(lib))
             return ci
     raise RuntimeError(
         "libclang not found — set LIBCLANG_PATH to the directory containing "
-        "libclang.dll (e.g. pip install libclang, or a local LLVM install)")
+        "libclang (e.g. pip install libclang, or a local LLVM install)")
 
 
 def get_ci():
