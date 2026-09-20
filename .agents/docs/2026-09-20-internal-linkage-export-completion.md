@@ -72,12 +72,23 @@ vendored 修补文件:
 `reapply_hand_edits.py` 的 `VENDORED_PATCHES` 已登记三个新名字; 全部幂等
 (应用后反向 apply 检测跳过)。
 
-> 说明: 生成器 `_parse_bundle` 的 clang++ gate 未传 `_WIN32_WINNT` /
-> `WIN32_LEAN_AND_MEAN` (仅 `BC.CLANG_ARGS` 传), 在 pinned MinGW sysroot
-> 下会把 `boost/atomic.hpp` 等误判 prune。该缺陷早于本任务 (sysroot
-> bootstrap 引入), 与本任务四库无关 (四库在既有 gate 下逐字节复现
-> HEAD), 故本次不改; 完整重生成若在 atomic 等库处 reapply 失败, 属该
-> 既有缺陷, 不在本任务范围。
+> 说明: 生成器 `_parse_bundle` 的 clang++ gate 与 libclang 解析现共用同一
+> 套参数 (`BC.CLANG_ARGS` + 每库 `EXTRA_DEFINES`; gate 仅额外加
+> `-fsyntax-only`), 故 `_WIN32_WINNT=0x0A00` / `WIN32_LEAN_AND_MEAN` 等宏
+> 在两侧完全一致, pinned MinGW sysroot 下不再把 `boost/atomic.hpp` 等误判
+> prune。该缺陷早于本任务 (sysroot bootstrap 引入), 本次一并收口; 本任务
+> 四库在统一 gate 下逐字节复现 HEAD。
+>
+> 该宏配置现为固定默认; 需要变更时设 `BOOST_MODULE_GEN_DEFINES`
+> (空格分隔, 整体替换默认列表), 目标 triple / sysroot 仍由
+> `BOOST_MODULE_GEN_TARGET` / `BOOST_MODULE_GEN_SYSROOT` 覆盖。
+>
+> gate 修正后 `boost/process.hpp` 重新进入 process 的 GMF, 因此同步按新基线
+> 重建了 `scripts/patchs/process.patch`: `process.inc` 新增 23 个 v2 实体
+> (`_popen` / `handle_closer` 以 `_WIN32` 守卫; 其余跨平台), `process.cppm`
+> 改由 `#include <boost/process.hpp>` 提供 v2 核心, 删去原先为 gate 误剪
+> 打补丁的 POSIX 显式 include 块。重建后 27 库全量重生成 + reapply 幂等,
+> 仅 process 产物反映上述变化。
 
 ## 4. 测试
 
@@ -97,4 +108,3 @@ vendored 修补文件:
   仅收口 accumulators/mqtt5 两个对象面残余。
 - 「内部链接对象不可导出」作为 C++ 语言事实仍然成立; 凡上游未加 `inline`
   的 `const`/`constexpr` 公开对象, 仍需逐个 vendored 改造或提供替代拼写。
-- 生成器 gate 的 `_WIN32_WINNT` 缺陷见 §3.1 注。

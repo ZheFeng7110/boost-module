@@ -1688,11 +1688,15 @@ def _parse_bundle(lib, headers, use_cache=True):
         bundle.write_text(_bundle_text(gfm), encoding="utf-8")
 
     extra = ["-D" + d for d in EXTRA_DEFINES.get(lib, ())]
+    # The gate must use the same macro set as the libclang parse below
+    # (bc.CLANG_ARGS + extra): a divergence makes the gate's prune verdict
+    # disagree with the AST snapshot. In particular, dropping
+    # _WIN32_WINNT/WIN32_LEAN_AND_MEAN used to make the gate mis-prune
+    # boost/atomic.hpp under the pinned MinGW sysroot.
+    gate_args = ["-fsyntax-only", *bc.CLANG_ARGS, *extra]
 
     def gate():
-        r = subprocess.run(["clang++", "-std=c++23", "-fsyntax-only", "-w",
-                            *bc.TARGET_ARGS, "-DBOOST_ALL_NO_LIB",
-                            "-Ideps/boost"] + extra + [str(bundle)],
+        r = subprocess.run(["clang++", *gate_args, str(bundle)],
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
 
@@ -1702,9 +1706,7 @@ def _parse_bundle(lib, headers, use_cache=True):
     gh.update(b"bundle:" + _bundle_text(gfm).encode())
     gh.update(b"closure:" + _closure_hash(lib, gfm).encode())
     gh.update(b"extra:" + ",".join(extra).encode())
-    gh.update(("gate:clang++ -std=c++23 -fsyntax-only -w {} "
-               "-DBOOST_ALL_NO_LIB -Ideps/boost"
-               .format(" ".join(bc.TARGET_ARGS))).encode())
+    gh.update(("gate:clang++ " + " ".join(gate_args)).encode())
     gh.update(b"clang:" + _clang_version().encode())
     gkey = gh.hexdigest()
     gate_cache = bc.CACHE_DIR / (lib + ".gate.json")

@@ -249,6 +249,26 @@ TARGET_ARGS = ["--target=" + GEN_TARGET]
 if GEN_SYSROOT:
     TARGET_ARGS.append("--sysroot=" + GEN_SYSROOT)
 
+# Platform defines every bundle TU is parsed under, shared by both the libclang
+# AST snapshot and the clang++ gate (gen_exports._parse_bundle passes CLANG_ARGS
+# to each), so the two can never disagree:
+#   _WIN32_WINNT=0x0A00     — Win10 API set. MinGW's default is older and hides
+#     e.g. WaitOnAddress from boost.winapi, which made the gate mis-prune
+#     boost/atomic.hpp under the pinned sysroot.
+#   WIN32_LEAN_AND_MEAN     — M11: asio (cobalt/log/process TUs) errors
+#     "WinSock.h has already been included" when windows.h pulled winsock1
+#     before asio's winsock2 — which any boost.winapi -> windows.h chain does.
+#     WIN32_LEAN_AND_MEAN makes windows.h skip winsock.h entirely; asio then
+#     includes winsock2.h itself (defining _WINSOCKAPI_ instead is wrong: asio
+#     treats it as evidence that winsock1 is already in and hard-errors,
+#     verified).
+# These are the fixed default; set BOOST_MODULE_GEN_DEFINES (space-separated,
+# replaces the whole list) to snapshot a different flavor.
+_DEFAULT_GEN_DEFINES = ["_WIN32_WINNT=0x0A00", "WIN32_LEAN_AND_MEAN"]
+_ENV_GEN_DEFINES = os.environ.get("BOOST_MODULE_GEN_DEFINES", "")
+GEN_DEFINES = _ENV_GEN_DEFINES.split() if _ENV_GEN_DEFINES.strip() \
+    else list(_DEFAULT_GEN_DEFINES)
+
 # clang command-line used for every bundle TU (same as M0 probe 4).
 # The libclang resource dir (-I .../lib/clang/<ver>/include) is appended at
 # load time: without it libclang cannot find its own builtin headers (e.g.
@@ -260,14 +280,7 @@ CLANG_ARGS = [
     "-Ideps/boost",
     *TARGET_ARGS,
     "-DBOOST_ALL_NO_LIB",
-    "-D_WIN32_WINNT=0x0A00",
-    # M11: asio (cobalt/log/process TUs) errors "WinSock.h has already been
-    # included" when windows.h pulled winsock1 before asio's winsock2 — which
-    # any boost.winapi -> windows.h chain does. WIN32_LEAN_AND_MEAN makes
-    # windows.h skip winsock.h entirely; asio then includes winsock2.h itself
-    # (defining _WINSOCKAPI_ instead is wrong: asio treats it as evidence that
-    # winsock1 is already in and hard-errors, verified).
-    "-DWIN32_LEAN_AND_MEAN",
+    *["-D" + d for d in GEN_DEFINES],
     "-w",
 ]
 

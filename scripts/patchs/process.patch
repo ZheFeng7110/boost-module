@@ -1,8 +1,8 @@
 diff --git a/src/gen_exports/process.inc b/src/gen_exports/process.inc
-index 390c1ef..9105321 100644
+index 48bd1fda..b91f7888 100644
 --- a/src/gen_exports/process.inc
 +++ b/src/gen_exports/process.inc
-@@ -247,7 +247,10 @@ export namespace boost { namespace process { namespace v1 { namespace detail {
+@@ -248,7 +248,10 @@ export namespace boost { namespace process { namespace v1 { namespace detail {
    using boost::process::v1::detail::valid_argument_list;
  }}}}
  
@@ -13,7 +13,7 @@ index 390c1ef..9105321 100644
    using boost::process::v1::detail::windows::apply_out_handles;
    using boost::process::v1::detail::windows::associate_completion_port;
    using boost::process::v1::detail::windows::async_handler;
-@@ -351,6 +354,7 @@ export namespace boost { namespace process { namespace v1 { namespace detail { n
+@@ -352,6 +355,7 @@ export namespace boost { namespace process { namespace v1 { namespace detail { n
    using boost::process::v1::detail::windows::workaround::nt_system_query_information;
    using boost::process::v1::detail::windows::workaround::set_information_job_object;
  }}}}}}
@@ -21,7 +21,19 @@ index 390c1ef..9105321 100644
  
  export namespace boost { namespace process { namespace v1 { namespace extend {
    using boost::process::v1::extend::foreach_used_handle;
-@@ -390,41 +394,126 @@ export namespace boost { namespace process { namespace v2 {
+@@ -366,7 +370,11 @@ export namespace boost { namespace process { namespace v1 { namespace extend {
+ }}}}
+ 
+ export namespace boost { namespace process { namespace v2 {
++#if defined(_WIN32)
++  // M11 platform guard: _popen is the MinGW spelling of popen
++  // (mingw stdio.h #defines popen to _popen); no POSIX v2::_popen.
+   using boost::process::v2::_popen;
++#endif
+   using boost::process::v2::all_pids;
+   using boost::process::v2::async_execute;
+   using boost::process::v2::basic_cstring_ref;
+@@ -404,51 +412,140 @@ export namespace boost { namespace process { namespace v2 {
  }}}
  
  export namespace boost { namespace process { namespace v2 { namespace detail {
@@ -58,11 +70,17 @@ index 390c1ef..9105321 100644
    using boost::process::v2::detail::derived;
 +#endif
    using boost::process::v2::detail::do_throw_error;
+   using boost::process::v2::detail::execute_op;
 +#if defined(_WIN32)
 +  // M11 platform guard: get_exit_code_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
    using boost::process::v2::detail::get_exit_code_;
 +#endif
    using boost::process::v2::detail::get_last_error;
++#if defined(_WIN32)
++  // M11 platform guard: handle_closer is the Windows stdio handle
++  // wrapper (DWORD/GetStdHandle); POSIX stdio does not declare it.
+   using boost::process::v2::detail::handle_closer;
++#endif
 +#if defined(_WIN32)
 +  // M11 platform guard: has_on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
    using boost::process::v2::detail::has_on_error;
@@ -75,6 +93,7 @@ index 390c1ef..9105321 100644
 +  // M11 platform guard: has_on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
    using boost::process::v2::detail::has_on_success;
 +#endif
+   using boost::process::v2::detail::index_sequence;
 +#if defined(_WIN32)
 +  // M11 platform guard: interrupt_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
    using boost::process::v2::detail::interrupt_;
@@ -95,6 +114,9 @@ index 390c1ef..9105321 100644
 +  // M11 platform guard: is_initializer is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
    using boost::process::v2::detail::is_initializer;
 +#endif
+   using boost::process::v2::detail::make_index_sequence;
+   using boost::process::v2::detail::make_index_sequence_impl;
+   using boost::process::v2::detail::make_index_sequence_t;
 +#if defined(_WIN32)
 +  // M11 platform guard: on_error is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
    using boost::process::v2::detail::on_error;
@@ -123,6 +145,10 @@ index 390c1ef..9105321 100644
 +  // M11 platform guard: probe_on_success is the windows generic-launcher machinery (flat v2::detail); POSIX nests a different set under v2::posix::detail.
    using boost::process::v2::detail::probe_on_success;
 +#endif
+   using boost::process::v2::detail::process_error_binding;
+   using boost::process::v2::detail::process_input_binding;
+   using boost::process::v2::detail::process_io_binding;
+   using boost::process::v2::detail::process_output_binding;
 +#if defined(_WIN32)
 +  // M11 platform guard: request_exit_ lives in detail/process_handle_windows.hpp (no fd-variant counterpart).
    using boost::process::v2::detail::request_exit_;
@@ -148,7 +174,7 @@ index 390c1ef..9105321 100644
    using boost::process::v2::detail::throw_error;
  }}}}
  
-@@ -472,7 +561,11 @@ export namespace boost { namespace process { namespace v2 { namespace environmen
+@@ -496,7 +593,11 @@ export namespace boost { namespace process { namespace v2 { namespace environmen
    using boost::process::v2::environment::detail::find_key;
    using boost::process::v2::environment::detail::get;
    using boost::process::v2::environment::detail::hash_step;
@@ -160,7 +186,7 @@ index 390c1ef..9105321 100644
    using boost::process::v2::environment::detail::is_executable;
    using boost::process::v2::environment::detail::load_native_handle;
    using boost::process::v2::environment::detail::native_handle_deleter;
-@@ -497,7 +590,9 @@ export namespace boost { namespace process { namespace v2 { namespace ext {
+@@ -521,7 +622,9 @@ export namespace boost { namespace process { namespace v2 { namespace ext {
    using boost::process::v2::ext::exe;
  }}}}
  
@@ -170,7 +196,7 @@ index 390c1ef..9105321 100644
    using boost::process::v2::windows::as_user_launcher;
    using boost::process::v2::windows::default_launcher;
    using boost::process::v2::windows::process_creation_flags;
-@@ -505,6 +600,7 @@ export namespace boost { namespace process { namespace v2 { namespace windows {
+@@ -529,6 +632,7 @@ export namespace boost { namespace process { namespace v2 { namespace windows {
    using boost::process::v2::windows::with_logon_launcher;
    using boost::process::v2::windows::with_token_launcher;
  }}}}
@@ -179,10 +205,10 @@ index 390c1ef..9105321 100644
  export namespace boost { namespace system {
    using boost::system::error_category;
 diff --git a/src/process.cppm b/src/process.cppm
-index ab8abf1..963980d 100644
+index 8e851574..b6e83f0e 100644
 --- a/src/process.cppm
 +++ b/src/process.cppm
-@@ -10,6 +10,10 @@ module;
+@@ -11,6 +11,10 @@ module;
  #include <boost/process/v1/async_pipe.hpp>
  #include <boost/process/v1/exception.hpp>
  #include <boost/process/v1/extend.hpp>
@@ -193,19 +219,10 @@ index ab8abf1..963980d 100644
  #include <boost/process/v1/windows.hpp>
  #include <boost/process/v2/windows/show_window.hpp>
  #include <boost/process/v2/windows/with_logon_launcher.hpp>
-@@ -20,6 +24,16 @@ module;
+@@ -21,6 +25,7 @@ module;
  #include <boost/process/windows/show_window.hpp>
  #include <boost/process/windows/with_logon_launcher.hpp>
  #include <boost/process/windows/with_token_launcher.hpp>
-+#endif
-+// M11 platform guard (POSIX): the mingw snapshot's GMF reached the v2
-+// core (basic_process) and the launcher detail helpers only through the
-+// windows launcher chain; on POSIX include the cross-platform core and
-+// the posix default launcher explicitly so the shared-surface `using`
-+// lines resolve.
-+#if !defined(_WIN32) && !defined(__CYGWIN__)
-+#include <boost/process/v2/process.hpp>
-+#include <boost/process/v2/posix/default_launcher.hpp>
 +#endif
  
  export module boost.process;
