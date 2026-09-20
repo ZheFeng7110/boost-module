@@ -118,13 +118,17 @@ struct property_traits;
 
 using user_property_value_t = std::vector<std::pair<std::string, std::string>>;
 
+// boost-module vendor patch: a namespace-scope constexpr object is
+// const-qualified => internal linkage, so boost::mqtt5::prop::<name> could
+// not be re-exported by a module. The inline below keeps the spelling and
+// gives external linkage + cross-TU dedup.
 #define DEF_PROPERTY_TRAIT(Pname, Ptype) \
 template <> \
 struct property_traits<Pname##_t> { \
     static constexpr std::string_view name = #Pname; \
     using type = Ptype; \
 }; \
-constexpr std::integral_constant<property_type, Pname##_t> Pname {};
+inline constexpr std::integral_constant<property_type, Pname##_t> Pname {};
 
 DEF_PROPERTY_TRAIT(payload_format_indicator, std::optional<uint8_t>);
 DEF_PROPERTY_TRAIT(message_expiry_interval, std::optional<uint32_t>);

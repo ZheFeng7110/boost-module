@@ -30,7 +30,7 @@ namespace tag
 }
 namespace extract
 {
-    extractor<tag::quantile> const quantile = {};
+    inline extractor<tag::quantile> const quantile = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(quantile)
 }
@@ -48,7 +48,7 @@ namespace tag
 }
 namespace extract
 {
-    extractor<tag::tail_mean> const tail_mean = {};
+    inline extractor<tag::tail_mean> const tail_mean = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_mean)
 }

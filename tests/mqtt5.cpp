@@ -1,6 +1,7 @@
 // boost.mqtt5 smoke — MQTT 5 protocol types (compile-time surface, no I/O)
-// NB: the prop::xxx named constants are constexpr (internal-linkage) objects —
-// not module-exportable; consumers spell the integral_constant form.
+// The prop::xxx named constants used to be constexpr (internal-linkage)
+// objects; the vendored `inline constexpr` patch makes them external, so the
+// module exports the named-constant spelling (no integral_constant workaround).
 #include "test_assert.hpp"
 import std;
 import boost.mqtt5;
@@ -12,12 +13,16 @@ int main() {
     static_assert(m5::qos_e::at_least_once == m5::qos_e{1});
     static_assert(m5::qos_e::exactly_once == m5::qos_e{2});
 
-    using session_expiry =
+    using session_expiry_t =
         std::integral_constant<m5::prop::property_type,
                                m5::prop::property_type::session_expiry_interval_t>;
+    static_assert(std::is_same_v<decltype(m5::prop::session_expiry_interval),
+                                 const session_expiry_t>);
+
     m5::connect_props props;
-    props[session_expiry{}] = std::optional<std::uint32_t>(60);
-    assert(props[session_expiry{}] == std::optional<std::uint32_t>(60));
+    props[m5::prop::session_expiry_interval] = std::optional<std::uint32_t>(60);
+    assert(props[m5::prop::session_expiry_interval] ==
+           std::optional<std::uint32_t>(60));
 
     static_assert(m5::log_level::error == m5::log_level{1});
     static_assert(!m5::prop::name_v<

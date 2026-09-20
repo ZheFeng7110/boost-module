@@ -223,7 +223,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::median> const weighted_median = {};
+    inline extractor<tag::median> const weighted_median = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_median)
 }

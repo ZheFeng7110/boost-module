@@ -118,8 +118,8 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::weighted_sum_kahan> const weighted_sum_kahan = {};
-    extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates_kahan = {};
+    inline extractor<tag::weighted_sum_kahan> const weighted_sum_kahan = {};
+    inline extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates_kahan = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum_kahan)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum_of_variates_kahan)

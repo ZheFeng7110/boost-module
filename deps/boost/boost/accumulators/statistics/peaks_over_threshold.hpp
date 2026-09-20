@@ -366,7 +366,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::abstract_peaks_over_threshold> const peaks_over_threshold = {};
+    inline extractor<tag::abstract_peaks_over_threshold> const peaks_over_threshold = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(peaks_over_threshold)
 }

@@ -92,7 +92,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::skewness> const skewness = {};
+    inline extractor<tag::skewness> const skewness = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(skewness)
 }

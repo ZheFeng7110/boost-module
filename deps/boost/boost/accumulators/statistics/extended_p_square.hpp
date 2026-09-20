@@ -283,7 +283,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::extended_p_square> const extended_p_square = {};
+    inline extractor<tag::extended_p_square> const extended_p_square = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square)
 }

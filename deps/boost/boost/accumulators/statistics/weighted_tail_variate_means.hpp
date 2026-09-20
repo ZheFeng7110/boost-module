@@ -220,8 +220,8 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::abstract_absolute_tail_variate_means> const weighted_tail_variate_means = {};
-    extractor<tag::abstract_relative_tail_variate_means> const relative_weighted_tail_variate_means = {};
+    inline extractor<tag::abstract_absolute_tail_variate_means> const weighted_tail_variate_means = {};
+    inline extractor<tag::abstract_relative_tail_variate_means> const relative_weighted_tail_variate_means = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_tail_variate_means)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(relative_weighted_tail_variate_means)

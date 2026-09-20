@@ -80,7 +80,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::min> const min = {};
+    inline extractor<tag::min> const min = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(min)
 }

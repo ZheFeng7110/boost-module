@@ -212,9 +212,9 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::lazy_rolling_variance> const lazy_rolling_variance = {};
-    extractor<tag::immediate_rolling_variance> const immediate_rolling_variance = {};
-    extractor<tag::rolling_variance> const rolling_variance = {};
+    inline extractor<tag::lazy_rolling_variance> const lazy_rolling_variance = {};
+    inline extractor<tag::immediate_rolling_variance> const immediate_rolling_variance = {};
+    inline extractor<tag::rolling_variance> const rolling_variance = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(lazy_rolling_variance)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(immediate_rolling_variance)

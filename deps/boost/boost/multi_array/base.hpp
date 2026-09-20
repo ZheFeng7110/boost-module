@@ -65,10 +65,13 @@ namespace multi_array_types {
 // can be left undefined by defining BOOST_MULTI_ARRAY_NO_GENERATORS 
 // before loading multi_array.hpp.
 #ifndef BOOST_MULTI_ARRAY_NO_GENERATORS
-namespace {
-  multi_array_types::extent_gen extents;
-  multi_array_types::index_gen indices;
-}
+// boost-module vendor patch: the public generators used to live in an
+// anonymous namespace (internal linkage, no qualified name), so a
+// module could not re-export boost::extents / boost::indices. Inline
+// variables at namespace scope keep the spelling and give external
+// linkage with cross-TU dedup.
+inline multi_array_types::extent_gen extents;
+inline multi_array_types::index_gen indices;
 #endif // BOOST_MULTI_ARRAY_NO_GENERATORS
 
 namespace detail {

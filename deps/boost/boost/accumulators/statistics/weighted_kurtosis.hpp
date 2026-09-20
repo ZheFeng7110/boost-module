@@ -93,7 +93,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::weighted_kurtosis> const weighted_kurtosis = {};
+    inline extractor<tag::weighted_kurtosis> const weighted_kurtosis = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_kurtosis)
 }

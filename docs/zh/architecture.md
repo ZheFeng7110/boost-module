@@ -127,9 +127,14 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 | atomic sse41 走探测失败回退 | 自动 |
 | type_erasure `any<>` 动态分发路径 clang-msvc 模块消费者不可实例化 | 模块面/概念模板可用 |
 | `numeric::interval<double>` 模块面不可实例化 (默认 policies 显式特化) | include 头文件 |
-| 匿名命名空间 forwarder 不导出: range pipe 语法 (`vec \| reversed`)、multi_array `boost::extents` | 用函数形式/容器式构造 |
-| 内部链接 constexpr 对象不可导出 — 残余面: accumulators `extract::*` (用 `extract_result<>`)、mqtt5 `prop::*` (用 `integral_constant`) | 按替代拼写 |
 | 变量模板初始化器对字面 `boost::...` 引用与相对限定名 (`mp11::mp_size`，按变量模板所在命名空间解析) 补跨模块 `.deps` 边 (libclang 将 `VarTemplateDecl` 暴露为无 body 的 `UNEXPOSED_DECL`，生成器重新 tokenize 声明并做名字解析)；宏展开/别名/裸非限定名仍不推导 | 需要时显式 import 被引用模块 |
+
+> 历史 (2026-09-20 已解): 匿名命名空间 forwarder (range pipe
+> `vec \| reversed`、multi_array `boost::extents` / `boost::indices`) 与内部
+> 链接 constexpr 对象 (accumulators `extract::*`、mqtt5 `prop::*`) 已由
+> vendored `inline` 改造取得外部链接并导出, 无需再退化为函数形式 /
+> `extract_result<>` / `integral_constant`。见设计文档
+> [`.agents/docs/2026-09-20-internal-linkage-export-completion.md`](../../.agents/docs/2026-09-20-internal-linkage-export-completion.md)。
 
 ### 4.2 gcc 16.1 缺陷家族与消费三分规则
 

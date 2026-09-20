@@ -157,14 +157,16 @@ namespace boost
 
     namespace adaptors
     {
-        namespace
-        {
-            const range_detail::map_keys_forwarder map_keys =
+        // boost-module vendor patch: this forwarder used to live in an
+        // anonymous namespace (internal linkage, no qualified name), so a
+        // module could not re-export the pipe-syntax entity
+        // boost::adaptors::<name>. An inline const object keeps the public
+        // spelling and gives external linkage with cross-TU dedup.
+            inline const range_detail::map_keys_forwarder map_keys =
                                             range_detail::map_keys_forwarder();
 
-            const range_detail::map_values_forwarder map_values =
+            inline const range_detail::map_values_forwarder map_values =
                                            range_detail::map_values_forwarder();
-        }
 
         template<class StdPairRange>
         inline select_first_range<StdPairRange>

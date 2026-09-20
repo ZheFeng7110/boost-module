@@ -290,7 +290,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::weighted_extended_p_square> const weighted_extended_p_square = {};
+    inline extractor<tag::weighted_extended_p_square> const weighted_extended_p_square = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_extended_p_square)
 }

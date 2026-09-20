@@ -263,7 +263,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::weighted_p_square_cumulative_distribution> const weighted_p_square_cumulative_distribution = {};
+    inline extractor<tag::weighted_p_square_cumulative_distribution> const weighted_p_square_cumulative_distribution = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_p_square_cumulative_distribution)
 }

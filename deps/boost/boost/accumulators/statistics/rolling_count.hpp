@@ -72,7 +72,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::rolling_count> const rolling_count = {};
+    inline extractor<tag::rolling_count> const rolling_count = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_count)
 }

@@ -1,0 +1,612 @@
+diff --git a/deps/boost/boost/accumulators/statistics/count.hpp b/deps/boost/boost/accumulators/statistics/count.hpp
+index 2bd09a97..523c6dcc 100644
+--- a/deps/boost/boost/accumulators/statistics/count.hpp
++++ b/deps/boost/boost/accumulators/statistics/count.hpp
+@@ -75,7 +75,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::count> const count = {};
++    inline extractor<tag::count> const count = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(count)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/covariance.hpp b/deps/boost/boost/accumulators/statistics/covariance.hpp
+index d80a85ed..3bd87e4e 100644
+--- a/deps/boost/boost/accumulators/statistics/covariance.hpp
++++ b/deps/boost/boost/accumulators/statistics/covariance.hpp
+@@ -188,7 +188,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_covariance> const covariance = {};
++    inline extractor<tag::abstract_covariance> const covariance = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(covariance)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/density.hpp b/deps/boost/boost/accumulators/statistics/density.hpp
+index 32b48060..06f30c88 100644
+--- a/deps/boost/boost/accumulators/statistics/density.hpp
++++ b/deps/boost/boost/accumulators/statistics/density.hpp
+@@ -240,7 +240,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::density> const density = {};
++    inline extractor<tag::density> const density = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(density)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/extended_p_square.hpp b/deps/boost/boost/accumulators/statistics/extended_p_square.hpp
+index 6990050e..c8ad6bdc 100644
+--- a/deps/boost/boost/accumulators/statistics/extended_p_square.hpp
++++ b/deps/boost/boost/accumulators/statistics/extended_p_square.hpp
+@@ -283,7 +283,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::extended_p_square> const extended_p_square = {};
++    inline extractor<tag::extended_p_square> const extended_p_square = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/extended_p_square_quantile.hpp b/deps/boost/boost/accumulators/statistics/extended_p_square_quantile.hpp
+index a4ac3cd6..dfc623ca 100644
+--- a/deps/boost/boost/accumulators/statistics/extended_p_square_quantile.hpp
++++ b/deps/boost/boost/accumulators/statistics/extended_p_square_quantile.hpp
+@@ -239,10 +239,10 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::extended_p_square_quantile> const extended_p_square_quantile = {};
+-    extractor<tag::extended_p_square_quantile_quadratic> const extended_p_square_quantile_quadratic = {};
+-    extractor<tag::weighted_extended_p_square_quantile> const weighted_extended_p_square_quantile = {};
+-    extractor<tag::weighted_extended_p_square_quantile_quadratic> const weighted_extended_p_square_quantile_quadratic = {};
++    inline extractor<tag::extended_p_square_quantile> const extended_p_square_quantile = {};
++    inline extractor<tag::extended_p_square_quantile_quadratic> const extended_p_square_quantile_quadratic = {};
++    inline extractor<tag::weighted_extended_p_square_quantile> const weighted_extended_p_square_quantile = {};
++    inline extractor<tag::weighted_extended_p_square_quantile_quadratic> const weighted_extended_p_square_quantile_quadratic = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square_quantile)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square_quantile_quadratic)
+diff --git a/deps/boost/boost/accumulators/statistics/kurtosis.hpp b/deps/boost/boost/accumulators/statistics/kurtosis.hpp
+index 9ff9ecdc..7c6ef93e 100644
+--- a/deps/boost/boost/accumulators/statistics/kurtosis.hpp
++++ b/deps/boost/boost/accumulators/statistics/kurtosis.hpp
+@@ -90,7 +90,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::kurtosis> const kurtosis = {};
++    inline extractor<tag::kurtosis> const kurtosis = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(kurtosis)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/max.hpp b/deps/boost/boost/accumulators/statistics/max.hpp
+index 4cc8c559..a0dde4ed 100644
+--- a/deps/boost/boost/accumulators/statistics/max.hpp
++++ b/deps/boost/boost/accumulators/statistics/max.hpp
+@@ -80,7 +80,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::max> const max = {};
++    inline extractor<tag::max> const max = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(max)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/mean.hpp b/deps/boost/boost/accumulators/statistics/mean.hpp
+index 699fad7a..083c5e6c 100644
+--- a/deps/boost/boost/accumulators/statistics/mean.hpp
++++ b/deps/boost/boost/accumulators/statistics/mean.hpp
+@@ -152,8 +152,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::mean> const mean = {};
+-    extractor<tag::mean_of_weights> const mean_of_weights = {};
++    inline extractor<tag::mean> const mean = {};
++    inline extractor<tag::mean_of_weights> const mean_of_weights = {};
+     BOOST_ACCUMULATORS_DEFINE_EXTRACTOR(tag, mean_of_variates, (typename)(typename))
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(mean)
+diff --git a/deps/boost/boost/accumulators/statistics/median.hpp b/deps/boost/boost/accumulators/statistics/median.hpp
+index 4d4118d8..5d13d474 100644
+--- a/deps/boost/boost/accumulators/statistics/median.hpp
++++ b/deps/boost/boost/accumulators/statistics/median.hpp
+@@ -228,9 +228,9 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::median> const median = {};
+-    extractor<tag::with_density_median> const with_density_median = {};
+-    extractor<tag::with_p_square_cumulative_distribution_median> const with_p_square_cumulative_distribution_median = {};
++    inline extractor<tag::median> const median = {};
++    inline extractor<tag::with_density_median> const with_density_median = {};
++    inline extractor<tag::with_p_square_cumulative_distribution_median> const with_p_square_cumulative_distribution_median = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(median)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(with_density_median)
+diff --git a/deps/boost/boost/accumulators/statistics/min.hpp b/deps/boost/boost/accumulators/statistics/min.hpp
+index 2cbe2775..891c0206 100644
+--- a/deps/boost/boost/accumulators/statistics/min.hpp
++++ b/deps/boost/boost/accumulators/statistics/min.hpp
+@@ -80,7 +80,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::min> const min = {};
++    inline extractor<tag::min> const min = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(min)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/p_square_cumul_dist.hpp b/deps/boost/boost/accumulators/statistics/p_square_cumul_dist.hpp
+index daa66f9b..0fc31125 100644
+--- a/deps/boost/boost/accumulators/statistics/p_square_cumul_dist.hpp
++++ b/deps/boost/boost/accumulators/statistics/p_square_cumul_dist.hpp
+@@ -253,7 +253,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::p_square_cumulative_distribution> const p_square_cumulative_distribution = {};
++    inline extractor<tag::p_square_cumulative_distribution> const p_square_cumulative_distribution = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(p_square_cumulative_distribution)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/p_square_quantile.hpp b/deps/boost/boost/accumulators/statistics/p_square_quantile.hpp
+index d87c1b3d..c760c8fa 100644
+--- a/deps/boost/boost/accumulators/statistics/p_square_quantile.hpp
++++ b/deps/boost/boost/accumulators/statistics/p_square_quantile.hpp
+@@ -242,8 +242,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::p_square_quantile> const p_square_quantile = {};
+-    extractor<tag::p_square_quantile_for_median> const p_square_quantile_for_median = {};
++    inline extractor<tag::p_square_quantile> const p_square_quantile = {};
++    inline extractor<tag::p_square_quantile_for_median> const p_square_quantile_for_median = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(p_square_quantile)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(p_square_quantile_for_median)
+diff --git a/deps/boost/boost/accumulators/statistics/peaks_over_threshold.hpp b/deps/boost/boost/accumulators/statistics/peaks_over_threshold.hpp
+index de73c658..b246129a 100644
+--- a/deps/boost/boost/accumulators/statistics/peaks_over_threshold.hpp
++++ b/deps/boost/boost/accumulators/statistics/peaks_over_threshold.hpp
+@@ -366,7 +366,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_peaks_over_threshold> const peaks_over_threshold = {};
++    inline extractor<tag::abstract_peaks_over_threshold> const peaks_over_threshold = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(peaks_over_threshold)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/rolling_count.hpp b/deps/boost/boost/accumulators/statistics/rolling_count.hpp
+index 803f1b77..2ee9de63 100644
+--- a/deps/boost/boost/accumulators/statistics/rolling_count.hpp
++++ b/deps/boost/boost/accumulators/statistics/rolling_count.hpp
+@@ -72,7 +72,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::rolling_count> const rolling_count = {};
++    inline extractor<tag::rolling_count> const rolling_count = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_count)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/rolling_sum.hpp b/deps/boost/boost/accumulators/statistics/rolling_sum.hpp
+index c5114606..7e72ea0e 100644
+--- a/deps/boost/boost/accumulators/statistics/rolling_sum.hpp
++++ b/deps/boost/boost/accumulators/statistics/rolling_sum.hpp
+@@ -87,7 +87,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::rolling_sum> const rolling_sum = {};
++    inline extractor<tag::rolling_sum> const rolling_sum = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_sum)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/rolling_variance.hpp b/deps/boost/boost/accumulators/statistics/rolling_variance.hpp
+index 249d5c19..e7437b3c 100644
+--- a/deps/boost/boost/accumulators/statistics/rolling_variance.hpp
++++ b/deps/boost/boost/accumulators/statistics/rolling_variance.hpp
+@@ -212,9 +212,9 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::lazy_rolling_variance> const lazy_rolling_variance = {};
+-    extractor<tag::immediate_rolling_variance> const immediate_rolling_variance = {};
+-    extractor<tag::rolling_variance> const rolling_variance = {};
++    inline extractor<tag::lazy_rolling_variance> const lazy_rolling_variance = {};
++    inline extractor<tag::immediate_rolling_variance> const immediate_rolling_variance = {};
++    inline extractor<tag::rolling_variance> const rolling_variance = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(lazy_rolling_variance)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(immediate_rolling_variance)
+diff --git a/deps/boost/boost/accumulators/statistics/rolling_window.hpp b/deps/boost/boost/accumulators/statistics/rolling_window.hpp
+index a43ecdfd..ad05bcf4 100644
+--- a/deps/boost/boost/accumulators/statistics/rolling_window.hpp
++++ b/deps/boost/boost/accumulators/statistics/rolling_window.hpp
+@@ -207,7 +207,7 @@ namespace tag
+ namespace extract
+ {
+     extractor<tag::rolling_window_plus1> const rolling_window_plus1 = {};
+-    extractor<tag::rolling_window> const rolling_window = {};
++    inline extractor<tag::rolling_window> const rolling_window = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_window_plus1)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_window)
+diff --git a/deps/boost/boost/accumulators/statistics/skewness.hpp b/deps/boost/boost/accumulators/statistics/skewness.hpp
+index 9c9c376a..06e98d2c 100644
+--- a/deps/boost/boost/accumulators/statistics/skewness.hpp
++++ b/deps/boost/boost/accumulators/statistics/skewness.hpp
+@@ -92,7 +92,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::skewness> const skewness = {};
++    inline extractor<tag::skewness> const skewness = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(skewness)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/sum.hpp b/deps/boost/boost/accumulators/statistics/sum.hpp
+index c8beb55b..c73f4814 100644
+--- a/deps/boost/boost/accumulators/statistics/sum.hpp
++++ b/deps/boost/boost/accumulators/statistics/sum.hpp
+@@ -109,9 +109,9 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::sum> const sum = {};
+-    extractor<tag::sum_of_weights> const sum_of_weights = {};
+-    extractor<tag::abstract_sum_of_variates> const sum_of_variates = {};
++    inline extractor<tag::sum> const sum = {};
++    inline extractor<tag::sum_of_weights> const sum_of_weights = {};
++    inline extractor<tag::abstract_sum_of_variates> const sum_of_variates = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum_of_weights)
+diff --git a/deps/boost/boost/accumulators/statistics/sum_kahan.hpp b/deps/boost/boost/accumulators/statistics/sum_kahan.hpp
+index b5e90922..81e8ebe1 100644
+--- a/deps/boost/boost/accumulators/statistics/sum_kahan.hpp
++++ b/deps/boost/boost/accumulators/statistics/sum_kahan.hpp
+@@ -128,9 +128,9 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::sum_kahan> const sum_kahan = {};
+-    extractor<tag::sum_of_weights_kahan> const sum_of_weights_kahan = {};
+-    extractor<tag::abstract_sum_of_variates> const sum_of_variates_kahan = {};
++    inline extractor<tag::sum_kahan> const sum_kahan = {};
++    inline extractor<tag::sum_of_weights_kahan> const sum_of_weights_kahan = {};
++    inline extractor<tag::abstract_sum_of_variates> const sum_of_variates_kahan = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum_kahan)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum_of_weights_kahan)
+diff --git a/deps/boost/boost/accumulators/statistics/tail.hpp b/deps/boost/boost/accumulators/statistics/tail.hpp
+index 40dab371..017f7a74 100644
+--- a/deps/boost/boost/accumulators/statistics/tail.hpp
++++ b/deps/boost/boost/accumulators/statistics/tail.hpp
+@@ -334,7 +334,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_tail> const tail = {};
++    inline extractor<tag::abstract_tail> const tail = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/tail_mean.hpp b/deps/boost/boost/accumulators/statistics/tail_mean.hpp
+index f56606d1..c18d0cc2 100644
+--- a/deps/boost/boost/accumulators/statistics/tail_mean.hpp
++++ b/deps/boost/boost/accumulators/statistics/tail_mean.hpp
+@@ -204,8 +204,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_tail_mean = {};
+-    extractor<tag::tail_mean> const coherent_tail_mean = {};
++    inline extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_tail_mean = {};
++    inline extractor<tag::tail_mean> const coherent_tail_mean = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(non_coherent_tail_mean)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(coherent_tail_mean)
+diff --git a/deps/boost/boost/accumulators/statistics/tail_quantile.hpp b/deps/boost/boost/accumulators/statistics/tail_quantile.hpp
+index ed1f6e6d..cdd7bf9c 100644
+--- a/deps/boost/boost/accumulators/statistics/tail_quantile.hpp
++++ b/deps/boost/boost/accumulators/statistics/tail_quantile.hpp
+@@ -125,7 +125,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::quantile> const tail_quantile = {};
++    inline extractor<tag::quantile> const tail_quantile = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_quantile)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/tail_variate.hpp b/deps/boost/boost/accumulators/statistics/tail_variate.hpp
+index 6885ece1..32912b35 100644
+--- a/deps/boost/boost/accumulators/statistics/tail_variate.hpp
++++ b/deps/boost/boost/accumulators/statistics/tail_variate.hpp
+@@ -123,8 +123,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_tail_variate> const tail_variate = {};
+-    extractor<tag::abstract_tail_weights> const tail_weights = {};
++    inline extractor<tag::abstract_tail_variate> const tail_variate = {};
++    inline extractor<tag::abstract_tail_weights> const tail_weights = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_variate)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_weights)
+diff --git a/deps/boost/boost/accumulators/statistics/tail_variate_means.hpp b/deps/boost/boost/accumulators/statistics/tail_variate_means.hpp
+index efe9f7c3..5f5064b9 100644
+--- a/deps/boost/boost/accumulators/statistics/tail_variate_means.hpp
++++ b/deps/boost/boost/accumulators/statistics/tail_variate_means.hpp
+@@ -195,8 +195,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_absolute_tail_variate_means> const tail_variate_means = {};
+-    extractor<tag::abstract_relative_tail_variate_means> const relative_tail_variate_means = {};
++    inline extractor<tag::abstract_absolute_tail_variate_means> const tail_variate_means = {};
++    inline extractor<tag::abstract_relative_tail_variate_means> const relative_tail_variate_means = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_variate_means)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(relative_tail_variate_means)
+diff --git a/deps/boost/boost/accumulators/statistics/variance.hpp b/deps/boost/boost/accumulators/statistics/variance.hpp
+index f760c3e1..ba9581d4 100644
+--- a/deps/boost/boost/accumulators/statistics/variance.hpp
++++ b/deps/boost/boost/accumulators/statistics/variance.hpp
+@@ -159,8 +159,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::lazy_variance> const lazy_variance = {};
+-    extractor<tag::variance> const variance = {};
++    inline extractor<tag::lazy_variance> const lazy_variance = {};
++    inline extractor<tag::variance> const variance = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(lazy_variance)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(variance)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_covariance.hpp b/deps/boost/boost/accumulators/statistics/weighted_covariance.hpp
+index e423a225..9e805f97 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_covariance.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_covariance.hpp
+@@ -128,7 +128,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_covariance> const weighted_covariance = {};
++    inline extractor<tag::abstract_covariance> const weighted_covariance = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_covariance)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_density.hpp b/deps/boost/boost/accumulators/statistics/weighted_density.hpp
+index 6b5a0ee0..c50ddac1 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_density.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_density.hpp
+@@ -225,7 +225,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::density> const weighted_density = {};
++    inline extractor<tag::density> const weighted_density = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_density)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_extended_p_square.hpp b/deps/boost/boost/accumulators/statistics/weighted_extended_p_square.hpp
+index f88e9b9e..1e7fe94f 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_extended_p_square.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_extended_p_square.hpp
+@@ -290,7 +290,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_extended_p_square> const weighted_extended_p_square = {};
++    inline extractor<tag::weighted_extended_p_square> const weighted_extended_p_square = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_extended_p_square)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_kurtosis.hpp b/deps/boost/boost/accumulators/statistics/weighted_kurtosis.hpp
+index 3fd4ed7b..1a455d56 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_kurtosis.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_kurtosis.hpp
+@@ -93,7 +93,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_kurtosis> const weighted_kurtosis = {};
++    inline extractor<tag::weighted_kurtosis> const weighted_kurtosis = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_kurtosis)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_mean.hpp b/deps/boost/boost/accumulators/statistics/weighted_mean.hpp
+index 3214af6f..c236f345 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_mean.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_mean.hpp
+@@ -154,7 +154,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::mean> const weighted_mean = {};
++    inline extractor<tag::mean> const weighted_mean = {};
+     BOOST_ACCUMULATORS_DEFINE_EXTRACTOR(tag, weighted_mean_of_variates, (typename)(typename))
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_mean)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_median.hpp b/deps/boost/boost/accumulators/statistics/weighted_median.hpp
+index 22224a87..fbb7c77c 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_median.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_median.hpp
+@@ -223,7 +223,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::median> const weighted_median = {};
++    inline extractor<tag::median> const weighted_median = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_median)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_p_square_cumul_dist.hpp b/deps/boost/boost/accumulators/statistics/weighted_p_square_cumul_dist.hpp
+index f8a44d60..12b1b3f9 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_p_square_cumul_dist.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_p_square_cumul_dist.hpp
+@@ -263,7 +263,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_p_square_cumulative_distribution> const weighted_p_square_cumulative_distribution = {};
++    inline extractor<tag::weighted_p_square_cumulative_distribution> const weighted_p_square_cumulative_distribution = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_p_square_cumulative_distribution)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_p_square_quantile.hpp b/deps/boost/boost/accumulators/statistics/weighted_p_square_quantile.hpp
+index fecd9939..51d4675d 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_p_square_quantile.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_p_square_quantile.hpp
+@@ -251,8 +251,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_p_square_quantile> const weighted_p_square_quantile = {};
+-    extractor<tag::weighted_p_square_quantile_for_median> const weighted_p_square_quantile_for_median = {};
++    inline extractor<tag::weighted_p_square_quantile> const weighted_p_square_quantile = {};
++    inline extractor<tag::weighted_p_square_quantile_for_median> const weighted_p_square_quantile_for_median = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_p_square_quantile)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_p_square_quantile_for_median)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_peaks_over_threshold.hpp b/deps/boost/boost/accumulators/statistics/weighted_peaks_over_threshold.hpp
+index f3dc327b..6011ebe1 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_peaks_over_threshold.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_peaks_over_threshold.hpp
+@@ -272,7 +272,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_peaks_over_threshold> const weighted_peaks_over_threshold = {};
++    inline extractor<tag::abstract_peaks_over_threshold> const weighted_peaks_over_threshold = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_peaks_over_threshold)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_skewness.hpp b/deps/boost/boost/accumulators/statistics/weighted_skewness.hpp
+index a3ac3876..bd48059f 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_skewness.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_skewness.hpp
+@@ -89,7 +89,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_skewness> const weighted_skewness = {};
++    inline extractor<tag::weighted_skewness> const weighted_skewness = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_skewness)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_sum.hpp b/deps/boost/boost/accumulators/statistics/weighted_sum.hpp
+index 7e516774..3c4cbb35 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_sum.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_sum.hpp
+@@ -102,8 +102,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_sum> const weighted_sum = {};
+-    extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates = {};
++    inline extractor<tag::weighted_sum> const weighted_sum = {};
++    inline extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum_of_variates)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_sum_kahan.hpp b/deps/boost/boost/accumulators/statistics/weighted_sum_kahan.hpp
+index 5ee5250d..485eddec 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_sum_kahan.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_sum_kahan.hpp
+@@ -118,8 +118,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::weighted_sum_kahan> const weighted_sum_kahan = {};
+-    extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates_kahan = {};
++    inline extractor<tag::weighted_sum_kahan> const weighted_sum_kahan = {};
++    inline extractor<tag::abstract_weighted_sum_of_variates> const weighted_sum_of_variates_kahan = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum_kahan)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_sum_of_variates_kahan)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_tail_mean.hpp b/deps/boost/boost/accumulators/statistics/weighted_tail_mean.hpp
+index bae85306..c8d1524c 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_tail_mean.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_tail_mean.hpp
+@@ -153,7 +153,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_weighted_tail_mean = {};
++    inline extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_weighted_tail_mean = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(non_coherent_weighted_tail_mean)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_tail_quantile.hpp b/deps/boost/boost/accumulators/statistics/weighted_tail_quantile.hpp
+index b143457d..e83c1a03 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_tail_quantile.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_tail_quantile.hpp
+@@ -130,7 +130,7 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::quantile> const weighted_tail_quantile = {};
++    inline extractor<tag::quantile> const weighted_tail_quantile = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_tail_quantile)
+ }
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_tail_variate_means.hpp b/deps/boost/boost/accumulators/statistics/weighted_tail_variate_means.hpp
+index f096a93b..31932ae6 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_tail_variate_means.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_tail_variate_means.hpp
+@@ -220,8 +220,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::abstract_absolute_tail_variate_means> const weighted_tail_variate_means = {};
+-    extractor<tag::abstract_relative_tail_variate_means> const relative_weighted_tail_variate_means = {};
++    inline extractor<tag::abstract_absolute_tail_variate_means> const weighted_tail_variate_means = {};
++    inline extractor<tag::abstract_relative_tail_variate_means> const relative_weighted_tail_variate_means = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_tail_variate_means)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(relative_weighted_tail_variate_means)
+diff --git a/deps/boost/boost/accumulators/statistics/weighted_variance.hpp b/deps/boost/boost/accumulators/statistics/weighted_variance.hpp
+index f7d2b6e5..9a09295e 100644
+--- a/deps/boost/boost/accumulators/statistics/weighted_variance.hpp
++++ b/deps/boost/boost/accumulators/statistics/weighted_variance.hpp
+@@ -145,8 +145,8 @@ namespace tag
+ //
+ namespace extract
+ {
+-    extractor<tag::lazy_weighted_variance> const lazy_weighted_variance = {};
+-    extractor<tag::weighted_variance> const weighted_variance = {};
++    inline extractor<tag::lazy_weighted_variance> const lazy_weighted_variance = {};
++    inline extractor<tag::weighted_variance> const weighted_variance = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(lazy_weighted_variance)
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(weighted_variance)
+diff --git a/deps/boost/boost/accumulators/statistics_fwd.hpp b/deps/boost/boost/accumulators/statistics_fwd.hpp
+index 61904f30..41e1c942 100644
+--- a/deps/boost/boost/accumulators/statistics_fwd.hpp
++++ b/deps/boost/boost/accumulators/statistics_fwd.hpp
+@@ -30,7 +30,7 @@ namespace tag
+ }
+ namespace extract
+ {
+-    extractor<tag::quantile> const quantile = {};
++    inline extractor<tag::quantile> const quantile = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(quantile)
+ }
+@@ -48,7 +48,7 @@ namespace tag
+ }
+ namespace extract
+ {
+-    extractor<tag::tail_mean> const tail_mean = {};
++    inline extractor<tag::tail_mean> const tail_mean = {};
+ 
+     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail_mean)
+ }

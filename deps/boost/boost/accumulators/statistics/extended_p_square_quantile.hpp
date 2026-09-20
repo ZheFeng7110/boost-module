@@ -239,10 +239,10 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::extended_p_square_quantile> const extended_p_square_quantile = {};
-    extractor<tag::extended_p_square_quantile_quadratic> const extended_p_square_quantile_quadratic = {};
-    extractor<tag::weighted_extended_p_square_quantile> const weighted_extended_p_square_quantile = {};
-    extractor<tag::weighted_extended_p_square_quantile_quadratic> const weighted_extended_p_square_quantile_quadratic = {};
+    inline extractor<tag::extended_p_square_quantile> const extended_p_square_quantile = {};
+    inline extractor<tag::extended_p_square_quantile_quadratic> const extended_p_square_quantile_quadratic = {};
+    inline extractor<tag::weighted_extended_p_square_quantile> const weighted_extended_p_square_quantile = {};
+    inline extractor<tag::weighted_extended_p_square_quantile_quadratic> const weighted_extended_p_square_quantile_quadratic = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square_quantile)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(extended_p_square_quantile_quadratic)

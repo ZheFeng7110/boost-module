@@ -1,0 +1,279 @@
+diff --git a/deps/boost/boost/range/adaptor/adjacent_filtered.hpp b/deps/boost/boost/range/adaptor/adjacent_filtered.hpp
+index 405fe7bc..b61a7f44 100644
+--- a/deps/boost/boost/range/adaptor/adjacent_filtered.hpp
++++ b/deps/boost/boost/range/adaptor/adjacent_filtered.hpp
+@@ -199,16 +199,18 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::forwarder<range_detail::adjacent_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder<range_detail::adjacent_holder>
+                 adjacent_filtered =
+                    range_detail::forwarder<range_detail::adjacent_holder>();
+ 
+-            const range_detail::forwarder<range_detail::adjacent_excl_holder>
++            inline const range_detail::forwarder<range_detail::adjacent_excl_holder>
+                 adjacent_filtered_excl =
+                     range_detail::forwarder<range_detail::adjacent_excl_holder>();
+-        }
+ 
+         template<class ForwardRng, class BinPredicate>
+         inline adjacent_filtered_range<BinPredicate, ForwardRng, true>
+diff --git a/deps/boost/boost/range/adaptor/filtered.hpp b/deps/boost/boost/range/adaptor/filtered.hpp
+index 1fb778e5..a9b932cd 100644
+--- a/deps/boost/boost/range/adaptor/filtered.hpp
++++ b/deps/boost/boost/range/adaptor/filtered.hpp
+@@ -86,12 +86,14 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::forwarder<range_detail::filter_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder<range_detail::filter_holder>
+                     filtered =
+                        range_detail::forwarder<range_detail::filter_holder>();
+-        }
+ 
+         template<class SinglePassRange, class Predicate>
+         inline filtered_range<Predicate, SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/indirected.hpp b/deps/boost/boost/range/adaptor/indirected.hpp
+index e741f17f..a391f628 100644
+--- a/deps/boost/boost/range/adaptor/indirected.hpp
++++ b/deps/boost/boost/range/adaptor/indirected.hpp
+@@ -69,11 +69,13 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::indirect_forwarder indirected =
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::indirect_forwarder indirected =
+                                             range_detail::indirect_forwarder();
+-        }
+ 
+         template<class SinglePassRange>
+         inline indirected_range<SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/map.hpp b/deps/boost/boost/range/adaptor/map.hpp
+index 2d922ea4..ac06a983 100644
+--- a/deps/boost/boost/range/adaptor/map.hpp
++++ b/deps/boost/boost/range/adaptor/map.hpp
+@@ -157,14 +157,16 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::map_keys_forwarder map_keys =
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::map_keys_forwarder map_keys =
+                                             range_detail::map_keys_forwarder();
+ 
+-            const range_detail::map_values_forwarder map_values =
++            inline const range_detail::map_values_forwarder map_values =
+                                            range_detail::map_values_forwarder();
+-        }
+ 
+         template<class StdPairRange>
+         inline select_first_range<StdPairRange>
+diff --git a/deps/boost/boost/range/adaptor/ref_unwrapped.hpp b/deps/boost/boost/range/adaptor/ref_unwrapped.hpp
+index 7ac51154..24e0cbf9 100644
+--- a/deps/boost/boost/range/adaptor/ref_unwrapped.hpp
++++ b/deps/boost/boost/range/adaptor/ref_unwrapped.hpp
+@@ -77,11 +77,13 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::ref_unwrapped_forwarder ref_unwrapped =
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::ref_unwrapped_forwarder ref_unwrapped =
+                                        range_detail::ref_unwrapped_forwarder();
+-        }
+ 
+         template<class SinglePassRange>
+         inline unwrap_ref_range<SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/replaced.hpp b/deps/boost/boost/range/adaptor/replaced.hpp
+index 42eb52a2..352b9a42 100644
+--- a/deps/boost/boost/range/adaptor/replaced.hpp
++++ b/deps/boost/boost/range/adaptor/replaced.hpp
+@@ -126,12 +126,14 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::forwarder2<range_detail::replace_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder2<range_detail::replace_holder>
+                 replaced =
+                     range_detail::forwarder2<range_detail::replace_holder>();
+-        }
+ 
+         template< class SinglePassRange, class Value >
+         inline replaced_range<SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/replaced_if.hpp b/deps/boost/boost/range/adaptor/replaced_if.hpp
+index 83d3ec81..fe803935 100644
+--- a/deps/boost/boost/range/adaptor/replaced_if.hpp
++++ b/deps/boost/boost/range/adaptor/replaced_if.hpp
+@@ -130,12 +130,14 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::forwarder2TU<range_detail::replace_if_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder2TU<range_detail::replace_if_holder>
+                 replaced_if =
+                     range_detail::forwarder2TU<range_detail::replace_if_holder>();
+-        }
+ 
+         template< class Pred, class SinglePassRange, class Value >
+         inline replaced_if_range<Pred, SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/reversed.hpp b/deps/boost/boost/range/adaptor/reversed.hpp
+index 944fbffc..bf65acde 100644
+--- a/deps/boost/boost/range/adaptor/reversed.hpp
++++ b/deps/boost/boost/range/adaptor/reversed.hpp
+@@ -71,11 +71,13 @@ namespace boost
+ 
+     namespace adaptors
+     { 
+-        namespace
+-        {
+-            const range_detail::reverse_forwarder reversed = 
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::reverse_forwarder reversed = 
+                                             range_detail::reverse_forwarder();
+-        }
+         
+         template<class BidirectionalRange>
+         inline reversed_range<BidirectionalRange>
+diff --git a/deps/boost/boost/range/adaptor/strided.hpp b/deps/boost/boost/range/adaptor/strided.hpp
+index 9119fccb..021a3344 100644
+--- a/deps/boost/boost/range/adaptor/strided.hpp
++++ b/deps/boost/boost/range/adaptor/strided.hpp
+@@ -671,12 +671,14 @@ namespace boost
+     namespace adaptors
+     {
+ 
+-        namespace
+-        {
+-            const range_detail::forwarder<range_detail::strided_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder<range_detail::strided_holder>
+                 strided = range_detail::forwarder<
+                             range_detail::strided_holder>();
+-        }
+ 
+         template<class Range, class Difference>
+         inline strided_range<Range>
+diff --git a/deps/boost/boost/range/adaptor/tokenized.hpp b/deps/boost/boost/range/adaptor/tokenized.hpp
+index f0aa12ee..3adf9da4 100644
+--- a/deps/boost/boost/range/adaptor/tokenized.hpp
++++ b/deps/boost/boost/range/adaptor/tokenized.hpp
+@@ -111,11 +111,13 @@ namespace boost
+ 
+     namespace adaptors
+     { 
+-        namespace
+-        {
+-            const range_detail::regex_forwarder tokenized = 
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::regex_forwarder tokenized = 
+                     range_detail::regex_forwarder();
+-        }
+         
+         template<class BidirectionalRange, class Regex, class Submatch, class Flag>
+         inline tokenized_range<BidirectionalRange>
+diff --git a/deps/boost/boost/range/adaptor/transformed.hpp b/deps/boost/boost/range/adaptor/transformed.hpp
+index 428ff4be..544d78bb 100644
+--- a/deps/boost/boost/range/adaptor/transformed.hpp
++++ b/deps/boost/boost/range/adaptor/transformed.hpp
+@@ -103,12 +103,14 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::forwarder<range_detail::transform_holder>
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::forwarder<range_detail::transform_holder>
+                     transformed =
+                       range_detail::forwarder<range_detail::transform_holder>();
+-        }
+ 
+         template<class UnaryFunction, class SinglePassRange>
+         inline transformed_range<UnaryFunction, SinglePassRange>
+diff --git a/deps/boost/boost/range/adaptor/uniqued.hpp b/deps/boost/boost/range/adaptor/uniqued.hpp
+index 29101d32..a61782de 100644
+--- a/deps/boost/boost/range/adaptor/uniqued.hpp
++++ b/deps/boost/boost/range/adaptor/uniqued.hpp
+@@ -67,11 +67,13 @@ namespace boost
+ 
+     namespace adaptors
+     {
+-        namespace
+-        {
+-            const range_detail::unique_forwarder uniqued =
++        // boost-module vendor patch: this forwarder used to live in an
++        // anonymous namespace (internal linkage, no qualified name), so a
++        // module could not re-export the pipe-syntax entity
++        // boost::adaptors::<name>. An inline const object keeps the public
++        // spelling and gives external linkage with cross-TU dedup.
++            inline const range_detail::unique_forwarder uniqued =
+                        range_detail::unique_forwarder();
+-        }
+ 
+         template<class ForwardRange>
+         inline uniqued_range<ForwardRange>

@@ -80,7 +80,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::max> const max = {};
+    inline extractor<tag::max> const max = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(max)
 }

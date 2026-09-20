@@ -1,4 +1,4 @@
-// boost.range smoke — ranges, adaptors (function forms), algorithms on ranges
+// boost.range smoke — ranges, adaptors (function + pipe forms), algorithms
 #include "test_assert.hpp"
 import std;
 import boost.range;
@@ -15,6 +15,16 @@ int main() {
     std::vector<int> out;
     boost::copy(boost::adaptors::reverse(rng), std::back_inserter(out));
     assert(out == std::vector<int>({5, 1, 4, 1, 3}));
+    // Pipe syntax: the adaptor forwarder objects (reversed/filtered/...) used
+    // to be anonymous-namespace (internal linkage); the vendored inline patch
+    // exports them, so `range | adaptor` works through the module.
+    out.clear();
+    boost::copy(v | boost::adaptors::reversed, std::back_inserter(out));
+    assert(out == std::vector<int>({5, 1, 4, 1, 3}));
+    out.clear();
+    boost::copy(v | boost::adaptors::filtered([](int i) { return i > 2; }),
+                std::back_inserter(out));
+    assert(out == std::vector<int>({3, 4, 5}));
     auto ir = boost::irange(0, 4);
     assert(ir.size() == 4);
     out.clear();

@@ -334,7 +334,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::abstract_tail> const tail = {};
+    inline extractor<tag::abstract_tail> const tail = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(tail)
 }

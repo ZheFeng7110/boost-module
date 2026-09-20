@@ -242,8 +242,8 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::p_square_quantile> const p_square_quantile = {};
-    extractor<tag::p_square_quantile_for_median> const p_square_quantile_for_median = {};
+    inline extractor<tag::p_square_quantile> const p_square_quantile = {};
+    inline extractor<tag::p_square_quantile_for_median> const p_square_quantile_for_median = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(p_square_quantile)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(p_square_quantile_for_median)

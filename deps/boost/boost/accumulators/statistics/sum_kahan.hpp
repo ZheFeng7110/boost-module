@@ -128,9 +128,9 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::sum_kahan> const sum_kahan = {};
-    extractor<tag::sum_of_weights_kahan> const sum_of_weights_kahan = {};
-    extractor<tag::abstract_sum_of_variates> const sum_of_variates_kahan = {};
+    inline extractor<tag::sum_kahan> const sum_kahan = {};
+    inline extractor<tag::sum_of_weights_kahan> const sum_of_weights_kahan = {};
+    inline extractor<tag::abstract_sum_of_variates> const sum_of_variates_kahan = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum_kahan)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(sum_of_weights_kahan)

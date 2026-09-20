@@ -351,11 +351,15 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
    requires 子句不遍历 → 编译期 smoke 兜底。
 3. 显式特化跨库不可导出; boost 命名空间别名到 std 的实体 canonical 不可达
    (curated 兜底)。
-4. 内部链接 constexpr 对象不可导出 — 残余面: accumulators `extract::*`
-   (用 `extract_result<>` 函数模板)、mqtt5 `prop::*` 常量 (用
-   `integral_constant`)、hana 字面量变量模板; hof/units 已由 C2 改造解决。
-5. 匿名命名空间 forwarder 不导出: range pipe 语法 (`vec | reversed`)、
-   multi_array `boost::extents` — 用函数形式/容器式构造。
+4. 内部链接 constexpr 对象不可导出 (语言事实, 需 vendored 改造或替代拼写):
+   accumulators `extract::*`、mqtt5 `prop::*` 已由 2026-09-20 vendored
+   `inline` 改造解决; hof/units 已由 C2 改造解决; hana 变量模板已由
+   2026-09-17 A1/A2 导出。见
+   docs/2026-09-20-internal-linkage-export-completion.md。
+5. ~~匿名命名空间 forwarder 不导出: range pipe 语法 (`vec | reversed`)、
+   multi_array `boost::extents` — 用函数形式/容器式构造。~~ — **已解
+   (2026-09-20)**: range 12 个 adaptor forwarder + multi_array
+   `extents`/`indices` 改 vendored `inline`, 已入模块面。
 6. `numeric::interval<double>` 模块面不可实例化 (默认 policies 显式特化
    CMI 无法携带) → include 头文件。
 7. 宏永不跨模块边界 (§4.1); 同 TU 宏面与 re-homed 拼写互斥 (§4.3)。

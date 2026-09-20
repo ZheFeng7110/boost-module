@@ -153,7 +153,7 @@ namespace tag
 //
 namespace extract
 {
-    extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_weighted_tail_mean = {};
+    inline extractor<tag::abstract_non_coherent_tail_mean> const non_coherent_weighted_tail_mean = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(non_coherent_weighted_tail_mean)
 }

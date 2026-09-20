@@ -86,12 +86,14 @@ namespace boost
 
     namespace adaptors
     {
-        namespace
-        {
-            const range_detail::forwarder<range_detail::filter_holder>
+        // boost-module vendor patch: this forwarder used to live in an
+        // anonymous namespace (internal linkage, no qualified name), so a
+        // module could not re-export the pipe-syntax entity
+        // boost::adaptors::<name>. An inline const object keeps the public
+        // spelling and gives external linkage with cross-TU dedup.
+            inline const range_detail::forwarder<range_detail::filter_holder>
                     filtered =
                        range_detail::forwarder<range_detail::filter_holder>();
-        }
 
         template<class SinglePassRange, class Predicate>
         inline filtered_range<Predicate, SinglePassRange>

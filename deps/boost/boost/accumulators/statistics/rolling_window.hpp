@@ -207,7 +207,7 @@ namespace tag
 namespace extract
 {
     extractor<tag::rolling_window_plus1> const rolling_window_plus1 = {};
-    extractor<tag::rolling_window> const rolling_window = {};
+    inline extractor<tag::rolling_window> const rolling_window = {};
 
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_window_plus1)
     BOOST_ACCUMULATORS_IGNORE_GLOBAL(rolling_window)
