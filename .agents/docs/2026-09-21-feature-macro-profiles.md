@@ -36,7 +36,7 @@ per-TU flags）、`implies`（传递闭包），且 feature 变化改 cflags →
 
 ```toml
 [dependencies.boost.boost]
-git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview"
+git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0"
 backend = "log-avx2"        # == features = ["backend-log-avx2"]
 ```
 

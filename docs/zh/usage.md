@@ -5,20 +5,20 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0-preview"
+tag = "b1.91.0w0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
 ```
 
-后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
+已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3），上架后本页会同步更新。
 
 > **clang 下不要用 `features = ["all"]`**: 全部 CMI 约 2.98GB，超过 clang
 > 2^31 源位置上限，报 "ran out of source locations"，无 flag 可调。
@@ -140,7 +140,6 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 - filesystem 固定 v3 API、thread 固定 v2 API（`unique_future`）、
   stacktrace basic 等裁剪清单见 [architecture.md §4.1](architecture.md#41-工具链标准硬限制)。
 - M13 外部依赖库（context / fiber / coroutine / locale / mpi / python /
-  parameter_python / graph_parallel / compute / mysql / redis）预览版
-  **不支持**。
+  parameter_python / graph_parallel / compute / mysql / redis）**不支持**。
 - 平台支持范围见 [architecture_zh.md §5](architecture_zh.md#5-支持矩阵)
   （mingw 与真 MSVC 不承诺）。

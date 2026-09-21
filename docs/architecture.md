@@ -28,17 +28,17 @@ is identical to upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0-preview"
+tag = "b1.91.0w0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
 ```
 
 Once the first stable release is out, the package will be published on the mcpp package
@@ -123,6 +123,42 @@ hand): 116 module features (T0 26 + T1a 61 + T2 16 + T1b 12 + `version` 1) +
   boost entity signatures that reference std types are not visible in a pure-import TU (by
   design).
 
+### 3.1 Feature-macro Profiles (`backend-*`)
+
+`BOOST_*` feature macros are fixed in the default build (BMI freezing + committed `.inc`
+snapshots), but the package exposes a supported subset as **profile features**
+`[features.backend-<axis>-<impl>]`; consumers select them with mcpp's generic dependency
+sugar `backend = "<axis>-<impl>"` (desugars 1:1 to `features = ["backend-<axis>-<impl>"]`).
+Activating a feature changes the package's compile flags → BMI/build caches invalidate and
+the package recompiles.
+
+Currently supported (2026-09-21):
+
+| profile | macros | notes |
+|---|---|---|
+| `backend-log-ssse3` | `BOOST_LOG_USE_SSSE3` | x86_64; adds `dump_ssse3.cpp` (`-mssse3`) |
+| `backend-log-avx2` | `BOOST_LOG_USE_SSSE3` + `BOOST_LOG_USE_AVX2` | x86_64; adds `dump_ssse3.cpp` + `dump_avx2.cpp` (`-mssse3`/`-mavx2`; the AVX2 path probes SSSE3 first, so both are required) |
+
+log is include-only: the macros only drive the library TU dispatch table, so consumers need
+no macros of their own. Only one profile per axis may be active; `build.mcpp` validates
+mutual exclusion and `arch` before module scanning and exits with an error on a conflict.
+
+```toml
+[dependencies.boost.boost]
+git = "...", tag = "..."
+backend = "log-avx2"          # single-axis sugar; combine axes with features = ["backend-...", ...]
+```
+
+**Not yet supported + escape hatch**: macros that change the exported entity set
+(`BOOST_FILESYSTEM_VERSION`, `BOOST_THREAD_VERSION`) or replace existing TUs would need an
+alternative export tree generated for every module (`src/gen_exports/<profile>/`) to keep
+`.inc` and the module surface consistent, so they are out of scope for now. For those, and
+for any `BOOST_*` not listed as a profile, consumers `#define` it and `#include <boost/...>`
+themselves (giving up that library's module surface; see §2.2/§2.3). The profile list is
+maintained in `scripts/gen_features.py`'s `PROFILE_FEATURES` (do not edit by hand), and
+`scripts/profiles.lst` is consumed by `build.mcpp` for validation. See
+[`.agents/docs/2026-09-21-feature-macro-profiles.md`](../.agents/docs/2026-09-21-feature-macro-profiles.md).
+
 ## 4. Known Limitations (consumer notes)
 
 ### 4.1 Toolchain/Standard Hard Limits
@@ -130,12 +166,12 @@ hand): 116 module features (T0 26 + T1a 61 + T2 16 + T1b 12 + `version` 1) +
 | Limitation | How to consume |
 |---|---|
 | clang `--features all` exceeds the 2^31 source-location cap (~2.98GB CMI) | **Import libraries one by one (recommended)** (user decision 2026-09-08); not verified on the gcc side |
-| Feature macros are all fixed at build time | Consumers cannot customize any BOOST_* feature macros |
+| Feature macros are fixed at build time by default | **Limited customization**: supported macros use profile features (consumers select via `backend = "<axis>-<impl>"`, triggering a package recompile); arbitrary macros use the include-only escape (see §3.1) |
 | filesystem locked to v3 API; thread locked to v2 API (`unique_future`); stacktrace basic | Spell per the corresponding upstream version |
 | algorithm has no regex surface (gcc abi-tag) | For regex needs, include the upstream headers separately |
 | iostreams external backends (zlib/gzip/bzip2/lzma/zstd) and cobalt ssl not packaged (OpenSSL) | Provide external dependencies yourself |
 | math tr1, container dlmalloc/alloc_lib, process aggregate headers not packaged | Use the main API surface |
-| log event_log hand-written mc.exe stub, dump_avx2/ssse3 not packaged | Platform trims |
+| log event_log hand-written mc.exe stub not packaged; dump_avx2/ssse3 not in the base build | Platform trim; opt into the dump backends via `backend-log-ssse3` / `backend-log-avx2` (see §3.1) |
 | atomic sse41 uses probe-fail fallback | Automatic |
 | type_erasure `any<>` dynamic-dispatch path cannot be instantiated by clang-msvc module consumers | Module surface / concept templates work |
 | `numeric::interval<double>` module surface not instantiable (explicit specialization of default policies) | Include the header file |
@@ -168,7 +204,7 @@ time a new library is onboarded or consumed.
 - **Downgraded (4)**: exception (gcc 16.1 CMI pendings), describe / openmethod /
   scope_exit (macro-heavy + gcc 16.1 include+import mixed-use ODR redefinition).
 
-### 4.4 M13 Deferred List (11 libraries, not supported in the preview)
+### 4.4 M13 Deferred List (11 libraries, not supported)
 
 External-dependency/asm libraries remain deferred (user decision 2026-09-08); zero changes
 this cycle:
@@ -266,7 +302,7 @@ Script responsibilities:
 ## 7. Related Documents
 
 - User guide (quick reference for consumers): [`usage.md`](usage.md)
-- Preview release notes: [`release_notes/b1.91.0w0.0.0-preview.md`](release_notes/b1.91.0w0.0.0-preview.md)
+- Release notes: [`release_notes/b1.91.0w0.0.0.md`](release_notes/b1.91.0w0.0.0.md)
 - Consolidated design (replaces all older design/plan documents):
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - Preview release plan: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

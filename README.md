@@ -19,21 +19,21 @@ upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0-preview"
+tag = "b1.91.0w0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
 ```
 
-Once the first stable release is out, the package will be published on the mcpp package index;
-for now, use git dependencies.
+The first stable release is out; the git dependency above is the supported channel for now.
+Publication on the mcpp package index is planned (tracked as T3).
 
 See the user guide for details: [`docs/usage.md`](docs/usage.md)
 

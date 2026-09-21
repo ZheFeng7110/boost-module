@@ -5,21 +5,21 @@
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0-preview"
+tag = "b1.91.0w0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
 ```
 
-Once the first stable release is out, the package will be published on the mcpp package index;
-for now, use git dependencies.
+The first stable release is out; the git dependency is the supported channel for now. Publication
+on the mcpp package index is planned (tracked as T3), and this page will be updated then.
 
 > **Do not use `features = ["all"]` with clang**: all CMIs total about 2.98GB, exceeding
 > clang's 2^31 source-location limit, which fails with "ran out of source locations";
@@ -127,12 +127,31 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
   ① plain import; ② import + supplemental standard headers (`<new>`/`<typeinfo>`);
   ③ pure include. Per-library verification: see
   [architecture.md §4](architecture.md#4-known-limitations-consumer-notes).
-- Feature macros are all fixed at build time; consumers cannot customize any BOOST_* feature
-  macros. For the trim list (filesystem locked to the v3 API, thread locked to the v2 API
+- **Feature-macro profiles (supported customization)**: `BOOST_*` feature macros are fixed at
+  build time by default, but a supported subset is exposed as profile features the consumer
+  selects in the dependency declaration with mcpp's generic sugar
+  `backend = "<axis>-<impl>"` (desugars 1:1 to `features = ["backend-<axis>-<impl>"]`);
+  activating a feature recompiles the package. Currently supported: `backend-log-ssse3` /
+  `backend-log-avx2` (x86_64, Boost.Log dump implementations). Combine axes with
+  `features = [...]`. Conflicting profiles or a wrong architecture are reported by
+  `build.mcpp`.
+
+  ```toml
+  [dependencies.boost.boost]
+  git = "...", tag = "..."
+  backend = "log-avx2"     # == features = ["backend-log-avx2"]
+  ```
+
+  Macros not listed as profiles (including `BOOST_FILESYSTEM_VERSION`,
+  `BOOST_THREAD_VERSION` and others that change the exported entity set) still require the
+  include-only escape: `#define` them yourself and `#include <boost/...>`, giving up that
+  library's module surface. See
+  [architecture.md §3.1](architecture.md#31-feature-macro-profiles-backend-).
+- For the trim list (filesystem locked to the v3 API, thread locked to the v2 API
   (`unique_future`), stacktrace basic, etc.), see
   [architecture.md §4.1](architecture.md#41-toolchainstandard-hard-limits).
 - The M13 external-dependency libraries (context / fiber / coroutine / locale / mpi /
   python / parameter_python / graph_parallel / compute / mysql / redis) are **not
-  supported** in the preview.
+  supported**.
 - See [architecture.md §5](architecture.md#5-support-matrix) for platform support
   (mingw and real MSVC are not guaranteed).

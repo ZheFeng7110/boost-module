@@ -6,6 +6,60 @@ This file tracks the version history of boost-module. Version numbers follow the
 `b<boost version>w<wrapper version>` format
 (e.g. `b1.91.0w0.0.0-preview` = Boost v1.91.0 × modules wrapper v0.0.0 preview).
 
+## b1.91.0w0.0.0 (2026-09-21, stable)
+
+First stable release for Boost 1.91.0. Module/feature counts are unchanged from the preview;
+this cycle closed several export blind spots and added a supported channel for
+consumer-selected feature macros. mcpp package-index publication (T3) is intentionally
+scheduled after this tag, so the git dependency remains the supported channel.
+
+### Contents
+
+- **116 module interfaces** (`src/*.cppm`): consumers `import boost.<lib>;` or the umbrella
+  `import boost;` (dynamically re-exports the currently active libraries).
+- **118 library features**: 116 module features + two module-less features, `log` and
+  `unit_test_framework`; plus **2 profile features** (`backend-log-ssse3` /
+  `backend-log-avx2`, x86_64 Boost.Log dump backends).
+- **Default 49-library closure** (`[features].default`); everything else is opt-in
+  (`features = [...]` / `default-features = false`).
+- **138 libraries consumable in total** = 116 modules + 2 compiled libraries consumed
+  include-only (log, test) + 20 pure include-only (16 macro-driven + 4 downgraded).
+- **Testing**: 141/141 smoke tests pass on the default set; four CI legs
+  (windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64) with full A/B gating.
+- **`boost.version` module**: `boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION`
+  constexpr constants, part of the default set, automatically available via `import boost;`.
+
+### Changes Since the Preview
+
+- **Feature-macro profiles (`backend-*`)**: consumer-selectable `BOOST_*` feature macros;
+  first entries `backend-log-ssse3` / `backend-log-avx2`; `build.mcpp` enforces per-axis
+  mutual exclusion and target architecture.
+- **Variable-template exports**: `boost::pfr::tuple_size_v`,
+  `boost::hana::int_c` / `integral_c`, and 363 variable templates across 21 modules;
+  generator classifies opaque `UNEXPOSED_DECL` variable templates and recovers cross-module
+  initializer dependencies.
+- **Internal-linkage object exports**: range adaptor pipe syntax, `boost::extents` /
+  `boost::indices`, accumulators `extract::*`, mqtt5 `prop::*` via vendored `inline` patches.
+- **Win32 ABI harmonization** for include-only consumers (`config` patches), fixing the
+  clang-msvc `boost_log_abi` mismatch.
+- **Export-generator hardening**: pinned MinGW sysroot bootstrap, unified `clang++` gate,
+  rebuilt `process.inc`; **build fix**: `boost.cppm` generated into `MCPP_OUT_DIR`.
+- **CI**: group A/B now parallel jobs with examples gated on both; toolchain/cache upgrades;
+  full English documentation added.
+
+### Not Supported (M13 deferred)
+
+11 external-dependency/asm libraries remain deferred: context / fiber / coroutine (asm),
+locale (ICU), mpi, python, parameter_python, graph_parallel, compute (OpenCL),
+mysql / redis (OpenSSL).
+
+### Known Limitations
+
+See the release notes (`docs/release_notes/b1.91.0w0.0.0.md`) and
+[architecture doc §4](docs/architecture.md#4-known-limitations-consumer-notes). Full
+disclosure is kept (not reduced for stable) because the T3 package-index integration is
+still pending.
+
 ## b1.91.0w0.0.0-preview (2026-09-09, preview)
 
 First C++23 named modules wrapper preview for Boost 1.91.0. The release bar was applied as

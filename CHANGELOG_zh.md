@@ -5,6 +5,58 @@
 本文件记录 boost-module 的版本演进。版本号格式 `b<boost版本>w<封装版本>`
 （如 `b1.91.0w0.0.0-preview` = Boost v1.91.0 × 模块封装 v0.0.0 预览版）。
 
+## b1.91.0w0.0.0 (2026-09-21, 正式版)
+
+Boost 1.91.0 的首个正式版。模块/feature 计数与预览版一致; 本周期收口了若干导出
+盲区, 并新增了消费者选择特性宏的受支持通道。mcpp package index 上架 (T3) 有意
+安排在本次 tag 之后, 故现阶段仍以 git 依赖为支持渠道。
+
+### 内容清单
+
+- **116 个模块接口**（`src/*.cppm`）：消费者 `import boost.<lib>;` / 汇总
+  `import boost;`（动态 re-export 当前激活库）。
+- **118 个库 feature**：116 模块 feature + `log` / `unit_test_framework`
+  两个无模块 feature; 另有 **2 个 profile feature**（`backend-log-ssse3` /
+  `backend-log-avx2`, x86_64 Boost.Log dump 后端）。
+- **默认 49 库闭包**（`[features].default`），其余 opt-in
+  （`features = [...]` / `default-features = false`）。
+- **封装可消费总数 138 库** = 116 模块 + 2 编译库 include-only（log、
+  test）+ 20 纯 include-only（宏驱动 16 + 降级 4）。
+- **测试**: 默认集 141/141 smoke 通过；CI 四腿
+  （windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64）
+  A/B 两组全量门禁。
+- **`boost.version` 模块**: `boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION`
+  constexpr 常量，默认集内、`import boost;` 自动可用。
+
+### 预览版以来的变更
+
+- **特性宏 profile (`backend-*`)**: 消费者可选 `BOOST_*` 特性宏, 首批
+  `backend-log-ssse3` / `backend-log-avx2`; `build.mcpp` 校验同轴互斥与目标架构。
+- **变量模板导出**: `boost::pfr::tuple_size_v`、`boost::hana::int_c` /
+  `integral_c` 等 21 个模块的 363 条变量模板; 生成器可分类不透明的
+  `UNEXPOSED_DECL` 变量模板并恢复跨模块初始化器依赖。
+- **内部链接对象导出**: range adaptor 管道语法、`boost::extents` /
+  `boost::indices`、accumulators `extract::*`、mqtt5 `prop::*`, 经 vendored
+  `inline` 修补导出。
+- **include-only 消费者 Win32 ABI 对齐**（`config` 修补）: 修复 clang-msvc 的
+  `boost_log_abi` mismatch。
+- **导出生成器加固**: 固定 MinGW sysroot bootstrap、统一 `clang++` gate、重建
+  `process.inc`; **构建修复**: `boost.cppm` 生成到 `MCPP_OUT_DIR`。
+- **CI**: group A/B 改为并行 job, examples 对两者同时门禁; 升级 toolchain/缓存;
+  补齐完整英文文档。
+
+### 不支持 (M13 暂缓)
+
+外部依赖/asm 库 11 个持续暂缓: context / fiber / coroutine (asm)、
+locale (ICU)、mpi、python、parameter_python、graph_parallel、
+compute (OpenCL)、mysql / redis (OpenSSL)。
+
+### 已知限制
+
+见 release notes（`docs/release_notes/b1.91.0w0.0.0.md`）与
+[架构文档 §4](docs/architecture.md#4-已知限制-消费者须知)。因 T3 package index
+集成仍待做, 已知限制保持全量披露, 未做正式版的精简。
+
 ## b1.91.0w0.0.0-preview (2026-09-09, 预览版)
 
 对 Boost 1.91.0 的首个 C++23 named modules 封装预览版。发布门槛按

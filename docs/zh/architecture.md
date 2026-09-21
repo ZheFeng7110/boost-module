@@ -26,17 +26,17 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0-preview"
+tag = "b1.91.0w0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0-preview", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
 ```
 
 后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
@@ -156,7 +156,7 @@ backend = "log-avx2"          # 单轴糖; 多轴用 features = ["backend-...", 
 | algorithm 无 regex 面 (gcc abi-tag) | regex 需求另行 include 上游头 |
 | iostreams 外部后端 (zlib/gzip/bzip2/lzma/zstd) 与 cobalt ssl 不入包 (OpenSSL) | 自备外部依赖 |
 | math tr1、container dlmalloc/alloc_lib、process 聚合头不入包 | 用主 API 面 |
-| log event_log 手写 mc.exe 桩、dump_avx2/ssse3 不入包 | 平台裁剪 |
+| log event_log 手写 mc.exe 桩不入包; dump_avx2/ssse3 不在基础构建内 | 平台裁剪; 需 dump 后端时用 `backend-log-ssse3` / `backend-log-avx2` profile 选择 (见 §3.1) |
 | atomic sse41 走探测失败回退 | 自动 |
 | type_erasure `any<>` 动态分发路径 clang-msvc 模块消费者不可实例化 | 模块面/概念模板可用 |
 | `numeric::interval<double>` 模块面不可实例化 (默认 policies 显式特化) | include 头文件 |
@@ -187,7 +187,7 @@ pendings (库已降级 include-only)、variant `apply_visitor` 自由函数 ICE
 - **降级 (4)**: exception (gcc 16.1 CMI pendings)、describe / openmethod /
   scope_exit (宏主体 + gcc 16.1 include+import 混用 ODR 重定义)。
 
-### 4.4 M13 暂缓清单 (11 库, 预览版不支持)
+### 4.4 M13 暂缓清单 (11 库, 不支持)
 
 外部依赖/asm 库持续暂缓 (用户决策 2026-09-08), 本期零改动:
 
@@ -275,7 +275,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 ## 7. 相关文档
 
 - 使用文档 (消费者用法速查): [`usage.md`](usage.md)
-- 预览版 release notes: [`release_notes/b1.91.0w0.0.0-preview.md`](release_notes/b1.91.0w0.0.0-preview.md)
+- release notes: [`release_notes/b1.91.0w0.0.0.md`](release_notes/b1.91.0w0.0.0.md)
 - 总体设计汇总（替代全部旧设计/计划文档）:
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)
