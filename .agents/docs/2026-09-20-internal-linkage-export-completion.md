@@ -85,7 +85,9 @@ vendored 修补文件:
 >
 > gate 修正后 `boost/process.hpp` 重新进入 process 的 GMF, 因此同步按新基线
 > 重建了 `scripts/patchs/process.patch`: `process.inc` 新增 23 个 v2 实体
-> (`_popen` / `handle_closer` 以 `_WIN32` 守卫; 其余跨平台), `process.cppm`
+> (`handle_closer` 以 `_WIN32` 守卫; `_popen` 以 `__MINGW32__` 守卫 —— 它是
+> mingw stdio.h 的 `popen` 宏拼写, MSVC/POSIX 的成员名是 `popen` 无下划线,
+> 用 `_WIN32` 会让 MSVC 腿编译失败; 其余跨平台), `process.cppm`
 > 改由 `#include <boost/process.hpp>` 提供 v2 核心, 删去原先为 gate 误剪
 > 打补丁的 POSIX 显式 include 块。重建后 27 库全量重生成 + reapply 幂等,
 > 仅 process 产物反映上述变化。

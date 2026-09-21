@@ -372,9 +372,9 @@ export namespace boost { namespace process { namespace v1 { namespace extend {
 }}}}
 
 export namespace boost { namespace process { namespace v2 {
-#if defined(_WIN32)
+#if defined(__MINGW32__)
   // M11 platform guard: _popen is the MinGW spelling of popen
-  // (mingw stdio.h #defines popen to _popen); no POSIX v2::_popen.
+  // (mingw stdio.h #defines popen to _popen); MSVC/POSIX expose popen.
   using boost::process::v2::_popen;
 #endif
   using boost::process::v2::all_pids;

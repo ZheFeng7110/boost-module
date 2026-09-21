@@ -7,6 +7,11 @@
 #   macos-llvm          macos-14        llvm@22.1.8 → aarch64-macos
 # (windows gcc/mingw 先不做 — 移交后续里程碑)
 #
+# 门禁按组拆分 (2026-09-21): `test` job 的 matrix 增加 group 轴 (A/B), 每个 OS
+# 上两条腿并行, 不再把 A+B+examples 串在一个 job 里 (linux-gcc 曾因此撞 2h 上限);
+# 默认集 (无 --features 的 `mcpp build && mcpp test`) 腿删除。examples 单独一个
+# job, `needs: test` —— 仅当 A、B 两腿全部成功后才会构建运行 examples。
+#
 # mcpp 安装: 直接下载 pinned release tarball/zip (GitHub Releases), sha256 校验,
 # 解压到 ~/.mcpp (mcpp 从二进制位置解析 MCPP_HOME), 加 ~/.mcpp/bin 进 PATH。
 # 工具链经 mcpp 自带 xlings 沙箱安装 (~/.mcpp/registry), 由 actions/cache 按 job 缓存。
@@ -46,9 +51,9 @@ env:
   # 按里程碑分两层, 两组各自全绿即等价覆盖全库 (见 2026-09-05 M12 设计文档 §3)。
   # C1 (2026-09-06): describe/openmethod/scope_exit/log/test 除名 (98 模块) —
   # log 与 unit_test_framework (test 改名, 无模块 feature) 以 feature 名保留在
-  # 列表尾部, 让库 TU 在组 A 腿上照常编译链接; test 双形态由两条腿分别覆盖:
-  # 组 A (feature 开) 跑 test_utf 编译形态, 默认集 (feature 关) 跑 test_included
-  # 纯头形态 — 两形态不可同链接 (M11 §3)。
+  # 列表尾部, 让库 TU 在组 A 腿上照常编译链接; unit_test_framework 的
+  # test_utf 编译形态由组 A 覆盖 (原默认集 feature 关的 test_included 纯头
+  # 形态随默认腿一并删除; 两形态不可同链接, M11 §3)。
   # C2 (2026-09-06): hof/units 重新模块化 (+2, 98 → 100 模块, 组 A 覆盖)。
   # C4 (2026-09-07): bind/lambda/lambda2 重新模块化 (+3, 100 → 103 模块)。
   # lambda 占位符 TU-local → inline constexpr 后接入;bind 弃用的全局
@@ -57,8 +62,96 @@ env:
   BOOST_GROUP_B: "accumulators,asio,beast,geometry,gil,hana,interprocess,mqtt5,multiprecision,numeric,polygon,qvm"
 
 jobs:
+  # M12 门禁: 每个 OS 上 group A / group B 是两条独立腿 (matrix.group), 并行执行。
   test:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.target.name }} (group ${{ matrix.group }})
+    runs-on: ${{ matrix.target.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: windows-llvm-msvc, os: windows-latest, toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: linux-gcc,         os: ubuntu-24.04,  toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
+          - { name: linux-llvm,        os: ubuntu-24.04,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: macos-llvm,        os: macos-14,      toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+        group: [A, B]
+    steps:
+      - uses: actions/checkout@v4
+
+      # 缓存 mcpp 沙箱 (xlings + 工具链 payload + 全局 BMI 缓存) — 按 job 分开 key,
+      # 避免 linux-gcc / linux-llvm 之间的 toolchain default (config.toml) 相互污染。
+      # A/B 两腿共用同 key (工具链 payload 是共享大头; 并发首次 save 由 cache 自行
+      # 仲裁, 落败一方跳过, 不影响构建)。
+      - name: Cache mcpp sandbox
+        uses: actions/cache@v4
+        with:
+          path: ~/.mcpp
+          key: mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-v${{ env.MCPP_VERSION }}
+          restore-keys: |
+            mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-
+
+      - name: Install mcpp
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER="$MCPP_VERSION"
+          BASE="https://github.com/mcpp-community/mcpp/releases/download/v${VER}"
+          case "$RUNNER_OS" in
+            Linux)   PLAT="linux-x86_64";   EXT="tar.gz" ;;
+            macOS)   PLAT="macosx-arm64";   EXT="tar.gz" ;;
+            Windows) PLAT="windows-x86_64"; EXT="zip"    ;;
+            *) echo "unsupported runner os: $RUNNER_OS"; exit 1 ;;
+          esac
+          WORK=$(mktemp -d)
+          curl -fsSL -o "$WORK/mcpp.$EXT"        "$BASE/mcpp-${VER}-${PLAT}.${EXT}"
+          curl -fsSL -o "$WORK/mcpp.$EXT.sha256" "$BASE/mcpp-${VER}-${PLAT}.${EXT}.sha256"
+          if command -v sha256sum >/dev/null 2>&1; then
+            actual=$(sha256sum "$WORK/mcpp.$EXT" | awk '{print $1}')
+          else
+            actual=$(shasum -a 256 "$WORK/mcpp.$EXT" | awk '{print $1}')
+          fi
+          expected=$(awk '{print $1}' "$WORK/mcpp.$EXT.sha256")
+          test "$actual" = "$expected" || { echo "sha256 mismatch"; exit 1; }
+          echo "mcpp ${VER} ${PLAT} sha256 verified"
+
+          mkdir -p "$HOME/.mcpp"
+          case "$EXT" in
+            tar.gz) tar -xzf "$WORK/mcpp.$EXT" -C "$HOME/.mcpp" --strip-components=1 ;;
+            zip)
+              unzip -q "$WORK/mcpp.$EXT" -d "$WORK/zip"
+              # zip 内有一层 wrapper 目录 (mcpp-<ver>-<plat>/...), 取其内容
+              cp -R "$WORK/zip"/*/* "$HOME/.mcpp/"
+              ;;
+          esac
+          rm -rf "$WORK"
+          echo "$HOME/.mcpp/bin" >> "$GITHUB_PATH"
+          "$HOME/.mcpp/bin/mcpp" --version
+
+      - name: Install toolchain (${{ matrix.target.toolchain }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          mcpp toolchain install ${{ matrix.target.install }}
+          mcpp toolchain default ${{ matrix.target.toolchain }}
+          mcpp toolchain list
+
+      # 组内库按 mcpp.toml feature 激活: build 模式 DROP 只编激活库; test 模式
+      # DROP 跳过 → 该腿编译全量 src/ 测试面。A/B 两组各自全绿即覆盖全库。
+      - name: Build libraries (group ${{ matrix.group }})
+        shell: bash
+        run: mcpp build --features "${{ (matrix.group == 'A' && env.BOOST_GROUP_A) || env.BOOST_GROUP_B }}"
+
+      - name: Test libraries (group ${{ matrix.group }})
+        shell: bash
+        run: mcpp test --features "${{ (matrix.group == 'A' && env.BOOST_GROUP_A) || env.BOOST_GROUP_B }}"
+
+  # examples/ 是一个 workspace (members: default_usage, git_dep_usage),
+  # 用 `mcpp run -p <member>` 逐个构建并运行各个 example。单独成 job, 且
+  # needs test —— group A/B 两腿全部成功后才会跑。
+  examples:
+    name: ${{ matrix.name }} (examples)
+    needs: [test]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     strategy:
@@ -84,8 +177,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 缓存 mcpp 沙箱 (xlings + 工具链 payload + 全局 BMI 缓存) — 按 job 分开 key,
-      # 避免 linux-gcc / linux-llvm 之间的 toolchain default (config.toml) 相互污染。
       - name: Cache mcpp sandbox
         uses: actions/cache@v4
         with:
@@ -139,35 +230,6 @@ jobs:
           mcpp toolchain default ${{ matrix.toolchain }}
           mcpp toolchain list
 
-      - name: Build
-        shell: bash
-        run: mcpp build
-
-      # M8: 默认集 = 18 库闭包 (mcpp.toml [features].default)。`mcpp build` 只编译
-      # 激活库; test 模式 DROP 跳过 (设计文档 2026-08-15 §1.1), 故默认 `mcpp test`
-      # 编译全量 src/ 表面 — 库全部覆盖。M12 起全库验证按 A/B 两组跑 (见 env 注释)。
-      - name: Test
-        shell: bash
-        run: mcpp test
-
-      - name: "Build all libraries (group A: M11 set)"
-        shell: bash
-        run: mcpp build --features "$BOOST_GROUP_A"
-
-      - name: Test all libraries (group A)
-        shell: bash
-        run: mcpp test --features "$BOOST_GROUP_A"
-
-      - name: "Build all libraries (group B: T1b heavy set)"
-        shell: bash
-        run: mcpp build --features "$BOOST_GROUP_B"
-
-      - name: Test all libraries (group B)
-        shell: bash
-        run: mcpp test --features "$BOOST_GROUP_B"
-
-      # examples/ 是一个 workspace (members: default_usage, git_dep_usage),
-      # 用 `mcpp run -p <member>` 逐个构建并运行各个 example。
       - name: Build & run example (default_usage)
         shell: bash
         run: mcpp run -p default_usage
