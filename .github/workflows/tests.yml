@@ -239,3 +239,11 @@ jobs:
         shell: bash
         run: mcpp run -p git_dep_usage
         working-directory: examples
+
+      # Profile feature (backend = "log-avx2"): x86_64-only (-mavx2), so skip
+      # the arm64 macOS leg. See .agents/docs/2026-09-21-feature-macro-profiles.md.
+      - name: Build & run example (profiles_usage, x86_64)
+        if: matrix.name != 'macos-llvm'
+        shell: bash
+        run: mcpp run -p profiles_usage
+        working-directory: examples

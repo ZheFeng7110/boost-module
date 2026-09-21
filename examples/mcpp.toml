@@ -2,4 +2,5 @@
 members = [
     "default_usage",
     "git_dep_usage",
+    "profiles_usage",
 ]

@@ -111,6 +111,39 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 - 消费者必须自带 std 表面 (`import std;` 或 include) —— boost 实体签名
   引用 std 类型的运算符在纯 import TU 不可见 (设计使然)。
 
+### 3.1 特性宏 profile (`backend-*`)
+
+`BOOST_*` 特性宏在默认构建里固定 (BMI 冻结 + 导出 `.inc` 快照), 但包把「受支持
+的宏」暴露成 **profile feature** `[features.backend-<axis>-<impl>]`; 消费者用
+mcpp 依赖声明的通用糖 `backend = "<axis>-<impl>"` 选择 (1:1 脱糖为
+`features = ["backend-<axis>-<impl>"]`)。feature 激活改变包编译 flags →
+BMI/构建缓存自动失效并重编译。
+
+当前受支持 (2026-09-21):
+
+| profile | 宏 | 说明 |
+|---|---|---|
+| `backend-log-ssse3` | `BOOST_LOG_USE_SSSE3` | x86_64; 加入 `dump_ssse3.cpp` (`-mssse3`) |
+| `backend-log-avx2` | `BOOST_LOG_USE_SSSE3` + `BOOST_LOG_USE_AVX2` | x86_64; 加入 `dump_ssse3.cpp` + `dump_avx2.cpp` (`-mssse3`/`-mavx2`; `dump.cpp` 的 AVX2 路径先探测 SSSE3, 故必须同时提供) |
+
+log 是 include-only: 宏只驱动库 TU 的 dispatch 表, 消费者无需自定宏。
+同一 axis 只能激活一个 profile; `build.mcpp` 在模块扫描前校验互斥与 `arch`
+(`-mavx2` 仅 x86_64), 冲突时报错退出。
+
+```toml
+[dependencies.boost.boost]
+git = "...", tag = "..."
+backend = "log-avx2"          # 单轴糖; 多轴用 features = ["backend-...", ...]
+```
+
+**尚未支持 + 逃生**: 改变导出实体集 (`BOOST_FILESYSTEM_VERSION`、
+`BOOST_THREAD_VERSION`) 或替换既有 TU 的宏, 需要对全部模块生成一遍替代导出树
+(`src/gen_exports/<profile>/`) 才能保证 `.inc` 与模块面一致, 未纳入本期。这类宏
+以及任何未列入 profile 的 `BOOST_*`, 消费者自行 `#define` + `#include <boost/...>`
+(放弃该库的模块面, 见 §2.2/§2.3)。profile 名单由 `scripts/gen_features.py` 的
+`PROFILE_FEATURES` 维护 (勿手改), `scripts/profiles.lst` 供 `build.mcpp` 校验。
+详见 [`.agents/docs/2026-09-21-feature-macro-profiles.md`](../../.agents/docs/2026-09-21-feature-macro-profiles.md)。
+
 ## 4. 已知限制 (消费者须知)
 
 ### 4.1 工具链/标准硬限制
@@ -118,7 +151,7 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 | 限制 | 消费方式 |
 |---|---|
 | clang `--features all` 超 2^31 源位置上限 (~2.98GB CMI) | **推荐逐库 import** (用户决策 2026-09-08); gcc 侧未实测 |
-| 特性宏一律构建期固定 | 消费者无法自定义任何 BOOST_* 特性宏 |
+| 特性宏默认构建期固定 | **有限自定义**: 受支持宏用 profile feature (消费者 `backend = "<axis>-<impl>"` 选择, 触发包重编译); 任意宏走 include-only 逃生 (见 §3.1) |
 | filesystem 固定 v3 API; thread 固定 v2 API (`unique_future`); stacktrace basic | 拼写按对应上游版本 |
 | algorithm 无 regex 面 (gcc abi-tag) | regex 需求另行 include 上游头 |
 | iostreams 外部后端 (zlib/gzip/bzip2/lzma/zstd) 与 cobalt ssl 不入包 (OpenSSL) | 自备外部依赖 |

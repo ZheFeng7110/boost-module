@@ -1,0 +1,2 @@
+log-dump	backend-log-avx2	x86_64
+log-dump	backend-log-ssse3	x86_64

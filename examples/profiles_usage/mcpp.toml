@@ -1,0 +1,23 @@
+# Example consumer — profile feature (`backend = "<axis>-<impl>"` sugar).
+#
+# Selects the Boost.Log SSSE3/AVX2 dump implementation at *package build time*
+# by requesting the dependency feature `backend-log-avx2` (the sugar for
+# `features = ["backend-log-avx2"]`). The profile compiles the log library TUs
+# that the fixed default build deliberately excludes, with per-TU `-mssse3` /
+# `-mavx2`; no `BOOST_LOG_USE_*` is needed in this consumer's own TU — the macro
+# only drives the compiled dispatch table in libs/log/src/dump.cpp.
+#
+# `backend-log-avx2` is x86_64-only (`-mavx2`); build.mcpp refuses it on other
+# architectures, and nothing here is architecture-specific. See
+# docs/zh/usage.md §"特性宏 profile" and
+# .agents/docs/2026-09-21-feature-macro-profiles.md.
+[package]
+name        = "boost-example-profiles-usage"
+version     = "0.1.0"
+description = "Example consumer: profile feature backend-log-avx2 (backend = sugar)"
+license     = "BSL-1.0"
+
+[dependencies.boost.boost]
+path             = "../.."
+default-features = false
+backend          = "log-avx2"

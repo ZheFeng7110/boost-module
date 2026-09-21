@@ -53,6 +53,7 @@ MCPP_TOML = ROOT / "mcpp.toml"
 LIBS_JSON = ROOT / "scripts" / "libs.json"
 DEPS_DIR = ROOT / "src" / "gen_exports"
 FEATURES_LST = ROOT / "scripts" / "features.lst"
+PROFILES_LST = ROOT / "scripts" / "profiles.lst"
 
 # The full module-library list — derived from boost_common.TARGET_LIBS (which
 # knows the tier tables). boost_common has no hard dependency on libclang at
@@ -277,6 +278,98 @@ FEATURE_FLAGS = {
                 "defines": ["SECURITY_WIN32"]}],
 }
 
+# ---------------------------------------------------------------------------
+# Profile features (mcpp `backend = "<axis>-<impl>"` sugar)
+# ---------------------------------------------------------------------------
+# Consumer-selectable build profiles for Boost feature macros whose value the
+# package otherwise pins at build time (architecture.md §4.1 "特性宏一律构建期
+# 固定"). Every entry is declared as a `[features.backend-*]` table so mcpp's
+# `backend = "<axis>-<impl>"` dependency-spec sugar desugars 1:1 into
+# `features = ["backend-<axis>-<impl>"]` (docs/05-dependencies.md §"backend").
+#
+# Fields (all optional but `feature`/`axis`):
+#   feature  — [features] key; MUST start with `backend-`
+#   axis     — mutual-exclusion axis; build.mcpp refuses >1 active feature per
+#              axis (they set contradictory macros)
+#   defines  — package-wide -D<macro> when active (must be uniform across every
+#              TU of the package or the module ODRs)
+#   sources  — extra TU globs compiled only while the feature is active
+#   flags    — [{glob, defines?, cxxflags?}] private per-TU build flags
+#   implies  — base library features pulled in (so default-features=false works)
+#   arch     — restrict activation to one mcpp::target_arch() value; build.mcpp
+#              refuses the feature elsewhere (e.g. `-mavx2` is x86-only)
+#
+# A profile may only add sources/defines that the base features do NOT already
+# provide. Features whose macro swaps an *existing* TU (stacktrace backends) or
+# changes the generated export entity set (BOOST_FILESYSTEM_VERSION,
+# BOOST_THREAD_VERSION) need a full alternate export tree and are not declared
+# here — see .agents/docs/2026-09-21-feature-macro-profiles.md §"Extension".
+PROFILE_FEATURES = [
+    # log is a compiled include-only library: its consumer #includes the log
+    # headers. dump_avx2.cpp / dump_ssse3.cpp are excluded from the base build
+    # on all targets (unconditional <immintrin.h>, breaks arm64), so the profile
+    # is the only way to compile them. The package-side define selects the
+    # dispatch table the library TUs emit; the public log headers do not read
+    # BOOST_LOG_USE_*, so this consumer needs no macro of its own.
+    {
+        "feature": "backend-log-avx2",
+        "axis": "log-dump",
+        "arch": "x86_64",
+        # dump.cpp references the SSSE3 dump symbols whenever EITHER
+        # BOOST_LOG_USE_SSSE3 or BOOST_LOG_USE_AVX2 is set (the AVX2 runtime
+        # probe falls back to SSSE3 first), so the AVX2 profile must also
+        # provide the SSSE3 TU + macro.
+        "defines": ["BOOST_LOG_USE_SSSE3", "BOOST_LOG_USE_AVX2"],
+        "sources": ["deps/boost/libs/log/src/dump_ssse3.cpp",
+                    "deps/boost/libs/log/src/dump_avx2.cpp"],
+        "flags": [
+            {"glob": "deps/boost/libs/log/src/dump_ssse3.cpp",
+             "cxxflags": ["-mssse3"]},
+            {"glob": "deps/boost/libs/log/src/dump_avx2.cpp",
+             "cxxflags": ["-mavx2"]},
+        ],
+        "implies": ["log"],
+    },
+    {
+        "feature": "backend-log-ssse3",
+        "axis": "log-dump",
+        "arch": "x86_64",
+        "defines": ["BOOST_LOG_USE_SSSE3"],
+        "sources": ["deps/boost/libs/log/src/dump_ssse3.cpp"],
+        "flags": [{"glob": "deps/boost/libs/log/src/dump_ssse3.cpp",
+                   "cxxflags": ["-mssse3"]}],
+        "implies": ["log"],
+    },
+]
+
+# Files a profile feature owns exclusively. A base feature's coarse glob would
+# also match them; because a `sources` entry — including a target `!`-exclusion
+# — wins over a profile's re-add (verified 2026-09-21), the base glob must be
+# expanded at generation time to keep these files out unless the profile is
+# active. lib -> set of repo-relative paths.
+PROFILE_OWNED = {
+    "log": {
+        "deps/boost/libs/log/src/dump_avx2.cpp",
+        "deps/boost/libs/log/src/dump_ssse3.cpp",
+    },
+}
+
+
+def _expand_globs(globs, drop=()):
+    """Expand glob entries to explicit repo-relative paths, dropping `drop`.
+    Non-glob entries pass through unchanged."""
+    drop = set(drop)
+    out = []
+    for s in globs:
+        if any(ch in s for ch in "*?["):
+            for f in sorted(ROOT.glob(s)):
+                rel = f.relative_to(ROOT).as_posix()
+                if rel not in drop:
+                    out.append(rel)
+        else:
+            out.append(s)
+    return out
+
 # Library-owned extras (non-module TU needed by the module, M5/M7).
 EXTRAS = {
     "system": ["src/boost_system_extras.cpp"],
@@ -317,12 +410,19 @@ def feature_sources(lib):
     ship their library TU globs but no `.cppm`: the module interface (and the
     CMI it would produce) is gone. SPECIAL libs (C5: e.g. `version`) ship a
     `.cppm` and no TU globs — mirror image of C1, treated the same way as a
-    regular header-only module here."""
+    regular header-only module here.
+
+    Globs are expanded to explicit files here (PROFILE_OWNED): a profile
+    feature's exclusive files must not be matched by the base feature's glob,
+    or the profile could never re-add them."""
     srcs = []
     if lib not in COMPILED_INCLUDE_ONLY:
         srcs.append("src/{}.cppm".format(lib))
     srcs.extend(COMPILED_TU_GLOBS.get(lib, ()))
     srcs.extend(EXTRAS.get(lib, ()))
+    owned = PROFILE_OWNED.get(lib)
+    if owned:
+        return _expand_globs(srcs, owned)
     return srcs
 
 
@@ -380,6 +480,32 @@ def _flags_toml(flags):
         for f in flags))
 
 
+def _toml_list(items):
+    return "[{}]".format(", ".join('"{}"'.format(i) for i in items))
+
+
+def _profile_table(p):
+    """Render one [features.backend-*] table (PROFILE_FEATURES entry)."""
+    out = ["[features.{}]".format(p["feature"])]
+    if p.get("defines"):
+        out.append("  defines = {}".format(_toml_list(p["defines"])))
+    if p.get("sources"):
+        out.append("  sources = {}".format(_toml_list(p["sources"])))
+    if p.get("flags"):
+        entries = []
+        for f in p["flags"]:
+            bits = ['glob = "{}"'.format(f["glob"])]
+            if f.get("defines"):
+                bits.append("defines = {}".format(_toml_list(f["defines"])))
+            if f.get("cxxflags"):
+                bits.append("cxxflags = {}".format(_toml_list(f["cxxflags"])))
+            entries.append("{ " + ", ".join(bits) + " }")
+        out.append("  flags = [{}]".format(", ".join(entries)))
+    if p.get("implies"):
+        out.append("  implies = {}".format(_toml_list(p["implies"])))
+    return out
+
+
 def render_toml_block():
     closure = default_closure(DEFAULT_CANDIDATES)
     assert_closed(closure)
@@ -401,8 +527,18 @@ def render_toml_block():
         if deps:
             lines.append("  implies = [{}]".format(
                 ", ".join('"{}"'.format(d) for d in deps)))
+    for p in PROFILE_FEATURES:
+        lines.extend(_profile_table(p))
     lines.append(GEN_END)
     return "\n".join(lines) + "\n"
+
+
+def render_profiles_lst():
+    """axis<TAB>feature<TAB>arch per active profile (build.mcpp reads it for
+    conflict/arch validation). Kept beside features.lst."""
+    return "\n".join(
+        "{}\t{}\t{}".format(p["axis"], p["feature"], p.get("arch", ""))
+        for p in PROFILE_FEATURES) + "\n"
 
 
 def render_sources_block():
@@ -435,11 +571,14 @@ def write_committed():
     feature_names = [feature_name(l) for l in LIBS]
     FEATURES_LST.write_text("\n".join(feature_names) + "\n",
                             encoding="utf-8", newline="\n")
+    PROFILES_LST.write_text(render_profiles_lst(),
+                            encoding="utf-8", newline="\n")
     closure = default_closure(DEFAULT_CANDIDATES)
     print("wrote {}{} with {} features; default={} opt-in={}".format(
         MCPP_TOML, "" , len(LIBS), ",".join(closure),
         ",".join(l for l in LIBS if l not in closure)))
     print("wrote {} ({} libs)".format(FEATURES_LST, len(LIBS)))
+    print("wrote {} ({} profiles)".format(PROFILES_LST, len(PROFILE_FEATURES)))
     print("default closure: {}".format(" ".join(closure)))
     print("opt-in: {}".format(" ".join(l for l in LIBS if l not in closure)))
 
@@ -465,6 +604,10 @@ def check_committed():
     lst = FEATURES_LST.read_text(encoding="utf-8").splitlines() if FEATURES_LST.exists() else []
     if lst != [feature_name(l) for l in LIBS]:
         print("DRIFT in features.lst")
+        ok = False
+    plst = PROFILES_LST.read_text(encoding="utf-8") if PROFILES_LST.exists() else ""
+    if plst != render_profiles_lst():
+        print("DRIFT in profiles.lst")
         ok = False
     return ok
 

@@ -120,8 +120,24 @@ static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 - gcc 16.1 存在模块缺陷家族，消费方式三分规则: ① 正常 import；
   ② import + 补标准头（`<new>`/`<typeinfo>`）；③ 纯 include。
   逐库核实见 [architecture.md §4](architecture.md#4-已知限制-消费者须知)。
-- 特性宏一律构建期固定，消费者无法自定义任何 BOOST_* 特性宏；
-  filesystem 固定 v3 API、thread 固定 v2 API（`unique_future`）、
+- **特性宏 profile（受支持的自定义）**: 默认构建固定 `BOOST_*` 特性宏，但部分
+  宏可作为 profile feature 由消费者在依赖声明中选择——用 mcpp 通用糖
+  `backend = "<axis>-<impl>"`（1:1 脱糖为 `features = ["backend-<axis>-<impl>"]`），
+  feature 激活会重编译包。当前支持 `backend-log-ssse3` / `backend-log-avx2`
+  （x86_64，Boost.Log dump 实现）。多轴组合用 `features = [...]`。冲突/架构不符
+  由 `build.mcpp` 报错。
+
+  ```toml
+  [dependencies.boost.boost]
+  git = "...", tag = "..."
+  backend = "log-avx2"     # == features = ["backend-log-avx2"]
+  ```
+
+  未列入 profile 的宏（含 `BOOST_FILESYSTEM_VERSION`、`BOOST_THREAD_VERSION` 等
+  会改变导出实体集的宏）仍须走 include-only：自行 `#define` 后
+  `#include <boost/...>`，放弃该库的模块面。清单见
+  [architecture.md §3.1](architecture.md#31-特性宏-profile-backend-)。
+- filesystem 固定 v3 API、thread 固定 v2 API（`unique_future`）、
   stacktrace basic 等裁剪清单见 [architecture.md §4.1](architecture.md#41-工具链标准硬限制)。
 - M13 外部依赖库（context / fiber / coroutine / locale / mpi / python /
   parameter_python / graph_parallel / compute / mysql / redis）预览版

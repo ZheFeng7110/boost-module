@@ -46,6 +46,13 @@
 # BOOST_VERSION / BOOST_LIB_VERSION 常量同步移除 (移到了 boost.version)。
 # 116 模块 + 2 个无模块 feature = 118 feature; 默认闭包 48 → 49。
 # 详见 .agents/docs/2026-09-09-boost-version-module.md。
+#
+# M13 (2026-09-21): 特性宏 profile —— 把"构建期固定"的 BOOST_* 宏中的受支持
+# 子集暴露为 [features.backend-<axis>-<impl>] (mcpp `backend = "<axis>-<impl>"`
+# 语法糖), 由 build.mcpp 校验同轴互斥 + arch。首个落地 backend-log-ssse3 /
+# backend-log-avx2; log 的 dump_avx2/ssse3 改由 PROFILE_OWNED 从 base glob
+# 展开时剔除、profile 激活时加入 (见下方 target 表注释)。
+# 详见 .agents/docs/2026-09-21-feature-macro-profiles.md。
 
 [package]
 namespace   = "boost"
@@ -201,10 +208,57 @@ sources = [
     "src/iostreams.cppm",
     "deps/boost/libs/iostreams/src/file_descriptor.cpp",
     "deps/boost/libs/iostreams/src/mapped_file.cpp",
-    "deps/boost/libs/log/src/*.cpp",
-    "deps/boost/libs/log/src/setup/*.cpp",
-    "deps/boost/libs/log/src/windows/*.cpp",
-    "deps/boost/libs/log/src/posix/*.cpp",
+    "deps/boost/libs/log/src/attribute_name.cpp",
+    "deps/boost/libs/log/src/attribute_set.cpp",
+    "deps/boost/libs/log/src/attribute_value_set.cpp",
+    "deps/boost/libs/log/src/code_conversion.cpp",
+    "deps/boost/libs/log/src/core.cpp",
+    "deps/boost/libs/log/src/date_time_format_parser.cpp",
+    "deps/boost/libs/log/src/default_attribute_names.cpp",
+    "deps/boost/libs/log/src/default_sink.cpp",
+    "deps/boost/libs/log/src/dump.cpp",
+    "deps/boost/libs/log/src/event.cpp",
+    "deps/boost/libs/log/src/exceptions.cpp",
+    "deps/boost/libs/log/src/format_parser.cpp",
+    "deps/boost/libs/log/src/global_logger_storage.cpp",
+    "deps/boost/libs/log/src/named_scope.cpp",
+    "deps/boost/libs/log/src/named_scope_format_parser.cpp",
+    "deps/boost/libs/log/src/once_block.cpp",
+    "deps/boost/libs/log/src/permissions.cpp",
+    "deps/boost/libs/log/src/process_id.cpp",
+    "deps/boost/libs/log/src/process_name.cpp",
+    "deps/boost/libs/log/src/record_ostream.cpp",
+    "deps/boost/libs/log/src/severity_level.cpp",
+    "deps/boost/libs/log/src/spirit_encoding.cpp",
+    "deps/boost/libs/log/src/syslog_backend.cpp",
+    "deps/boost/libs/log/src/text_file_backend.cpp",
+    "deps/boost/libs/log/src/text_multifile_backend.cpp",
+    "deps/boost/libs/log/src/text_ostream_backend.cpp",
+    "deps/boost/libs/log/src/thread_id.cpp",
+    "deps/boost/libs/log/src/thread_specific.cpp",
+    "deps/boost/libs/log/src/threadsafe_queue.cpp",
+    "deps/boost/libs/log/src/timer.cpp",
+    "deps/boost/libs/log/src/timestamp.cpp",
+    "deps/boost/libs/log/src/trivial.cpp",
+    "deps/boost/libs/log/src/setup/default_filter_factory.cpp",
+    "deps/boost/libs/log/src/setup/default_formatter_factory.cpp",
+    "deps/boost/libs/log/src/setup/filter_parser.cpp",
+    "deps/boost/libs/log/src/setup/formatter_parser.cpp",
+    "deps/boost/libs/log/src/setup/init_from_settings.cpp",
+    "deps/boost/libs/log/src/setup/init_from_stream.cpp",
+    "deps/boost/libs/log/src/setup/matches_relation_factory.cpp",
+    "deps/boost/libs/log/src/setup/parser_utils.cpp",
+    "deps/boost/libs/log/src/setup/settings_parser.cpp",
+    "deps/boost/libs/log/src/windows/debug_output_backend.cpp",
+    "deps/boost/libs/log/src/windows/event_log_backend.cpp",
+    "deps/boost/libs/log/src/windows/ipc_reliable_message_queue.cpp",
+    "deps/boost/libs/log/src/windows/ipc_sync_wrappers.cpp",
+    "deps/boost/libs/log/src/windows/is_debugger_present.cpp",
+    "deps/boost/libs/log/src/windows/light_rw_mutex.cpp",
+    "deps/boost/libs/log/src/windows/mapped_shared_memory.cpp",
+    "deps/boost/libs/log/src/windows/object_name.cpp",
+    "deps/boost/libs/log/src/posix/ipc_reliable_message_queue.cpp",
+    "deps/boost/libs/log/src/posix/object_name.cpp",
     "src/math.cppm",
     "src/nowide.cppm",
     "deps/boost/libs/nowide/src/*.cpp",
@@ -553,7 +607,7 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   sources = ["src/iostreams.cppm", "deps/boost/libs/iostreams/src/file_descriptor.cpp", "deps/boost/libs/iostreams/src/mapped_file.cpp"]
   implies = ["assert", "config", "core", "iterator", "random", "range", "smart_ptr", "throw_exception", "type_traits", "utility"]
 [features.log]
-  sources = ["deps/boost/libs/log/src/*.cpp", "deps/boost/libs/log/src/setup/*.cpp", "deps/boost/libs/log/src/windows/*.cpp", "deps/boost/libs/log/src/posix/*.cpp"]
+  sources = ["deps/boost/libs/log/src/attribute_name.cpp", "deps/boost/libs/log/src/attribute_set.cpp", "deps/boost/libs/log/src/attribute_value_set.cpp", "deps/boost/libs/log/src/code_conversion.cpp", "deps/boost/libs/log/src/core.cpp", "deps/boost/libs/log/src/date_time_format_parser.cpp", "deps/boost/libs/log/src/default_attribute_names.cpp", "deps/boost/libs/log/src/default_sink.cpp", "deps/boost/libs/log/src/dump.cpp", "deps/boost/libs/log/src/event.cpp", "deps/boost/libs/log/src/exceptions.cpp", "deps/boost/libs/log/src/format_parser.cpp", "deps/boost/libs/log/src/global_logger_storage.cpp", "deps/boost/libs/log/src/named_scope.cpp", "deps/boost/libs/log/src/named_scope_format_parser.cpp", "deps/boost/libs/log/src/once_block.cpp", "deps/boost/libs/log/src/permissions.cpp", "deps/boost/libs/log/src/process_id.cpp", "deps/boost/libs/log/src/process_name.cpp", "deps/boost/libs/log/src/record_ostream.cpp", "deps/boost/libs/log/src/severity_level.cpp", "deps/boost/libs/log/src/spirit_encoding.cpp", "deps/boost/libs/log/src/syslog_backend.cpp", "deps/boost/libs/log/src/text_file_backend.cpp", "deps/boost/libs/log/src/text_multifile_backend.cpp", "deps/boost/libs/log/src/text_ostream_backend.cpp", "deps/boost/libs/log/src/thread_id.cpp", "deps/boost/libs/log/src/thread_specific.cpp", "deps/boost/libs/log/src/threadsafe_queue.cpp", "deps/boost/libs/log/src/timer.cpp", "deps/boost/libs/log/src/timestamp.cpp", "deps/boost/libs/log/src/trivial.cpp", "deps/boost/libs/log/src/setup/default_filter_factory.cpp", "deps/boost/libs/log/src/setup/default_formatter_factory.cpp", "deps/boost/libs/log/src/setup/filter_parser.cpp", "deps/boost/libs/log/src/setup/formatter_parser.cpp", "deps/boost/libs/log/src/setup/init_from_settings.cpp", "deps/boost/libs/log/src/setup/init_from_stream.cpp", "deps/boost/libs/log/src/setup/matches_relation_factory.cpp", "deps/boost/libs/log/src/setup/parser_utils.cpp", "deps/boost/libs/log/src/setup/settings_parser.cpp", "deps/boost/libs/log/src/windows/debug_output_backend.cpp", "deps/boost/libs/log/src/windows/event_log_backend.cpp", "deps/boost/libs/log/src/windows/ipc_reliable_message_queue.cpp", "deps/boost/libs/log/src/windows/ipc_sync_wrappers.cpp", "deps/boost/libs/log/src/windows/is_debugger_present.cpp", "deps/boost/libs/log/src/windows/light_rw_mutex.cpp", "deps/boost/libs/log/src/windows/mapped_shared_memory.cpp", "deps/boost/libs/log/src/windows/object_name.cpp", "deps/boost/libs/log/src/posix/ipc_reliable_message_queue.cpp", "deps/boost/libs/log/src/posix/object_name.cpp"]
   flags = [{ glob = "deps/boost/libs/log/src/windows/**", defines = ["SECURITY_WIN32"] }]
   implies = ["assert", "atomic", "config", "core", "date_time", "filesystem", "integer", "intrusive", "io", "iterator", "move", "mp11", "numeric", "optional", "property_tree", "range", "regex", "smart_ptr", "system", "thread", "throw_exception", "type_index", "type_traits", "utility", "variant", "winapi"]
 [features.math]
@@ -620,15 +674,28 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   sources = ["src/qvm.cppm"]
 [features.version]
   sources = ["src/version.cppm"]
+[features.backend-log-avx2]
+  defines = ["BOOST_LOG_USE_SSSE3", "BOOST_LOG_USE_AVX2"]
+  sources = ["deps/boost/libs/log/src/dump_ssse3.cpp", "deps/boost/libs/log/src/dump_avx2.cpp"]
+  flags = [{ glob = "deps/boost/libs/log/src/dump_ssse3.cpp", cxxflags = ["-mssse3"] }, { glob = "deps/boost/libs/log/src/dump_avx2.cpp", cxxflags = ["-mavx2"] }]
+  implies = ["log"]
+[features.backend-log-ssse3]
+  defines = ["BOOST_LOG_USE_SSSE3"]
+  sources = ["deps/boost/libs/log/src/dump_ssse3.cpp"]
+  flags = [{ glob = "deps/boost/libs/log/src/dump_ssse3.cpp", cxxflags = ["-mssse3"] }]
+  implies = ["log"]
 # -- </gen-features> --
 
 # M8: thread per-OS TU 互斥 — 全平台 glob 进 feature thread.sources, 这里用 `!`
 # 排除异平台 (计划 §1.3/§3.1; M7 pthread 伞文件 once.cpp 不 glob once_atomic.cpp)。
 # M11: log 同模式 — windows/posix 目录全平台 glob 进 feature, 这里互斥 (两平台
 # 有同名符号 ipc_reliable_message_queue/object_name, 必须互斥)。
-# M11: log 的 dump_avx2/dump_ssse3 在两个 target 都排除 — 顶部无条件 include
-# <immintrin.h>/<tmmintrin.h> (arm64 macos CI 腿编译失败), 且其符号只在消费者
-# 自定义 BOOST_LOG_USE_AVX2/SSSE3 时被引用 (模块面宏固定, 不可用 — M4 §9 限制)。
+# M13 (2026-09-21): log 的 dump_avx2/dump_ssse3 不再用 `!` 排除 — profile
+# feature `backend-log-avx2/-ssse3` 需要能重新加回它们 (一个 `sources` 条目,
+# 包括 `!` 排除, 会压过 profile 的重新加入)。改由 scripts/gen_features.py 的
+# PROFILE_OWNED 把 log 的 `libs/log/src/*.cpp` glob 展开成显式文件列表并剔除
+# 这两个文件; 基础构建因此永不编译它们 (arm64 的 <immintrin.h> 问题照旧规避),
+# profile 激活时才加入。见 .agents/docs/2026-09-21-feature-macro-profiles.md。
 [target.windows.build]
 # M11 CI 修复: _WIN32_WINNT 只属于 Windows 目标 (boost.winapi WaitOnAddress
 # 需 >= 0x0602; POSIX 上见 [build].defines 处注释 — asio Windows-App 探测误触发)。
@@ -636,8 +703,6 @@ defines = ["_WIN32_WINNT=0x0A00"]
 sources = [
     "!deps/boost/libs/thread/src/pthread/**",
     "!deps/boost/libs/log/src/posix/**",
-    "!deps/boost/libs/log/src/dump_avx2.cpp",
-    "!deps/boost/libs/log/src/dump_ssse3.cpp",
 ]
 # M11: cobalt (asio socket) 与 process (ext/*: ntdll 进程信息 + shell32
 # CommandLineToArgvW)、log object_name (secur32 GetUserNameExW)、atomic
@@ -649,8 +714,6 @@ ldflags = ["-lws2_32", "-lntdll", "-lshell32", "-ladvapi32", "-lsecur32", "-luse
 sources = [
     "!deps/boost/libs/thread/src/win32/**",
     "!deps/boost/libs/log/src/windows/**",
-    "!deps/boost/libs/log/src/dump_avx2.cpp",
-    "!deps/boost/libs/log/src/dump_ssse3.cpp",
 ]
 ldflags = ["-pthread"]
 
