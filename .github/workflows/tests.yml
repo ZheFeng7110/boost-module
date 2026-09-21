@@ -45,7 +45,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MCPP_VERSION: "2026.9.18.3"
+  MCPP_VERSION: "2026.9.21.3"
   # M12: 全量门禁分组 — clang 的 2^31 源位置空间装不下 117 个模块 CMI 的聚合
   # import (ran out of source locations), 单个 --features all 聚合不可行。
   # 按里程碑分两层, 两组各自全绿即等价覆盖全库 (见 2026-09-05 M12 设计文档 §3)。
@@ -66,7 +66,7 @@ jobs:
   test:
     name: ${{ matrix.target.name }} (group ${{ matrix.group }})
     runs-on: ${{ matrix.target.os }}
-    timeout-minutes: 120
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
