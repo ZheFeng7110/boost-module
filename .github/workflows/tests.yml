@@ -77,14 +77,14 @@ jobs:
           - { name: macos-llvm,        os: macos-14,      toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
         group: [A, B]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 缓存 mcpp 沙箱 (xlings + 工具链 payload + 全局 BMI 缓存) — 按 job 分开 key,
       # 避免 linux-gcc / linux-llvm 之间的 toolchain default (config.toml) 相互污染。
       # A/B 两腿共用同 key (工具链 payload 是共享大头; 并发首次 save 由 cache 自行
       # 仲裁, 落败一方跳过, 不影响构建)。
       - name: Cache mcpp sandbox
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.mcpp
           key: mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-v${{ env.MCPP_VERSION }}
@@ -175,10 +175,10 @@ jobs:
             toolchain: llvm@22.1.8
             install: "llvm 22.1.8"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache mcpp sandbox
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.mcpp
           key: mcpp-${{ matrix.os }}-${{ matrix.name }}-v${{ env.MCPP_VERSION }}
