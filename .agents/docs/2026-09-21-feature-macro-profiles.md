@@ -130,6 +130,25 @@ AVX2 profile 必须同时定义 SSSE3 并编译 `dump_ssse3.cpp`：`libs/log/src
 `#include <boost/...>`，放弃该库模块面（`deps/boost` 是传播给消费者的公共
 `include_dirs`）。
 
+CI 修复补充（2026-09-21，windows-llvm-msvc examples 腿）：include-only 消费者
+自身 TU 的 ABI 宏必须与包内库 TU 一致 —— 包侧 `[build].defines`（`_MT`）只作用
+于包内 TU，不传播给消费者；消费者 TU 缺 `_MT` 时 boost config 判不出
+`BOOST_HAS_THREADS`，`BOOST_LOG_VERSION_NAMESPACE` 算成 `v2s_st`
+（`BOOST_LOG_NO_THREADS`），而包内 log TU 是 `v2s_mt_nt62`，链接期
+`/failifmismatch` 报 `boost_log_abi` mismatch。修在 vendored 层而不是要求
+消费者自带宏（`_WIN32_WINNT` 无需处理：无该宏时 winapi 对 `_MSC_VER >= 1900`
+默认 WIN10，与包侧 `0x0A00` 一致）：
+
+- `scripts/patchs/config_platform.patch` — `boost/config/platform/win32.hpp`
+  无条件 `#define BOOST_HAS_THREADS`：cl.exe 恒定义 `_MT`（无单线程 CRT），只有
+  GNU 风味 clang++ 驱动（target `*-windows-msvc`）缺线程宏；Win32 恒有线程，
+  `BOOST_DISABLE_THREADS` 的撤销通道（config/detail/suffix.hpp）不受影响。
+- `scripts/patchs/config_user.patch` — `boost/config/user.hpp` 恒
+  `#define BOOST_ALL_NO_LIB`：线程打开后消费者 TU 会为不存在的
+  `libboost_log-clangw23-mt-s-x64-1_91.lib` 等 autolink 发 /DEFAULTLIB pragma；
+  本发行版经 mcpp 构建图直连对象，无可供 autolink 的库，恒关。两个补丁经
+  `reapply_hand_edits.py` 的 VENDORED_PATCHES 回放，重 vendor 不丢。
+
 ## 6. 决策与取舍
 
 - **为什么用 feature 而不是环境变量**：feature 是声明式、可复现、进缓存键；

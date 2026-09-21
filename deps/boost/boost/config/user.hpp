@@ -13,6 +13,18 @@
 //  configuration policy:
 //
 
+// boost-module (M13 CI fix): this distribution hands consumers Boost's
+// compiled objects directly through the mcpp build graph — there are no
+// libboost_*-*.lib archives for the MSVC auto-linking pragmas to find, and a
+// consumer TU that enables threading (see the BOOST_HAS_THREADS note in
+// config/platform/win32.hpp) would otherwise emit /DEFAULTLIB pragmas for
+// names like libboost_log-clangw23-mt-s-x64-1_91.lib and fail the link.
+// Auto-linking is therefore always off; package TUs define the same macro via
+// mcpp.toml [build].defines, so this only harmonizes consumer TUs.
+#if !defined(BOOST_ALL_NO_LIB)
+#  define BOOST_ALL_NO_LIB
+#endif
+
 // define this to locate a compiler config file:
 // #define BOOST_COMPILER_CONFIG <myheader>
 

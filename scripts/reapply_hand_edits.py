@@ -38,9 +38,10 @@ PATCH_DIR = ROOT / "scripts" / "patchs"
 TOLERANT = {"json", "core", "io"}
 
 VENDORED_PATCHES = [
-    "accumulators", "asio", "beast", "hof", "io", "lambda", "mqtt5",
-    "multi_array", "parameter", "range_adaptors", "regex", "safe_numerics",
-    "serialization", "system", "test", "ublas", "units",
+    "accumulators", "asio", "beast", "config_platform", "config_user", "hof",
+    "io", "lambda", "mqtt5", "multi_array", "parameter", "range_adaptors",
+    "regex", "safe_numerics", "serialization", "system", "test", "ublas",
+    "units",
 ]
 
 SRC_PATCHES = [

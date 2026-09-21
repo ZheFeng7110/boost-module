@@ -57,6 +57,19 @@
 // all translation units (needed for shared_ptr etc).
 //
 
+// boost-module (M13 CI fix): define BOOST_HAS_THREADS on Win32 unconditionally.
+// MSVC's cl.exe always defines _MT (there is no single-threaded CRT), so every
+// cl/clang-cl TU already had BOOST_HAS_THREADS via config/detail/suffix.hpp.
+// The GNU-flavor clang++ driver targeting *-windows-msvc defines no threading
+// macro, which left consumer TUs with BOOST_HAS_THREADS undefined while the
+// library TUs built with -D_MT had it — BOOST_LOG_VERSION_NAMESPACE then
+// diverged (v2s_st vs v2s_mt_nt62) and lld-link /failifmismatch rejected the
+// link. Win32 always has threading, and the suffix.hpp passes below still
+// honor BOOST_DISABLE_THREADS, so this is safe. Upstream has the same gap.
+#ifndef BOOST_HAS_THREADS
+#  define BOOST_HAS_THREADS
+#endif
+
 #ifndef BOOST_HAS_PTHREADS
 #  define BOOST_HAS_WINTHREADS
 #endif

@@ -304,6 +304,8 @@ include_dirs = [
 # filesystem 刻意不定义 BOOST_FILESYSTEM_SOURCE — 模块/库两侧保持 v3 API 一致 (M4 §5)。
 # _MT: MSVC 风味 clang++ driver 不定义线程标志, boost config 靠它判 BOOST_HAS_THREADS
 # (cl 模式本就有, 双端一致定义无害; 普通 msvc 链接时 _MT 对应多线程 CRT, mcpp 无 /MT 概念)。
+# 消费者 TU 由 vendored 补丁补齐 (scripts/patchs/config_platform.patch:
+# win32.hpp 恒 BOOST_HAS_THREADS), 不要求消费者自带此宏。
 # _WIN32_WINNT=0x0A00: mingw 风味不默认定义, boost.winapi 的 WaitOnAddress/
 # WakeByAddress* 需 >= 0x0602 才声明 (thread_primitives.cpp 依赖); 生成器快照同值。
 # (M11 CI 修复: 移入 [target.windows.build] — POSIX 上该宏会让 asio 误入
