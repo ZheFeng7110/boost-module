@@ -719,12 +719,13 @@ sources = [
 ]
 ldflags = ["-pthread"]
 
-# M8: src/boost.cppm 已删 (汇总模块由 build.mcpp 生成到 generated/boost.cppm)。
-# 显式声明 lib root — validate.cppm 的 "without conventional lib root" warning
-# 检查默认约定 src/<package-tail>.cppm (= src/boost.cppm, 已不存在), 这里指向
-# build.mcpp 在扫描前生成的固定文件, 消除 warning。generated/ 已 gitignore。
+# M8: src/boost.cppm 已删 (汇总模块由 build.mcpp 生成)。lib root 指向
+# MCPP_OUT_DIR 内的构建期产物 (docs/30 "Dependencies' build.mcpp": 包根可能只读
+# 且被多个消费者共享, 生成物必须落在 MCPP_OUT_DIR; build.mcpp 在扫描/validate
+# 之前运行, 所以根构建时该文件已存在)。generated/ 方案已废弃 — 包根内的固定
+# 路径会被多个并发构建竞争写入。
 [lib]
-path = "generated/boost.cppm"
+path = "target/.build-mcpp/out/boost.cppm"
 
 [targets.boost]
 kind = "lib"
