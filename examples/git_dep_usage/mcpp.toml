@@ -19,6 +19,6 @@ license     = "BSL-1.0"
 
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-rev = "23a615338e2bdebd75ad89a30fd39920bfc3d8f2"
+rev = "bd2807af39148cf88a6317e4b670006a4950352c"
 default-features = false
 features = ["optional", "json", "version", "type_traits"]
