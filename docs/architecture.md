@@ -28,17 +28,17 @@ is identical to upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
 
 # Pick a few libraries only (default-features = false disables the default set)
-[dependencies.boost.boost]
+[dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
 tag = "v1.91.0.0.0.1"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
 ```
 
 Once the first stable release is out, the package will be published on the mcpp package
@@ -144,7 +144,7 @@ no macros of their own. Only one profile per axis may be active; `build.mcpp` va
 mutual exclusion and `arch` before module scanning and exits with an error on a conflict.
 
 ```toml
-[dependencies.boost.boost]
+[dependencies.ZheFeng7110.boost]
 git = "...", tag = "..."
 backend = "log-avx2"          # single-axis sugar; combine axes with features = ["backend-...", ...]
 ```

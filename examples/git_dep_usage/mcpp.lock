@@ -5,7 +5,7 @@
 # file must not change depending on which command ran last.
 version = 2
 
-[package."boost.boost"]
+[package."ZheFeng7110.boost"]
 version = "23a615338e2bdebd75ad89a30fd39920bfc3d8f2"
 source  = "git+https://github.com/ZheFeng7110/boost-module#rev=23a615338e2bdebd75ad89a30fd39920bfc3d8f2"
 hash    = "fnv1a:9d3ed9c5303fa7dd"

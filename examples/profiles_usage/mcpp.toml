@@ -17,7 +17,7 @@ version     = "0.1.0"
 description = "Example consumer: profile feature backend-log-avx2 (backend = sugar)"
 license     = "BSL-1.0"
 
-[dependencies.boost.boost]
+[dependencies.ZheFeng7110.boost]
 path             = "../.."
 default-features = false
 backend          = "log-avx2"

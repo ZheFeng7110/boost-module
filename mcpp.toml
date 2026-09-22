@@ -55,7 +55,7 @@
 # 详见 .agents/docs/2026-09-21-feature-macro-profiles.md。
 
 [package]
-namespace   = "boost"
+namespace   = "ZheFeng7110"
 name        = "boost"
 version     = "1.91.0.0.0.1"
 description = "Boost 1.91.0 vendored + C++23 module layer — import boost.optional; (API spelling unchanged, no headers)"

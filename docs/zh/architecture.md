@@ -26,17 +26,17 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
 
 # 只选若干库 (default-features = false 关闭默认集)
-[dependencies.boost.boost]
+[dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
 tag = "v1.91.0.0.0.1"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
 ```
 
 后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
@@ -131,7 +131,7 @@ log 是 include-only: 宏只驱动库 TU 的 dispatch 表, 消费者无需自定
 (`-mavx2` 仅 x86_64), 冲突时报错退出。
 
 ```toml
-[dependencies.boost.boost]
+[dependencies.ZheFeng7110.boost]
 git = "...", tag = "..."
 backend = "log-avx2"          # 单轴糖; 多轴用 features = ["backend-...", ...]
 ```
