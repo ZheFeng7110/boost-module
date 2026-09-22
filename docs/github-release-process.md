@@ -53,29 +53,48 @@ git push origin <tag>
 - Always use an **annotated tag** (carries tagger / date / message).
 - The tag name must match the release notes file name (both v-prefixed) exactly; the CHANGELOG
   entry uses the same version without the `v`.
+- **Pushing the tag triggers the release workflow automatically** (see §3); make sure the
+  notes file `docs/release_notes/<tag>.md` exists before pushing — the workflow fails if
+  it is missing.
 - Mistakenly created but unpushed tag: `git tag -d <tag>`; pushed tags are in principle
   **never deleted or rewritten** — to retract, publish a new version and mark the old one
   deprecated in the release notes.
 
 ## 3. Creating the GitHub Release
 
+The GitHub Release is created **automatically** by the
+[`.github/workflows/release.yml`](.github/workflows/release.yml) workflow as soon as a tag
+is pushed: it extracts `docs/release_notes/<tag>.md` as the release body (**fails the run
+if the file is missing**), runs `scripts/package-source.sh` to build the source archives
+(`.zip` / `.tar.gz` / `.tar.xz` / `.7z` + `.sha256` checksums), and attaches them to a
+release titled `Release <tag>`. Tags ending in `-preview` are published with the
+prerelease flag set.
+
+Monitor the workflow run (`Actions` tab, `Release` workflow). Manual creation is only the
+fallback if the automation failed after the prerequisites were fixed:
+
 ```bash
+bash scripts/package-source.sh
 gh release create <tag> \
-  --title "<tag>" \
+  --title "Release <tag>" \
   --notes-file docs/release_notes/<tag>.md \
+  target/dist/* \
   --prerelease          # mandatory for previews; drop for stable releases
 ```
 
 - The body reuses `docs/release_notes/<tag>.md` directly (wording may be tweaked in the
   GitHub UI afterwards, but the in-repo file remains authoritative).
-- **No binary attachments**: this project is a source package; consumers get it via git dep
-  / (in the future) the mcpp package index; Source code (zip/tar.gz) is generated
-  automatically by GitHub.
+- **No binary attachments**: the only assets are the source archives produced by
+  `scripts/package-source.sh` (zip / tar.gz / tar.xz / 7z with sha256 files); consumers
+  normally get the sources via git dep / (in the future) the mcpp package index. GitHub's
+  auto-generated "Source code (zip/tar.gz)" links remain available alongside the archives.
 - Release page topic labels (if available): `cpp` `cpp23` `boost` `modules`.
 
 ## 4. Post-release Wrap-up
 
-- [ ] Release page visible, notes render correctly, tag commit is correct.
+- [ ] Release page visible, notes render correctly, tag commit is correct; the `Release`
+      workflow ran green and the source archives (zip / tar.gz / tar.xz / 7z + sha256) are
+      attached to the release.
 - [ ] Consumer probe: a temporary project with a `git = ... tag = <tag>` dependency
       declaration goes through build+run (at least the default set of the three
       configurations in architecture.md §2.1).
@@ -90,7 +109,7 @@ gh release create <tag> \
 
 | Item | Preview | Stable |
 |---|---|---|
-| `--prerelease` | yes | no |
+| `--prerelease` | yes (set automatically by the workflow for `-preview` tags) | no |
 | tag suffix | `-preview` | none (e.g. `v1.91.0.0.0.0`) |
 | mcpp package index (T3) | not published | boost.lua integration + registry consumption probe mandatory |
 | Known-limitation disclosure | full list | reduced to still-valid entries |

@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Extract release notes for tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          NOTES_FILE="docs/release_notes/${TAG}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "::error::Release notes not found: $NOTES_FILE"
+            exit 1
+          fi
+          cp "$NOTES_FILE" /tmp/release_notes.md
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+
+      - name: Package source
+        run: bash scripts/package-source.sh
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          PRERELEASE_FLAG=()
+          if [[ "$TAG" == *-preview ]]; then
+            PRERELEASE_FLAG=(--prerelease)
+          fi
+          gh release create "$TAG" \
+            "${PRERELEASE_FLAG[@]}" \
+            --title "Release $TAG" \
+            --notes-file /tmp/release_notes.md \
+            target/dist/*
