@@ -1,10 +1,11 @@
 # GitHub Release Process (runbook)
 
 > Applies to releases of any version; independent of a specific release.
-> Version naming: `b<boost version>w<wrapper version>`; below, `<tag>` denotes the tag name
-> of the release being published (e.g. `b1.91.0w0.0.0-preview`, `b1.91.0w0.0.0`).
-> `<version>` refers to the same string, used for the release notes file name and the
-> CHANGELOG entry.
+> Version naming: six-segment numeric `v<boost version>.<wrapper version>`; below, `<tag>`
+> denotes the tag name of the release being published (e.g. `v1.91.0.0.0.0-preview`,
+> `v1.91.0.0.0.0`). `<version>` is the same string without the leading `v`
+> (e.g. `1.91.0.0.0.0`), used for the release notes file name and the CHANGELOG entry —
+> and it is what `[package].version` / a consumer's `version = "..."` must carry.
 
 ## 0. Prerequisites (release bar)
 
@@ -88,6 +89,6 @@ gh release create <tag> \
 | Item | Preview | Stable |
 |---|---|---|
 | `--prerelease` | yes | no |
-| tag suffix | `-preview` | none (e.g. `b1.91.0w0.0.0`) |
+| tag suffix | `-preview` | none (e.g. `v1.91.0.0.0.0`) |
 | mcpp package index (T3) | not published | boost.lua integration + registry consumption probe mandatory |
 | Known-limitation disclosure | full list | reduced to still-valid entries |

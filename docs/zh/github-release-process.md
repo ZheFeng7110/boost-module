@@ -1,9 +1,10 @@
 # GitHub Release 发布流程 (runbook)
 
 > 适用于任意版本的发布, 与具体版本无关。
-> 版本命名: `b<boost版本>w<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
-> (如 `b1.91.0w0.0.0-preview`、`b1.91.0w0.0.0`)。
-> `<version>` 指同一字符串, 用于 release notes 文件名与 CHANGELOG 条目。
+> 版本命名: 六段纯数字 `v<boost版本>.<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
+> (如 `v1.91.0.0.0.0-preview`、`v1.91.0.0.0.0`)。
+> `<version>` 指去掉开头 `v` 后的同一字符串 (如 `1.91.0.0.0.0`), 用于 release notes 文件名与
+> CHANGELOG 条目 —— 也是 `[package].version` / 下游 `version = "..."` 必须填写的值。
 
 ## 0. 前置条件 (发布门槛)
 
@@ -81,6 +82,6 @@ gh release create <tag> \
 | 项 | 预览版 | 正式版 |
 |---|---|---|
 | `--prerelease` | 加 | 不加 |
-| tag 后缀 | `-preview` | 无 (如 `b1.91.0w0.0.0`) |
+| tag 后缀 | `-preview` | 无 (如 `v1.91.0.0.0.0`) |
 | mcpp package index (T3) | 不上架 | boost.lua 对接 + registry 消费 probe 必做 |
 | 已知限制披露 | 全量 | 缩减为仍有效的条目 |

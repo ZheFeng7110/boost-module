@@ -26,17 +26,17 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0"
+tag = "v1.91.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0", features = ["all"] }
 ```
 
 后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。

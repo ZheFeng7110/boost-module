@@ -28,17 +28,17 @@ is identical to upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0"
+tag = "v1.91.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0", features = ["all"] }
 ```
 
 Once the first stable release is out, the package will be published on the mcpp package

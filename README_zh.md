@@ -17,17 +17,17 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "b1.91.0w0.0.0"
+tag = "v1.91.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.91.0w0.0.0", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0", features = ["all"] }
 ```
 
 已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3）。
@@ -47,8 +47,12 @@ boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "b1.9
 
 例如当前开发分支 `b1.91.0wdev` 对应 Boost v1.91.0 的模块封装开发。
 
-Tag 命名同样带两段版本号，格式为 `b<boost版本>w<封装版本>`，例如 **`b1.91.0w0.0.0`**
-表示 Boost v1.91.0、模块封装版本 0.0.0。
+Tag 采用六段纯数字版本，格式为 `v<boost版本>.<封装版本>`（各三段），例如
+**`v1.91.0.0.0.0`** 表示 Boost v1.91.0、模块封装版本 0.0.0。
+
+版本号必须是纯数字加点：mcpp 的版本语法要求首字符为数字（不能带 `b`/`v` 前缀），且数值核心
+不接受字母。开头的 `v` 只属于 git tag —— `[package].version` 字段与下游的 `version = "..."`
+声明都不能带 `v`；mcpp 发布约定在推导 tag/tarball URL 时会自动补上 `v`。
 
 修订记录: [`CHANGELOG_zh.md`](CHANGELOG_zh.md) | 详细发布记录: [`docs/zh/release_notes/`](docs/zh/release_notes)
 
