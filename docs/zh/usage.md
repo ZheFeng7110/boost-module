@@ -5,17 +5,17 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.0.0"
+tag = "v1.91.0.0.0.1"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
 ```
 
 已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3），上架后本页会同步更新。

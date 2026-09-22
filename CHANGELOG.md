@@ -3,8 +3,35 @@
 > 中文版: [`CHANGELOG_zh.md`](CHANGELOG_zh.md)
 
 This file tracks the version history of boost-module. Version numbers follow the
-`b<boost version>w<wrapper version>` format
-(e.g. `b1.91.0w0.0.0-preview` = Boost v1.91.0 × modules wrapper v0.0.0 preview).
+six-segment numeric `v<boost version>.<wrapper version>` format
+(e.g. `v1.91.0.0.0.1` = Boost v1.91.0 × modules wrapper v0.0.1). Entries published before
+2026-09-22 use the historical `b<boost version>w<wrapper version>` spelling and are kept
+verbatim.
+
+## 1.91.0.0.0.1 (2026-09-22, stable patch)
+
+Wrapper patch release `1.91.0.0.0.1` (git tag `v1.91.0.0.0.1`). Module/feature counts and
+the consumable surface are identical to `1.91.0.0.0.0` (tag `b1.91.0w0.0.0`); the changes
+are a version/tag naming migration and a Windows build fix.
+
+### Changes Since b1.91.0w0.0.0
+
+- **Version/tag naming migration**: switched from `b<boost>w<wrapper>` to the
+  six-segment numeric `v<boost version>.<wrapper version>` scheme
+  (`[package].version = "1.91.0.0.0.1"`, tag `v1.91.0.0.0.1`) because mcpp's version
+  grammar requires a digit first and rejects letters in the numeric core. Consumers must
+  update `tag = ...` / `rev = ...` to `v1.91.0.0.0.1`.
+- **Windows build fix**: moved `BOOST_THREAD_BUILD_LIB` from `[features.thread].flags` to
+  the base `[build].flags` (per-glob over `deps/boost/libs/thread/src/**`), so `mcpp test`
+  no longer fails to link `tss_cleanup_implemented()` when `thread` is inactive;
+  `scripts/gen_features.py` was synced.
+- No module, feature, count, or API changes; supported library set unchanged.
+
+### Known Limitations
+
+Unchanged from `1.91.0.0.0.0`; disclosed in full there because the T3 package-index
+integration is still pending. See
+[`docs/release_notes/v1.91.0.0.0.1.md`](docs/release_notes/v1.91.0.0.0.1.md).
 
 ## b1.91.0w0.0.0 (2026-09-21, stable)
 

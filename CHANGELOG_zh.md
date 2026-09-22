@@ -2,8 +2,33 @@
 
 > English version: [`CHANGELOG.md`](CHANGELOG.md)
 
-本文件记录 boost-module 的版本演进。版本号格式 `b<boost版本>w<封装版本>`
-（如 `b1.91.0w0.0.0-preview` = Boost v1.91.0 × 模块封装 v0.0.0 预览版）。
+本文件记录 boost-module 的版本演进。版本号采用六段纯数字
+`v<boost版本>.<封装版本>` 格式（如 `v1.91.0.0.0.1` = Boost v1.91.0 × 模块封装
+v0.0.1）。2026-09-22 之前发布的条目使用历史的 `b<boost版本>w<封装版本>` 拼写,
+原样保留。
+
+## 1.91.0.0.0.1 (2026-09-22, 正式版补丁)
+
+模块封装补丁 `1.91.0.0.0.1`（git tag `v1.91.0.0.0.1`）。模块/feature 计数与可消费面
+与 `1.91.0.0.0.0`（tag `b1.91.0w0.0.0`）完全一致; 变更仅为版本/tag 命名迁移与一处
+Windows 构建修复。
+
+### 自 b1.91.0w0.0.0 以来的变更
+
+- **版本/tag 命名迁移**: 由 `b<boost>w<封装>` 切换为六段纯数字
+  `v<boost版本>.<封装版本>` 方案（`[package].version = "1.91.0.0.0.1"`,
+  tag `v1.91.0.0.0.1`）—— 因 mcpp 版本语法要求首字符为数字、数值核心不接受字母。
+  消费者需将 `tag = ...` / `rev = ...` 更新为 `v1.91.0.0.0.1`。
+- **Windows 构建修复**: 将 `BOOST_THREAD_BUILD_LIB` 从 `[features.thread].flags`
+  移回基础 `[build].flags`（按 glob 作用于 `deps/boost/libs/thread/src/**`）,
+  使 thread 未激活时 `mcpp test` 不再因 `tss_cleanup_implemented()` 链接失败;
+  同步更新 `scripts/gen_features.py`。
+- 无模块、feature、计数或 API 变更; 支持的库集合不变。
+
+### 已知限制
+
+与 `1.91.0.0.0.0` 一致; 因 T3 package index 集成仍待做, 在该版中保持全量披露。
+见 [`docs/zh/release_notes/v1.91.0.0.0.1.md`](docs/zh/release_notes/v1.91.0.0.0.1.md)。
 
 ## b1.91.0w0.0.0 (2026-09-21, 正式版)
 

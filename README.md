@@ -19,17 +19,17 @@ upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0" }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.boost.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.0.0"
+tag = "v1.91.0.0.0.1"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.0", features = ["all"] }
+boost.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
 ```
 
 The first stable release is out; the git dependency above is the supported channel for now.
@@ -52,7 +52,7 @@ For example, the current development branch `b1.91.0wdev` corresponds to the mod
 for Boost v1.91.0.
 
 Tags carry both version numbers as a six-segment numeric version, `v<boost version>.<wrapper version>`
-(each three segments), e.g. **`v1.91.0.0.0.0`** means Boost v1.91.0 with wrapper version 0.0.0.
+(each three segments), e.g. **`v1.91.0.0.0.1`** means Boost v1.91.0 with wrapper version 0.0.1.
 
 The version must be pure digits and dots: mcpp's version grammar requires a digit first (no `b`/`v`
 prefix) and rejects letters in the numeric core. The leading `v` belongs to the git tag only — the

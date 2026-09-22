@@ -2,9 +2,10 @@
 
 > 适用于任意版本的发布, 与具体版本无关。
 > 版本命名: 六段纯数字 `v<boost版本>.<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
-> (如 `v1.91.0.0.0.0-preview`、`v1.91.0.0.0.0`)。
-> `<version>` 指去掉开头 `v` 后的同一字符串 (如 `1.91.0.0.0.0`), 用于 release notes 文件名与
-> CHANGELOG 条目 —— 也是 `[package].version` / 下游 `version = "..."` 必须填写的值。
+> (如 `v1.91.0.0.0.1`), release notes 文件名为 `docs/release_notes/<tag>.md`
+> (带 `v` 前缀, 如 `v1.91.0.0.0.1.md`)。
+> `<version>` 指去掉开头 `v` 后的同一字符串 (如 `1.91.0.0.0.1`), 用于 CHANGELOG 条目 ——
+> 也是 `[package].version` / 下游 `version = "..."` 必须填写的值。
 
 ## 0. 前置条件 (发布门槛)
 
@@ -17,7 +18,7 @@
 - [ ] 计数复核: `src/*.cppm` = 模块数、`scripts/features.lst` = feature 数、
       `[features].default` = 默认闭包, 与 CHANGELOG / release notes 中
       数字一致。
-- [ ] `docs/release_notes/<version>.md` 已就绪 (内容清单 / 已知限制 /
+- [ ] `docs/release_notes/<tag>.md` 已就绪 (内容清单 / 已知限制 /
       报告问题指引), `CHANGELOG.md` 已有对应版本条目。
 - [ ] 用户确认可以打 tag。
 
@@ -47,7 +48,8 @@ git push origin <tag>
 ```
 
 - 一律用 **annotated tag** (携带 tagger / 日期 / message)。
-- tag 名与 release notes 文件名、CHANGELOG 条目严格一致。
+- tag 名与 release notes 文件名 (均带 `v` 前缀) 严格一致; CHANGELOG 条目用去掉
+  `v` 的同一版本号。
 - 误打未推送的 tag: `git tag -d <tag>`; 已推送的 tag 原则上**不删除不改写**,
   需撤回时发新版本并在 release notes 中标注废弃。
 
@@ -56,11 +58,11 @@ git push origin <tag>
 ```bash
 gh release create <tag> \
   --title "<tag>" \
-  --notes-file docs/release_notes/<version>.md \
+  --notes-file docs/release_notes/<tag>.md \
   --prerelease          # 预览版必须; 正式版去掉本项
 ```
 
-- 正文直接复用 `docs/release_notes/<version>.md` (发布后可在
+- 正文直接复用 `docs/release_notes/<tag>.md` (发布后可在
   GitHub 界面微调措辞, 但仓库内文件仍是权威版本)。
 - **不上传二进制附件**: 本项目是源码包, 消费者经 git dep / (未来)
   mcpp package index 获取; Source code (zip/tar.gz) 由 GitHub 自动生成。

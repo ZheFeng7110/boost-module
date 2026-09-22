@@ -2,10 +2,11 @@
 
 > Applies to releases of any version; independent of a specific release.
 > Version naming: six-segment numeric `v<boost version>.<wrapper version>`; below, `<tag>`
-> denotes the tag name of the release being published (e.g. `v1.91.0.0.0.0-preview`,
-> `v1.91.0.0.0.0`). `<version>` is the same string without the leading `v`
-> (e.g. `1.91.0.0.0.0`), used for the release notes file name and the CHANGELOG entry —
-> and it is what `[package].version` / a consumer's `version = "..."` must carry.
+> denotes the tag name of the release being published (e.g. `v1.91.0.0.0.1`), and the release
+> notes file is `docs/release_notes/<tag>.md` (v-prefixed, e.g. `v1.91.0.0.0.1.md`).
+> `<version>` is the same string without the leading `v` (e.g. `1.91.0.0.0.1`), used for the
+> CHANGELOG entry — and it is what `[package].version` / a consumer's `version = "..."` must
+> carry.
 
 ## 0. Prerequisites (release bar)
 
@@ -18,7 +19,7 @@
 - [ ] Count review: `src/*.cppm` = module count, `scripts/features.lst` = feature count,
       `[features].default` = default closure, all consistent with the numbers in the
       CHANGELOG / release notes.
-- [ ] `docs/release_notes/<version>.md` is ready (contents / known limitations /
+- [ ] `docs/release_notes/<tag>.md` is ready (contents / known limitations /
       issue-reporting guidance), and `CHANGELOG.md` has the corresponding version entry.
 - [ ] The user has confirmed that tagging may proceed.
 
@@ -50,7 +51,8 @@ git push origin <tag>
 ```
 
 - Always use an **annotated tag** (carries tagger / date / message).
-- The tag name must match the release notes file name and the CHANGELOG entry exactly.
+- The tag name must match the release notes file name (both v-prefixed) exactly; the CHANGELOG
+  entry uses the same version without the `v`.
 - Mistakenly created but unpushed tag: `git tag -d <tag>`; pushed tags are in principle
   **never deleted or rewritten** — to retract, publish a new version and mark the old one
   deprecated in the release notes.
@@ -60,11 +62,11 @@ git push origin <tag>
 ```bash
 gh release create <tag> \
   --title "<tag>" \
-  --notes-file docs/release_notes/<version>.md \
+  --notes-file docs/release_notes/<tag>.md \
   --prerelease          # mandatory for previews; drop for stable releases
 ```
 
-- The body reuses `docs/release_notes/<version>.md` directly (wording may be tweaked in the
+- The body reuses `docs/release_notes/<tag>.md` directly (wording may be tweaked in the
   GitHub UI afterwards, but the in-repo file remains authoritative).
 - **No binary attachments**: this project is a source package; consumers get it via git dep
   / (in the future) the mcpp package index; Source code (zip/tar.gz) is generated
