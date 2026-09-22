@@ -267,10 +267,13 @@ EXTRA_IMPLIES = {
 FEATURE_ONLY_SOURCES = ["unit_test_framework"]
 
 # Per-lib private compile flags (feature `flags` = private per-TU, never
-# propagated to consumers — plan §3.1; was [build].flags in M4).
+# propagated to consumers — plan §3.1). NOTE: thread's BOOST_THREAD_BUILD_LIB
+# deliberately does NOT live here — mcpp test compiles the base [build].sources
+# unconditionally regardless of feature selection, so on Windows
+# win32/thread.cpp would reference tss_cleanup_implemented() without the macro
+# and fail to link (cf. win32/thread.cpp:86, tss_pe.cpp gating). It lives in
+# the base [build].flags instead (per-glob, feature-independent).
 FEATURE_FLAGS = {
-    "thread": [{"glob": "deps/boost/libs/thread/src/**",
-                "defines": ["BOOST_THREAD_BUILD_LIB"]}],
     # log: the windows/ TUs include <security.h>, whose sspi.h chain requires
     # one of SECURITY_WIN32/KERNEL/MAC — upstream CMake defines SECURITY_WIN32
     # for exactly these TUs (CMakeLists.txt:324).

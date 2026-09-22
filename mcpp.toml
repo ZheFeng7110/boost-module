@@ -318,8 +318,12 @@ include_dirs = [
 # SECURITY_WIN32/KERNEL/MAC 三选一 (上游 CMakeLists.txt:324 同款, 只作用私有 TU)。
 defines  = ["BOOST_ALL_NO_LIB", "_MT", "WIN32_LEAN_AND_MEAN", "SECURITY_WIN32"]
 cxxflags = ["-w"]
-# M8: 原 M4 的 thread 私有标志 (BOOST_THREAD_BUILD_LIB) 已移入 [features.thread].flags
-# (私有 per-TU, 不传播消费者) — 见下方生成块。
+# M8: 原 M4 的 thread 私有标志曾移入 [features.thread].flags (私有 per-TU,
+# 不传播消费者); 现移回 base [build].flags — mcpp test 无视 feature 选择、
+# 恒全量编译 base [build].sources, Windows 下 win32/thread.cpp 会引用
+# tss_cleanup_implemented(), 宏缺失则链接失败 (tss_pe.cpp 的定义被条件编译掉)。
+# per-glob 形式保证仍只作用于 thread 库 TU, 不传播消费者。
+flags = [{ glob = "deps/boost/libs/thread/src/**", defines = ["BOOST_THREAD_BUILD_LIB"] }]
 
 # M9: poly_collection's detail headers specialize std::is_void (the
 # is_final/is_invocable fallback hooks); clang+MSVC STL hard-errors on it for
@@ -393,7 +397,6 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   implies = ["assert", "concept_check", "config", "throw_exception", "type_traits"]
 [features.thread]
   sources = ["src/thread.cppm", "deps/boost/libs/thread/src/future.cpp", "deps/boost/libs/thread/src/win32/*.cpp", "deps/boost/libs/thread/src/pthread/once.cpp", "deps/boost/libs/thread/src/pthread/thread.cpp", "src/boost_thread_extras.cpp"]
-  flags = [{ glob = "deps/boost/libs/thread/src/**", defines = ["BOOST_THREAD_BUILD_LIB"] }]
   implies = ["assert", "atomic", "chrono", "config", "core", "date_time", "io", "optional", "smart_ptr", "system", "throw_exception", "type_traits", "utility", "winapi"]
 [features.chrono]
   sources = ["src/chrono.cppm", "deps/boost/libs/chrono/src/*.cpp"]
