@@ -28,17 +28,17 @@ is identical to upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.0.1"
+tag = "v1.91.0.0.1.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
 ```
 
 Once the first stable release is out, the package will be published on the mcpp package
@@ -302,7 +302,7 @@ Script responsibilities:
 ## 7. Related Documents
 
 - User guide (quick reference for consumers): [`usage.md`](usage.md)
-- Release notes: [`release_notes/v1.91.0.0.0.1.md`](release_notes/v1.91.0.0.0.1.md)
+- Release notes: [`release_notes/v1.91.0.0.1.0.md`](release_notes/v1.91.0.0.1.0.md)
 - Consolidated design (replaces all older design/plan documents):
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - Preview release plan: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

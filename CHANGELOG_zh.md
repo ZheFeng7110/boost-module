@@ -3,9 +3,34 @@
 > English version: [`CHANGELOG.md`](CHANGELOG.md)
 
 本文件记录 boost-module 的版本演进。版本号采用六段纯数字
-`v<boost版本>.<封装版本>` 格式（如 `v1.91.0.0.0.1` = Boost v1.91.0 × 模块封装
-v0.0.1）。2026-09-22 之前发布的条目使用历史的 `b<boost版本>w<封装版本>` 拼写,
+`v<boost版本>.<封装版本>` 格式（如 `v1.91.0.0.1.0` = Boost v1.91.0 × 模块封装
+v0.1.0）。2026-09-22 之前发布的条目使用历史的 `b<boost版本>w<封装版本>` 拼写,
 原样保留。
+
+## 1.91.0.0.1.0 (2026-09-22, 正式版次版本)
+
+模块封装次版本 `1.91.0.0.1.0`（git tag `v1.91.0.0.1.0`）。模块/feature 计数与可消费面
+与 `1.91.0.0.0.1` 完全一致; 变更仅为包标识迁移、发布打包自动化与示例刷新。
+
+### 自 v1.91.0.0.0.1 以来的变更
+
+- **包命名空间重命名**: `[package].namespace` 现为 `ZheFeng7110`, mcpp 依赖标识因此由
+  `boost.boost` 变为 `ZheFeng7110.boost`; 面向消费者的文档与示例已同步。C++ 模块名
+  （`import boost.<lib>;` / `import boost;`）与导出的 `boost::` 命名空间不变。
+  消费者需将依赖键名由 `boost.boost` 改为 `ZheFeng7110.boost`。
+- **GitHub Release 自动化工作流**: 新增 `.github/workflows/release.yml`, 在 tag push 时
+  运行 —— 抽取 `docs/release_notes/<tag>.md`（缺失则失败）, 运行新增的
+  `scripts/package-source.sh` 生成源码归档（zip / tar.gz / tar.xz / 7z + sha256）,
+  并附到标题为 `Release <tag>` 的 release; `-preview` tag 标记为 prerelease。
+  发布 runbook 记录了自动化流程与手动兜底。
+- **示例刷新**: `examples/git_dep_usage` 指向当前 revision, 并移除已提交的过期
+  `mcpp.lock`。
+- 无模块、feature、计数或 API 变更; 支持的库集合不变。
+
+### 已知限制
+
+与 `1.91.0.0.0.0` 一致; 因 T3 package index 集成仍待做, 在该版中保持全量披露。
+见 [`docs/zh/release_notes/v1.91.0.0.1.0.md`](docs/zh/release_notes/v1.91.0.0.1.0.md)。
 
 ## 1.91.0.0.0.1 (2026-09-22, 正式版补丁)
 

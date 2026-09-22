@@ -26,17 +26,17 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.0.1"
+tag = "v1.91.0.0.1.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
 ```
 
 后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
@@ -275,7 +275,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 ## 7. 相关文档
 
 - 使用文档 (消费者用法速查): [`usage.md`](usage.md)
-- release notes: [`release_notes/v1.91.0.0.0.1.md`](release_notes/v1.91.0.0.0.1.md)
+- release notes: [`release_notes/v1.91.0.0.1.0.md`](release_notes/v1.91.0.0.1.0.md)
 - 总体设计汇总（替代全部旧设计/计划文档）:
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

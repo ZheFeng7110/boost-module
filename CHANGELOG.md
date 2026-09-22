@@ -4,9 +4,37 @@
 
 This file tracks the version history of boost-module. Version numbers follow the
 six-segment numeric `v<boost version>.<wrapper version>` format
-(e.g. `v1.91.0.0.0.1` = Boost v1.91.0 × modules wrapper v0.0.1). Entries published before
+(e.g. `v1.91.0.0.1.0` = Boost v1.91.0 × modules wrapper v0.1.0). Entries published before
 2026-09-22 use the historical `b<boost version>w<wrapper version>` spelling and are kept
 verbatim.
+
+## 1.91.0.0.1.0 (2026-09-22, stable minor)
+
+Wrapper minor release `1.91.0.0.1.0` (git tag `v1.91.0.0.1.0`). Module/feature counts and
+the consumable surface are identical to `1.91.0.0.0.1`; the changes are a package-identity
+migration, automated release packaging, and example refresh.
+
+### Changes Since v1.91.0.0.0.1
+
+- **Package namespace rename**: `[package].namespace` is now `ZheFeng7110`, so the mcpp
+  dependency identity is `ZheFeng7110.boost` instead of `boost.boost`; consumer-facing docs
+  and examples were synced. The C++ module names (`import boost.<lib>;` / `import boost;`)
+  and the exported `boost::` namespace are unchanged.
+  Consumers must rename the dependency key from `boost.boost` to `ZheFeng7110.boost`.
+- **Automated GitHub Release workflow**: `.github/workflows/release.yml` runs on tag push,
+  extracts `docs/release_notes/<tag>.md` (fails if missing), runs the new
+  `scripts/package-source.sh` to build source archives (zip / tar.gz / tar.xz / 7z + sha256),
+  and attaches them to a release titled `Release <tag>`; `-preview` tags are marked
+  prerelease. The release runbook documents the automated flow and the manual fallback.
+- **Example refresh**: `examples/git_dep_usage` points at the current revision and its stale
+  committed `mcpp.lock` was removed.
+- No module, feature, count, or API changes; supported library set unchanged.
+
+### Known Limitations
+
+Unchanged from `1.91.0.0.0.0`; disclosed in full there because the T3 package-index
+integration is still pending. See
+[`docs/release_notes/v1.91.0.0.1.0.md`](docs/release_notes/v1.91.0.0.1.0.md).
 
 ## 1.91.0.0.0.1 (2026-09-22, stable patch)
 

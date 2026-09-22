@@ -5,17 +5,17 @@
 ```toml
 # Default: 49-library closure
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.0.1"
+tag = "v1.91.0.0.1.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.0.1", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
 ```
 
 The first stable release is out; the git dependency is the supported channel for now. Publication
