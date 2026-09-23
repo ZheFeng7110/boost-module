@@ -21,25 +21,34 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 
 ## 2. import 用法
 
-### 2.1 依赖声明 (git dep)
+### 2.1 依赖声明
+
+已上架 mcpp package index（命名空间 `ZheFeng7110`）：
 
 ```toml
 # 默认: 49 库闭包
-[dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
-[dependencies.ZheFeng7110.boost]
-git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
-default-features = false
-features = ["optional", "json"]
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0", features = ["all"] }
 ```
 
-后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
+也可以直接以 git 依赖消费：
+
+```toml
+[dependencies.ZheFeng7110.boost]
+# 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "v1.91.0.0.1.0"
+```
+
+两种渠道内容一致，推荐使用 mcpp package index。
 
 > **clang 下不要用 `features = ["all"]`**: 全部 117 个 CMI 约 2.98GB, 超过
 > clang 2^31 源位置上限, 报 "ran out of source locations", 无 flag 可调。

@@ -14,23 +14,32 @@
 
 ## 使用方式
 
+已上架 mcpp package index（命名空间 `ZheFeng7110`）：
+
 ```toml
 # 默认: 49 库闭包
-[dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
-[dependencies.ZheFeng7110.boost]
-git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
-default-features = false
-features = ["optional", "json"]
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+[dependencies.ZheFeng7110]
+boost = { version = "1.91.0.0.1.0", features = ["all"] }
 ```
 
-已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3）。
+也可以直接以 git 依赖消费：
+
+```toml
+[dependencies.ZheFeng7110.boost]
+# 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "v1.91.0.0.1.0"
+```
+
+两种渠道内容一致，推荐使用 mcpp package index。
 
 详细使用说明见用户使用文档: [`docs/usage.md`](docs/zh/usage.md)
 
