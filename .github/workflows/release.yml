@@ -145,3 +145,99 @@ jobs:
         run: |
           set -euo pipefail
           gitcode --no-interactive release upload "$TAG" target/dist/* -R "$MIRROR_REPO"
+
+  # After both the GitHub Release and the GitCode mirror release exist, register
+  # the new version in the mcpp-index descriptor and open a PR upstream. The
+  # branch is pushed to the fork (ZheFeng7110/mcpp-index) and the PR targets the
+  # upstream (mcpplibs/mcpp-index). Cross-repository write + PR creation cannot
+  # use GITHUB_TOKEN, hence the dedicated PAT secret. Preview tags are skipped:
+  # the public index only carries stable releases.
+  publish-index:
+    needs: [release, mirror]
+    if: ${{ !contains(github.ref_name, '-preview') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download release archive from GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/dist
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "*.tar.xz" \
+            --dir target/dist \
+            --clobber
+
+      - name: Checkout mcpp-index fork
+        uses: actions/checkout@v7
+        with:
+          repository: ZheFeng7110/mcpp-index
+          ref: main
+          fetch-depth: 0
+          path: mcpp-index
+          token: ${{ secrets.BOOST_MODULE_PR_TO_MCPP_INDEX_GH_TOKEN }}
+
+      - name: Update descriptor on a new branch
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          KEY="${TAG#v}"
+          BRANCH="boost-module-${TAG}"
+          SHA256="$(sha256sum target/dist/*.tar.xz | cut -d' ' -f1)"
+          GLOBAL_URL="https://github.com/ZheFeng7110/boost-module/releases/download/${TAG}/boost-module-${TAG}.tar.xz"
+          CN_URL="https://gitcode.com/ZheFeng7/boost-module/releases/download/${TAG}/boost-module-${TAG}.tar.xz"
+
+          cd mcpp-index
+          # Base the branch on current upstream main so the PR applies cleanly
+          # even when the fork's main has drifted.
+          git remote add upstream https://github.com/mcpplibs/mcpp-index.git
+          git fetch --force upstream main
+          git switch -c "$BRANCH" upstream/main
+
+          python3 ../scripts/update_mcpp_index.py \
+            --file pkgs/z/ZheFeng7110.boost.lua \
+            --key "$KEY" \
+            --global-url "$GLOBAL_URL" \
+            --cn-url "$CN_URL" \
+            --sha256 "$SHA256"
+
+          git add pkgs/z/ZheFeng7110.boost.lua
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Zhefeng7110.boost: Add ${KEY}"
+          # Force so a re-run can repair a stale branch left by an aborted run.
+          git push --force origin "$BRANCH"
+
+      - name: Open PR upstream
+        env:
+          GH_TOKEN: ${{ secrets.BOOST_MODULE_PR_TO_MCPP_INDEX_GH_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          BRANCH="boost-module-${TAG}"
+          KEY="${TAG#v}"
+          BODY="$(cat <<EOF
+          Register ZheFeng7110.boost ${KEY} (Boost modules wrapper) in the index.
+
+          - Source: https://github.com/ZheFeng7110/boost-module/releases/tag/${TAG}
+          - CN mirror: https://gitcode.com/ZheFeng7/boost-module/releases/tag/${TAG}
+          - Descriptor: \`pkgs/z/ZheFeng7110.boost.lua\`, new version prepended
+
+          Automated by the boost-module release workflow.
+          EOF
+          )"
+          gh pr create \
+            --repo mcpplibs/mcpp-index \
+            --base main \
+            --head "ZheFeng7110:${BRANCH}" \
+            --title "Zhefeng7110.boost: Add ${KEY}" \
+            --body "$BODY"
