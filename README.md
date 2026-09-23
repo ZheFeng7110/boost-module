@@ -9,7 +9,7 @@ module interfaces (`.cppm` + `export using`), so consumers can simply write
 `import boost.filesystem;` (or the umbrella `import boost;`). The API spelling is identical to
 upstream — no `#include` needed.
 
-- Target upstream: **Boost 1.91.0** (`BOOST_VERSION 109100`)
+- Target upstream: **Boost 1.92.0** (`BOOST_VERSION 109200`)
 - Compilers: clang 22 / gcc 16 (MinGW-w64), the same dual-compiler CI approach as opencv-m
 - Repository layout: `deps/boost/` (vendored sources) + `src/*.cppm` + `src/gen_exports/*.inc`
   (generator output) + `scripts/` (helper scripts) + `tests/`, `examples/`
@@ -19,17 +19,17 @@ upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.92.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
 ```
 
 The first stable release is out; the git dependency above is the supported channel for now.
@@ -44,15 +44,15 @@ Project architecture documentation for developers: [`docs/architecture.md`](docs
 Branches are named `bx.x.xwdev`:
 
 - `b` = **boost**
-- `x.x.x` = Boost version (e.g. `1.91.0`)
+- `x.x.x` = Boost version (e.g. `1.92.0`)
 - `w` = **wrapper** (the modules wrapper)
 - `dev` = short for **develop**
 
-For example, the current development branch `b1.91.0wdev` corresponds to the modules wrapper
-for Boost v1.91.0.
+For example, the current development branch `b1.92.0wdev` corresponds to the modules wrapper
+for Boost v1.92.0.
 
 Tags carry both version numbers as a six-segment numeric version, `v<boost version>.<wrapper version>`
-(each three segments), e.g. **`v1.91.0.0.1.0`** means Boost v1.91.0 with wrapper version 0.1.0.
+(each three segments), e.g. **`v1.92.0.0.0.0`** means Boost v1.92.0 with wrapper version 0.0.0.
 
 The version must be pure digits and dots: mcpp's version grammar requires a digit first (no `b`/`v`
 prefix) and rejects letters in the numeric core. The leading `v` belongs to the git tag only — the

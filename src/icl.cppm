@@ -19,7 +19,6 @@ export module boost.icl;
 
 export import boost.assert;
 export import boost.config;
-export import boost.container;
 export import boost.date_time;
 export import boost.io;
 export import boost.iterator;

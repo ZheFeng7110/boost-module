@@ -378,14 +378,17 @@ const T static_instance<T>::instance = {};
 namespace boost {
 namespace asio {
 BOOST_ASIO_INLINE_NAMESPACE_BEGIN
-// boost-module M12 vendor patch: anonymous namespace -> inline variable.
-// The TU-local require object is referenced from the module face; when the
-// boost.asio CMI and a consumer GMF (beast/cobalt/process) both carry the
-// _GLOBAL__N_1 copy, gcc emits the same-mangled symbol twice (M11 §7.4
-// print_helper family). A named inline constexpr keeps the spelling and
-// merges the definitions.
-inline constexpr const BOOST_ASIO_VERSIONED_NAME(require_fn)::impl&
+
+#if defined(BOOST_ASIO_HAS_INLINE_VARIABLES)
+inline constexpr BOOST_ASIO_VERSIONED_NAME(require_fn)::impl require{};
+#else // defined(BOOST_ASIO_HAS_INLINE_VARIABLES)
+namespace {
+
+static constexpr const BOOST_ASIO_VERSIONED_NAME(require_fn)::impl&
   require = BOOST_ASIO_VERSIONED_NAME(require_fn)::static_instance<>::instance;
+
+} // namespace
+#endif // defined(BOOST_ASIO_HAS_INLINE_VARIABLES)
 
 typedef BOOST_ASIO_VERSIONED_NAME(require_fn)::impl require_t;
 

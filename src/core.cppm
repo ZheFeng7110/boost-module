@@ -7,7 +7,7 @@
 // them as `boost::BOOST_VERSION` / `boost::BOOST_LIB_VERSION` constexprs).
 // Consumers wanting the same constants in their TU now `import boost.version;`
 // (default feature set, §4.3 of the consolidated design doc). Macro-form
-// consumers (`#if BOOST_VERSION >= 109100`) include <boost/version.hpp>
+// consumers (`#if BOOST_VERSION >= 109200`) include <boost/version.hpp>
 // directly — the upstream header is self-contained and no longer wrapped by
 // this package.
 module;

@@ -3,12 +3,10 @@ boost.any
 boost.array
 boost.assert
 boost.bimap
-boost.bind
 boost.concept_check
 boost.config
 boost.core
 boost.function
-boost.geometry
 boost.integer
 boost.iterator
 boost.lexical_cast
@@ -16,6 +14,7 @@ boost.math
 boost.move
 boost.mp11
 boost.multi_index
+boost.multiprecision
 boost.numeric
 boost.optional
 boost.property_map

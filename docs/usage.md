@@ -5,17 +5,17 @@
 ```toml
 # Default: 49-library closure
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.92.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
 ```
 
 The first stable release is out; the git dependency is the supported channel for now. Publication
@@ -108,16 +108,16 @@ BOOST_AUTO_TEST_CASE(t) { BOOST_TEST(1 + 1 == 2); }
 
 ```cpp
 import boost.version;    // in the default set; import boost; re-exports it automatically
-static_assert(boost::BOOST_VERSION == 109100);
+static_assert(boost::BOOST_VERSION == 109200);
 static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 ```
 
 - The values come from upstream `<boost/version.hpp>`, exported in the `boost::` namespace as
   `inline constexpr` (spelling preserved).
-- The macro form (`#if BOOST_VERSION >= 109100`) requires the consumer to
+- The macro form (`#if BOOST_VERSION >= 109200`) requires the consumer to
   `#include <boost/version.hpp>` themselves; **within the same TU, the macro definitions and
   the module spelling are mutually exclusive** (the macro expands
-  `boost::BOOST_VERSION` → `boost::109100`) — pick one.
+  `boost::BOOST_VERSION` → `boost::109200`) — pick one.
 
 ## 5. Consumer Notes
 

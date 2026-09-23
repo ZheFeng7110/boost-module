@@ -167,7 +167,7 @@ def macros_audit(libs, out):
     t3 = set(bc.LIBS_T3 + bc.LIBS_INCLUDE_ONLY_M9)
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "macro_surface.txt", "w", encoding="utf-8") as fh:
-        fh.write("# boost-module macro-surface audit (boost 1.91.0) - M10 T3 "
+        fh.write("# boost-module macro-surface audit (boost 1.92.0) - M10 T3 "
                  "boundary check\n")
         fh.write("# macros = unique names #defined in the library's own "
                  "public header set (libs.json for module libs,\n")
@@ -267,7 +267,7 @@ def audit_lib(lib, headers, out_dir):
     out = out_dir / (lib + ".txt")
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as fh:
-        fh.write("# audit {} (boost 1.91.0)\n".format(lib))
+        fh.write("# audit {} (boost 1.92.0)\n".format(lib))
         fh.write("# {} static/internal free functions\n".format(len(static_fns)))
         fh.write("\n".join(sorted(static_fns)) + "\n\n")
         fh.write("# {} anonymous-namespace entities\n".format(len(anon)))

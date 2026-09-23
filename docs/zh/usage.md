@@ -5,17 +5,17 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.92.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
 ```
 
 已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3），上架后本页会同步更新。
@@ -103,15 +103,15 @@ BOOST_AUTO_TEST_CASE(t) { BOOST_TEST(1 + 1 == 2); }
 
 ```cpp
 import boost.version;    // 默认集内, import boost; 已自动 re-export
-static_assert(boost::BOOST_VERSION == 109100);
+static_assert(boost::BOOST_VERSION == 109200);
 static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 ```
 
 - 取值来自上游 `<boost/version.hpp>`，以 `inline constexpr` 在 `boost::`
   命名空间导出（拼写保持）。
-- 宏形式（`#if BOOST_VERSION >= 109100`）由消费者自行
+- 宏形式（`#if BOOST_VERSION >= 109200`）由消费者自行
   `#include <boost/version.hpp>`；**同一 TU 内宏定义与模块拼写互斥**
-  （宏会展开 `boost::BOOST_VERSION` → `boost::109100`），二选一。
+  （宏会展开 `boost::BOOST_VERSION` → `boost::109200`），二选一。
 
 ## 5. 消费者注意事项
 

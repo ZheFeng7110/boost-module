@@ -2,7 +2,7 @@
 
 > 日期: 2026-09-09 · 面向消费者 · 内容抽取自
 > [总体设计汇总](../../.agents/docs/2026-09-08-consolidated-design.md) (权威口径以该文档为准)
-> 目标上游: **Boost 1.91.0** (`BOOST_VERSION 109100`)
+> 目标上游: **Boost 1.92.0** (`BOOST_VERSION 109200`)
 
 ## 1. 项目定位
 
@@ -26,17 +26,17 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.92.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
 ```
 
 后续正式版发布后会上架 mcpp package，现阶段先使用 git 依赖。
@@ -84,13 +84,13 @@ ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag =
 
 ```cpp
 import boost.version;    // 默认集内, import boost; 已自动 re-export
-static_assert(boost::BOOST_VERSION == 109100);
+static_assert(boost::BOOST_VERSION == 109200);
 static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 ```
 
-宏形式 (`#if BOOST_VERSION >= 109100`) 由消费者自行
+宏形式 (`#if BOOST_VERSION >= 109200`) 由消费者自行
 `#include <boost/version.hpp>`; **同一 TU 内宏定义与模块拼写互斥**
-(宏会展开 `boost::BOOST_VERSION` → `boost::109100`), 二选一。
+(宏会展开 `boost::BOOST_VERSION` → `boost::109200`), 二选一。
 
 ## 3. feature 选择性构建语义
 
@@ -246,7 +246,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 
 各脚本职责：
 
-- `scripts/import_boost.py` — 下载固定 SHA-256 的官方 `boost_1_91_0.tar.gz`，裁剪后导入
+- `scripts/import_boost.py` — 下载固定 SHA-256 的官方 `boost_1_92_0.tar.gz`，裁剪后导入
   `deps/boost/`（`boost/boost/` 汇总 include 根 + `libs/` 等）。
 - `scripts/fetch_mingw_sysroot.py` — 下载固定版 WinLibs GCC 16.1.0 sysroot 到
   `scripts/_deps/`（gitignored），并用 clang++ 语法探针校验；`boost_common.py`
@@ -275,7 +275,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 ## 7. 相关文档
 
 - 使用文档 (消费者用法速查): [`usage.md`](usage.md)
-- release notes: [`release_notes/v1.91.0.0.1.0.md`](release_notes/v1.91.0.0.1.0.md)
+- release notes: [`release_notes/v1.92.0.0.0.0.md`](release_notes/v1.92.0.0.0.0.md)
 - 总体设计汇总（替代全部旧设计/计划文档）:
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

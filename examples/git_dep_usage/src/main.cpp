@@ -50,7 +50,7 @@ static void demo_json() {
 
 static void demo_version() {
     std::printf("== version ==\n");
-    CHECK(boost::BOOST_VERSION == 109100);
+    CHECK(boost::BOOST_VERSION == 109200);
     CHECK(boost::BOOST_LIB_VERSION[0] == '1');
     std::printf("  BOOST_VERSION = %d\n", boost::BOOST_VERSION);
 }

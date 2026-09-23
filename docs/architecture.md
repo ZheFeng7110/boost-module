@@ -3,7 +3,7 @@
 > Date: 2026-09-09 · Audience: consumers · Content extracted from the
 > [consolidated design](../../.agents/docs/2026-09-08-consolidated-design.md)
 > (that document is authoritative)
-> Target upstream: **Boost 1.91.0** (`BOOST_VERSION 109100`)
+> Target upstream: **Boost 1.92.0** (`BOOST_VERSION 109200`)
 
 ## 1. Project Positioning
 
@@ -28,17 +28,17 @@ is identical to upstream — no `#include` needed.
 ```toml
 # Default: 49-library closure
 [dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0" }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110.boost]
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.92.0.0.0.0"
 default-features = false
 features = ["optional", "json"]
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.91.0.0.1.0", features = ["all"] }
+ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
 ```
 
 Once the first stable release is out, the package will be published on the mcpp package
@@ -91,14 +91,14 @@ index; for now, use git dependencies.
 
 ```cpp
 import boost.version;    // in the default set; import boost; re-exports it automatically
-static_assert(boost::BOOST_VERSION == 109100);
+static_assert(boost::BOOST_VERSION == 109200);
 static_assert(boost::BOOST_LIB_VERSION[0] == '1');
 ```
 
-The macro form (`#if BOOST_VERSION >= 109100`) requires the consumer to
+The macro form (`#if BOOST_VERSION >= 109200`) requires the consumer to
 `#include <boost/version.hpp>` themselves; **within the same TU, the macro definitions and
 the module spelling are mutually exclusive** (the macro expands
-`boost::BOOST_VERSION` → `boost::109100`) — pick one.
+`boost::BOOST_VERSION` → `boost::109200`) — pick one.
 
 ## 3. Feature-based Selective Build Semantics
 
@@ -265,7 +265,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost wipes the vendored 
 
 Script responsibilities:
 
-- `scripts/import_boost.py` — downloads the official `boost_1_91_0.tar.gz` with a pinned
+- `scripts/import_boost.py` — downloads the official `boost_1_92_0.tar.gz` with a pinned
   SHA-256, trims it, and imports into `deps/boost/` (`boost/boost/` aggregate include root +
   `libs/` etc.).
 - `scripts/fetch_mingw_sysroot.py` — downloads the pinned WinLibs GCC 16.1.0
@@ -302,7 +302,7 @@ Script responsibilities:
 ## 7. Related Documents
 
 - User guide (quick reference for consumers): [`usage.md`](usage.md)
-- Release notes: [`release_notes/v1.91.0.0.1.0.md`](release_notes/v1.91.0.0.1.0.md)
+- Release notes: [`release_notes/v1.92.0.0.0.0.md`](release_notes/v1.92.0.0.0.0.md)
 - Consolidated design (replaces all older design/plan documents):
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - Preview release plan: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

@@ -1,5 +1,6 @@
 boost.assert
 boost.container
+boost.core
 boost.endian
 boost.mp11
 boost.system

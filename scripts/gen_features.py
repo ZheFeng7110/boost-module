@@ -112,7 +112,11 @@ COMPILED_TU_GLOBS = {
     "regex":            ["deps/boost/libs/regex/src/*.cpp"],
     "chrono":           ["deps/boost/libs/chrono/src/*.cpp"],
     "program_options":  ["deps/boost/libs/program_options/src/*.cpp"],
-    "stacktrace":       ["deps/boost/libs/stacktrace/src/basic.cpp"],
+    # stacktrace: 1.92 split this_thread_frames::collect out of basic.cpp into
+    # the new dump.cpp (upstream boost_stacktrace_basic links _dump); both are
+    # needed to resolve the symbol.
+    "stacktrace":       ["deps/boost/libs/stacktrace/src/basic.cpp",
+                         "deps/boost/libs/stacktrace/src/dump.cpp"],
     "json":             ["deps/boost/libs/json/src/*.cpp"],
     "url":              ["deps/boost/libs/url/src/**/*.cpp"],
     # thread: all-platform globs live in the feature; the target tables below
@@ -168,7 +172,7 @@ COMPILED_TU_GLOBS = {
                          "deps/boost/libs/container/src/unsynchronized_pool_resource.cpp"],
     "contract":         ["deps/boost/libs/contract/src/contract.cpp"],
     # date_time: upstream CMake compiles only greg_month.cpp — the other
-    # b2-era gregorian/posix_time TUs conflict with the 1.91 headers
+    # b2-era gregorian/posix_time TUs conflict with the 1.92 headers
     # (greg_weekday.hpp defines the as_*_string methods inline unconditionally).
     "date_time":        ["deps/boost/libs/date_time/src/gregorian/greg_month.cpp"],
     # exception is include-only on gcc 16.1 (see boost_common.py

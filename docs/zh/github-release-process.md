@@ -2,9 +2,9 @@
 
 > 适用于任意版本的发布, 与具体版本无关。
 > 版本命名: 六段纯数字 `v<boost版本>.<封装版本>`, 下文以 `<tag>` 指代待发布版本的 tag 名
-> (如 `v1.91.0.0.1.0`), release notes 文件名为 `docs/release_notes/<tag>.md`
-> (带 `v` 前缀, 如 `v1.91.0.0.1.0.md`)。
-> `<version>` 指去掉开头 `v` 后的同一字符串 (如 `1.91.0.0.1.0`), 用于 CHANGELOG 条目 ——
+> (如 `v1.92.0.0.0.0`), release notes 文件名为 `docs/release_notes/<tag>.md`
+> (带 `v` 前缀, 如 `v1.92.0.0.0.0.md`)。
+> `<version>` 指去掉开头 `v` 后的同一字符串 (如 `1.92.0.0.0.0`), 用于 CHANGELOG 条目 ——
 > 也是 `[package].version` / 下游 `version = "..."` 必须填写的值。
 
 ## 0. 前置条件 (发布门槛)
@@ -100,6 +100,6 @@ gh release create <tag> \
 | 项 | 预览版 | 正式版 |
 |---|---|---|
 | `--prerelease` | 加 (workflow 对 `-preview` tag 自动设置) | 不加 |
-| tag 后缀 | `-preview` | 无 (如 `v1.91.0.0.0.0`) |
+| tag 后缀 | `-preview` | 无 (如 `v1.92.0.0.0.0`) |
 | mcpp package index (T3) | 不上架 | boost.lua 对接 + registry 消费 probe 必做 |
 | 已知限制披露 | 全量 | 缩减为仍有效的条目 |

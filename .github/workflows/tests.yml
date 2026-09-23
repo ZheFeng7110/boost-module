@@ -1,4 +1,4 @@
-# Boost 1.91.0 C++23 module layer — CI matrix (M6).
+# Boost 1.92.0 C++23 module layer — CI matrix (M6).
 #
 # 编译/测试矩阵 (对应 .agents/plan/boost-mcpp-module-plan.md M6):
 #   windows-llvm-msvc   windows-latest  llvm@22.1.8 → x86_64-windows-msvc   (用 runner 自带 MSVC)
@@ -20,7 +20,7 @@ name: Tests
 
 on:
   push:
-    branches: [ b1.91.0wdev ]
+    branches: [ b1.92.0wdev ]
     paths:
       - '.github/workflows/**'
       - 'build.mcpp'
@@ -30,7 +30,7 @@ on:
       - 'tests/**'
       - 'examples/**'
   pull_request:
-    branches: [ b1.91.0wdev ]
+    branches: [ b1.92.0wdev ]
     paths:
       - '.github/workflows/**'
       - 'build.mcpp'

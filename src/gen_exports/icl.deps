@@ -1,6 +1,5 @@
 boost.assert
 boost.config
-boost.container
 boost.date_time
 boost.io
 boost.iterator

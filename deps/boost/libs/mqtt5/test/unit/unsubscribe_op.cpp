@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2025 Ivica Siladic, Bruno Iljazovic, Korina Simicevic
+// Copyright (c) 2023-2026 Ivica Siladic, Bruno Iljazovic, Korina Simicevic
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -40,10 +40,12 @@ BOOST_AUTO_TEST_CASE(pid_overrun) {
         BOOST_TEST(rcs[0] == reason_codes::empty);
     };
 
-    detail::unsubscribe_op<
+    auto unsub_op = detail::unsubscribe_op<
         client_service_type, decltype(handler)
-    > { svc_ptr, std::move(handler) }
-    .perform({ "topic" }, unsubscribe_props {});
+    > { svc_ptr, std::move(handler) };
+
+    BOOST_TEST(static_cast<bool>(unsub_op.get_executor() == asio::any_io_executor(ioc.get_executor())));
+    unsub_op.perform({ "topic" }, unsubscribe_props {});
 
     ioc.poll();
     BOOST_TEST(handlers_called == expected_handlers_called);

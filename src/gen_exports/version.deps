@@ -4,7 +4,7 @@
 # the entire module TU consists of two `inline constexpr` constants seeded
 # from <boost/version.hpp> via `module; #include` in src/version.cppm. The
 # constants have no signatures referring to other boost::* entities (the
-# BOOST_VERSION int is 109100 and BOOST_LIB_VERSION is "1_91" — both
+# BOOST_VERSION int is 109200 and BOOST_LIB_VERSION is "1_92" — both
 # literals), so the dep_graph BFS over signatures and the pass-2 body walk
 # both produce the empty edge set. There is no gen_exports.py bundle TU
 # for this library at all (it's bypassed in the SPECIAL tier, like log/test

@@ -3,13 +3,13 @@ boost.array
 boost.assert
 boost.concept_check
 boost.config
+boost.container
 boost.core
+boost.graph
 boost.integer
 boost.iterator
-boost.lexical_cast
 boost.math
 boost.mp11
-boost.multiprecision
 boost.polygon
 boost.qvm
 boost.range

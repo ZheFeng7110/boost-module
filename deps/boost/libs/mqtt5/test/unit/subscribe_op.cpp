@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023-2025 Ivica Siladic, Bruno Iljazovic, Korina Simicevic
+// Copyright (c) 2023-2026 Ivica Siladic, Bruno Iljazovic, Korina Simicevic
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -73,10 +73,12 @@ void run_test(
                 BOOST_TEST(rcs[i] == reason_codes::empty);
         };
 
-    detail::subscribe_op<
+    auto sub_op = detail::subscribe_op<
         client_service_type, decltype(handler)
-    > { svc_ptr, std::move(handler) }
-    .perform(topics, sprops);
+    > { svc_ptr, std::move(handler) };
+
+    BOOST_TEST(static_cast<bool>(sub_op.get_executor() == asio::any_io_executor(ioc.get_executor())));
+    sub_op.perform(topics, sprops);
 
     ioc.poll();
     BOOST_TEST(handlers_called == expected_handlers_called);

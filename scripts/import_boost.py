@@ -5,7 +5,7 @@
 # ///
 """import_boost.py — import the pinned official Boost release into deps/boost/.
 
-Fetches boost_1_91_0.tar.gz (verified against a pinned SHA-256), then extracts
+Fetches boost_1_92_0.tar.gz (verified against a pinned SHA-256), then extracts
 into deps/boost/ only the content needed for a module packaging build:
 the aggregated include root boost/, the library sources libs/ (pruned of
 docs/examples/Jamfiles/CI files), tools/cmake, CMakeLists.txt, LICENSE and
@@ -28,10 +28,10 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
-VERSION = "1.91.0"
+VERSION = "1.92.0"
 TARBALL_NAME = "boost_{}.tar.gz".format(VERSION.replace(".", "_"))
 DEFAULT_URL = "https://archives.boost.io/release/{}/source/{}".format(VERSION, TARBALL_NAME)
-PIN_SHA256 = "5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463"
+PIN_SHA256 = "c4a3b310ddd2472416e091067166b0713be97c63f38c212c484ada022fd296ce"
 
 ROOT = Path(__file__).resolve().parent.parent
 DST = ROOT / "deps" / "boost"

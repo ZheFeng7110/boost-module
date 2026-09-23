@@ -3,7 +3,7 @@ index 1afefda..aae1d6c 100644
 --- a/src/gen_exports/config.inc
 +++ b/src/gen_exports/config.inc
 @@ -2,8 +2,14 @@
- // lib=config boost=1.91.0 target=x86_64-w64-mingw32 entities=4
+ // lib=config boost=1.92.0 target=x86_64-w64-mingw32 entities=4
  
  export namespace boost {
 +#if defined(BOOST_HAS_INT128)
