@@ -46,6 +46,7 @@ module;
 #include <boost/graph/king_ordering.hpp>
 #include <boost/graph/kruskal_min_spanning_tree.hpp>
 #include <boost/graph/labeled_graph.hpp>
+#include <boost/graph/louvain_clustering.hpp>
 #include <boost/graph/make_biconnected_planar.hpp>
 #include <boost/graph/make_connected.hpp>
 #include <boost/graph/make_maximal_planar.hpp>
@@ -99,6 +100,7 @@ export import boost.assert;
 export import boost.bimap;
 export import boost.concept_check;
 export import boost.config;
+export import boost.container_hash;
 export import boost.core;
 export import boost.function;
 export import boost.integer;

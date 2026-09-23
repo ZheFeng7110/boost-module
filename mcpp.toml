@@ -608,7 +608,7 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   implies = ["algorithm", "assert", "core", "io", "iterator", "numeric", "throw_exception", "tokenizer", "type_traits"]
 [features.graph]
   sources = ["src/graph.cppm", "deps/boost/libs/graph/src/*.cpp"]
-  implies = ["algorithm", "any", "array", "assert", "bimap", "concept_check", "config", "core", "function", "integer", "iterator", "lexical_cast", "math", "move", "mp11", "multi_index", "multiprecision", "numeric", "optional", "property_map", "property_tree", "random", "range", "serialization", "smart_ptr", "throw_exception", "tuple", "type_traits", "unordered", "utility", "version"]
+  implies = ["algorithm", "any", "array", "assert", "bimap", "concept_check", "config", "container_hash", "core", "function", "integer", "iterator", "lexical_cast", "math", "move", "mp11", "multi_index", "multiprecision", "numeric", "optional", "property_map", "property_tree", "random", "range", "serialization", "smart_ptr", "throw_exception", "tuple", "type_traits", "unordered", "utility", "version"]
 [features.iostreams]
   sources = ["src/iostreams.cppm", "deps/boost/libs/iostreams/src/file_descriptor.cpp", "deps/boost/libs/iostreams/src/mapped_file.cpp"]
   implies = ["assert", "config", "core", "iterator", "random", "range", "smart_ptr", "throw_exception", "type_traits", "utility"]

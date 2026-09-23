@@ -1,8 +1,7 @@
 diff --git a/src/gen_exports/container.inc b/src/gen_exports/container.inc
-index afef0b0..5d5a5a5 100644
 --- a/src/gen_exports/container.inc
 +++ b/src/gen_exports/container.inc
-@@ -654,7 +654,11 @@ export namespace boost { namespace container { namespace dtl {
+@@ -826,7 +826,11 @@
    using boost::container::dtl::version;
    using boost::container::dtl::version_type;
    using boost::container::dtl::void_t;
@@ -13,8 +12,8 @@ index afef0b0..5d5a5a5 100644
 +#endif
  }}}
  
- export namespace boost { namespace container { namespace dtl { namespace impl {
-@@ -772,11 +776,15 @@ export namespace boost { namespace container { namespace stable_vector_detail {
+ export namespace boost { namespace container { namespace dtl { namespace adl_range {
+@@ -988,11 +992,15 @@
    using boost::container::stable_vector_detail::node_base;
  }}}
  

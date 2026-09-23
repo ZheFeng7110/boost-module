@@ -5,6 +5,7 @@ boost.assert
 boost.bimap
 boost.concept_check
 boost.config
+boost.container_hash
 boost.core
 boost.function
 boost.integer

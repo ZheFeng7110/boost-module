@@ -10,6 +10,7 @@ module;
 #include <boost/asio/experimental/concurrent_channel.hpp>
 #include <boost/asio/experimental/promise.hpp>
 #include <boost/asio/experimental/use_coro.hpp>
+#include <boost/asio/fwd.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/ssl/stream_base.hpp>
 #include <boost/asio/ts/net.hpp>
