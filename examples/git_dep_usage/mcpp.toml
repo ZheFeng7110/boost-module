@@ -18,6 +18,7 @@ description = "Example consumer: git dep, default-features = false, features = [
 license     = "BSL-1.0"
 
 [dependencies.ZheFeng7110.boost]
+# Mainland China mirror: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
 rev = "127b8d9471b7a448464bf24b996aba62a2d3fbc3"
 default-features = false

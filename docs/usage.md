@@ -2,24 +2,32 @@
 
 ## 1. Dependency Declaration
 
+The package is published on the mcpp package index (namespace `ZheFeng7110`):
+
 ```toml
 # Default: 49-library closure
-[dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0" }
 
 # Pick a few libraries only (default-features = false disables the default set)
-[dependencies.ZheFeng7110.boost]
-git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
-default-features = false
-features = ["optional", "json"]
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # Everything
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0", features = ["all"] }
 ```
 
-The first stable release is out; the git dependency is the supported channel for now. Publication
-on the mcpp package index is planned (tracked as T3), and this page will be updated then.
+Alternatively, depend on the git repository directly:
+
+```toml
+[dependencies.ZheFeng7110.boost]
+# Mainland China mirror: https://gitcode.com/ZheFeng7/boost-module
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "v1.92.0.0.0.0"
+```
+
+Both channels carry the same package; the mcpp package index is the recommended one.
 
 > **Do not use `features = ["all"]` with clang**: all CMIs total about 2.98GB, exceeding
 > clang's 2^31 source-location limit, which fails with "ran out of source locations";

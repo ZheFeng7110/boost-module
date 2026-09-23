@@ -2,23 +2,32 @@
 
 ## 1. 依赖声明
 
+已上架 mcpp package index（命名空间 `ZheFeng7110`）：
+
 ```toml
 # 默认: 49 库闭包
-[dependencies]
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0" }
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0" }
 
 # 只选若干库 (default-features = false 关闭默认集)
-[dependencies.ZheFeng7110.boost]
-git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
-default-features = false
-features = ["optional", "json"]
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
-ZheFeng7110.boost = { git = "https://github.com/ZheFeng7110/boost-module", tag = "v1.92.0.0.0.0", features = ["all"] }
+[dependencies.ZheFeng7110]
+boost = { version = "1.92.0.0.0.0", features = ["all"] }
 ```
 
-已发布首个正式版，现阶段仍以 git 依赖为支持渠道；mcpp package index 上架计划中（代号 T3），上架后本页会同步更新。
+也可以直接以 git 依赖消费：
+
+```toml
+[dependencies.ZheFeng7110.boost]
+# 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
+git = "https://github.com/ZheFeng7110/boost-module"
+tag = "v1.92.0.0.0.0"
+```
+
+两种渠道内容一致，推荐使用 mcpp package index。
 
 > **clang 下不要用 `features = ["all"]`**: 全部 CMI 约 2.98GB，超过 clang
 > 2^31 源位置上限，报 "ran out of source locations"，无 flag 可调。
