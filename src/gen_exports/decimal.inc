@@ -579,7 +579,9 @@ export namespace boost { namespace decimal { namespace detail {
   using boost::decimal::detail::total_ordering_impl;
   using boost::decimal::detail::trailing_significand_field_width_v;
   using boost::decimal::detail::u256;
+#if defined(__GNUC__)
   using boost::decimal::detail::u256_add;
+#endif
   using boost::decimal::detail::uchar_values;
   using boost::decimal::detail::umul256;
   using boost::decimal::detail::umul512_hi;
@@ -687,7 +689,9 @@ export namespace boost { namespace decimal { namespace detail { namespace fast_f
 
 export namespace boost { namespace decimal { namespace detail { namespace impl {
   using boost::decimal::detail::impl::BOOST_DECIMAL_DETAIL_INT128_pow10;
+#if defined(__GNUC__)
   using boost::decimal::detail::impl::add_carry_u64;
+#endif
   using boost::decimal::detail::impl::basic_add_impl;
   using boost::decimal::detail::impl::basic_and_impl;
   using boost::decimal::detail::impl::basic_equality_impl;
@@ -735,7 +739,9 @@ export namespace boost { namespace decimal { namespace detail { namespace impl {
   using boost::decimal::detail::impl::memcpy_impl;
   using boost::decimal::detail::impl::memmove_impl;
   using boost::decimal::detail::impl::memset_impl;
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::decimal::detail::impl::mg32_u256_by_u128;
+#endif
   using boost::decimal::detail::impl::mul_default_rounding;
   using boost::decimal::detail::impl::mul_finalize_u128;
   using boost::decimal::detail::impl::mul_finalize_u256;
@@ -994,16 +1000,30 @@ export namespace boost { namespace int128 { namespace detail { namespace impl {
   using boost::int128::detail::impl::countl_impl;
   using boost::int128::detail::impl::countr_impl;
   using boost::int128::detail::impl::digit_from_char;
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::div_mod_intrinsic;
+#endif
   using boost::int128::detail::impl::from_chars_integer_impl;
   using boost::int128::detail::impl::from_words;
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::int128_addcarry_u64;
+#endif
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::int128_subborrow_u64;
+#endif
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::int128_udiv128_intrinsic;
+#endif
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::int128_umul128_intrinsic;
+#endif
   using boost::int128::detail::impl::knuth_divide;
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::mg32_div_3by2;
+#endif
+#if defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)
   using boost::int128::detail::impl::mg32_reciprocal_2by1;
+#endif
   using boost::int128::detail::impl::to_words;
   using boost::int128::detail::impl::unpack_u;
   using boost::int128::detail::impl::unpack_v;

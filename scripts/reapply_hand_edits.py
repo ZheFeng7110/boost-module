@@ -357,6 +357,21 @@ def main():
     guard_entity_lines("src/gen_exports/process.inc", "defined(_WIN32)", [
         "stream_handle",
     ])
+    guard_entity_lines("src/gen_exports/decimal.inc", "defined(__GNUC__)", [
+        "add_carry_u64",
+        "u256_add",
+    ])
+    guard_entity_lines("src/gen_exports/decimal.inc",
+                       "defined(BOOST_DECIMAL_DETAIL_INT128_HAS_FAST_DIV128)", [
+        "div_mod_intrinsic",
+        "int128_addcarry_u64",
+        "int128_subborrow_u64",
+        "int128_udiv128_intrinsic",
+        "int128_umul128_intrinsic",
+        "mg32_div_3by2",
+        "mg32_reciprocal_2by1",
+        "mg32_u256_by_u128",
+    ])
     guard_entity_lines("src/gen_exports/asio.inc", "defined(BOOST_ASIO_HAS_FILE)", [
         "basic_file",
         "basic_random_access_file",
