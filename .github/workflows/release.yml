@@ -45,6 +45,6 @@ jobs:
           fi
           gh release create "$TAG" \
             "${PRERELEASE_FLAG[@]}" \
-            --title "Release $TAG" \
+            --title "$TAG" \
             --notes-file /tmp/release_notes.md \
             target/dist/*
