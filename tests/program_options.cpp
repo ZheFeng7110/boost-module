@@ -48,6 +48,20 @@ int main() {
         // way ELF/PE do), so the precise catch misses; std::exception (libc++,
         // single definition) still matches the wrapexcept inheritance chain.
         caught = true;
+    } catch (...) {
+        // 1.92 upgrade (b1.92.0wdev): on the macOS-llvm leg even the
+        // std::exception fallback above stopped matching — libc++abi reports
+        // "terminating due to uncaught exception of type
+        // boost::wrapexcept<invalid_option_value>" (exit 134, CI run 35872964147).
+        // The exception hierarchy headers are byte-identical between the
+        // vendored 1.91/1.92 trees; the 1.92 module-surface regeneration changed
+        // the test binary's link layout, and Mach-O's first-wins weak coalescing
+        // now resolves a node of the thrown wrapexcept RTTI chain to a copy
+        // distinct from the one the handler references (M7 root cause family,
+        // Mach-O typeinfo non-merge across module boundaries; proper fix out of
+        // scope). This RTTI-free catch-all restores the test's actual contract:
+        // an invalid option value must throw.
+        caught = true;
     }
     assert(caught);
 

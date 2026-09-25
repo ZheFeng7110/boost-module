@@ -308,7 +308,9 @@ cobalt 先例) / 纯 include (T3 consumer rule)。每接入新库需重新核实
 - pthread `once.cpp` 是伞文件 (include once_atomic.cpp), glob 会双编 →
   target.unix sources 明确列表。
 - macOS Mach-O typeinfo 跨模块边界不合并 → 精确 catch 落空, 测试以
-  `std::exception` 兜底; 根治超范围。
+  `std::exception` 兜底; 1.92 升级后该兜底在 program_options 上亦失效
+  (弱副本合并胜出方随链接布局漂移), 追加 RTTI 无关 `catch (...)` 兜底
+  (见 2026-09-25-macos-typeinfo-catch-regression.md); 根治超范围。
 - libc++ 22.1.8 `std::println` 格式串问题 → examples 改 `std::printf`。
 - POSIX timer 粒度 `_SC_CLK_TCK` (10ms) → 测试忙等前需 sleep。
 - clone_impl: 消费者 TU 隐式实例化发射无 thunk 的弱 vtable, ELF COMDAT group
