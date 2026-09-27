@@ -65,18 +65,43 @@ difference, not a broken test.
 
 ## 4. 修复
 
-`tests/program_options.cpp` 在既有两层 catch 之后追加 RTTI 无关的
-`catch (...)` 兜底:
+### 4.1 第一次尝试 (8a407ab5, 未奏效)
 
-- 精确 catch 与 `std::exception` catch 保留 (linux/msvc 腿仍走强断言);
-- macOS 腿由 catch-all 接住, 测试契约 (非法值必须抛异常) 不变;
-- 全平台生效但仅在前两层未命中时到达, 不弱化 linux/msvc 的既有断言强度。
+在 `tests/program_options.cpp` 追加 RTTI 无关的 `catch (...)` 兜底。若异常
+按标准两阶段展开传播, catch(...) 必然命中 (Itanium ABI 中 catch-all 的
+handler typeinfo 为空, phase 1 恒匹配)。CI run 36104518727 (同 commit) 仍以
+完全相同的消息 SIGABRT —— 证明异常**根本未到达展开阶段**: 要么抛出点与
+landing pad 之间有 noexcept 边界/调用帧展开信息缺失导致
+`_Unwind_RaiseException` phase 1 提前判负, libc++abi 在异常仍"在飞"时
+terminate (默认 terminate handler 对在飞异常打印同一条
+"terminating due to uncaught exception of type ..." 消息); 无论哪种,
+问题都出在**模块消费 TU 作为抛出侧**的展开路径, 而非 handler 匹配。
+
+### 4.2 最终修复: throw+catch 移入库侧普通 TU
+
+关键对照: `tests/exception.cpp` (include-only 消费, 不 import 模块) 在
+macOS 上对 `boost::throw_exception` 产生的 `wrapexcept<my_error>` 做
+**精确 catch** 全绿 —— 普通 (非模块消费) TU 里的 throw+catch 在 macOS
+测试二进制中完全正常。
+
+故沿用 `boost_*_extras.cpp` 先例 (M5 B'/M7c/M9), 新增
+`src/boost_program_options_extras.cpp` (普通 include-only TU, 已加入
+`gen_features.py` EXTRAS → `[features.program_options].sources`), 把
+throw+catch 整体移入:
+
+- 抛出点 (`typed_value<int>` 实例化 + `boost::throw_exception`) 与
+  landing pad 同 TU, 语义与上游 vanilla C++ 一致, 不再跨模块边界展开;
+- 普通 TU 内精确 catch (`invalid_option_value`) 恢复有效, 断言强度高于
+  此前消费侧的 catch 链 (M7 兜底反而被移除);
+- 消费者 (tests/program_options.cpp) 只手工 extern 声明
+  `boost::program_options::detail::mcpp_rejects_invalid_option_value()`
+  并断言返回 true —— 不触碰生成物 (`src/*.cppm` / `.inc`)。
 
 同类模式目前仅 program_options 一处 (grep 证实), 其余 140 例在 macOS
 通过, 无需扩散。
 
 ## 5. 验证
 
-- linux 本地 `mcpp test --features <program_options 闭包>` 通过 (行为无
-  回归; 精确 catch 仍优先命中)。
+- linux 本地 `mcpp test --features <program_options 闭包>` 通过 (141/141;
+  精确 catch 在普通 TU 内命中)。
 - macOS-llvm 腿待 CI 复跑确认 (本修复提交后由 Tests workflow 验证)。

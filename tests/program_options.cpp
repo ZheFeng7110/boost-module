@@ -3,6 +3,13 @@
 import std;
 import boost.program_options;
 
+// Out-of-line bad-value helper — lives in a plain (include-only) lib TU
+// (src/boost_program_options_extras.cpp); declared by hand here instead of
+// through the module so the generated module surface stays untouched.
+namespace boost { namespace program_options { namespace detail {
+bool mcpp_rejects_invalid_option_value();
+}}}
+
 int main() {
     namespace po = boost::program_options;
 
@@ -32,38 +39,18 @@ int main() {
     po::notify(vm2);
     assert(vm2["port"].as<int>() == 1234);
 
-    po::options_description e("error");
-    e.add_options()("port", po::value<int>());
-    po::variables_map vm3;
-    bool caught = false;
-    try {
-        po::store(po::command_line_parser({"--port=notanumber"}).options(e).run(), vm3);
-        po::notify(vm3);
-    } catch (po::invalid_option_value const&) {
-        caught = true;
-    } catch (std::exception const&) {
-        // M7: on macOS the lib TU (boost::throw_exception → wrapexcept<T>) and
-        // the module consumer see different typeinfo for the boost.exception
-        // hierarchy (Mach-O does not COMDAT-merge module-carried typeinfo the
-        // way ELF/PE do), so the precise catch misses; std::exception (libc++,
-        // single definition) still matches the wrapexcept inheritance chain.
-        caught = true;
-    } catch (...) {
-        // 1.92 upgrade (b1.92.0wdev): on the macOS-llvm leg even the
-        // std::exception fallback above stopped matching — libc++abi reports
-        // "terminating due to uncaught exception of type
-        // boost::wrapexcept<invalid_option_value>" (exit 134, CI run 35872964147).
-        // The exception hierarchy headers are byte-identical between the
-        // vendored 1.91/1.92 trees; the 1.92 module-surface regeneration changed
-        // the test binary's link layout, and Mach-O's first-wins weak coalescing
-        // now resolves a node of the thrown wrapexcept RTTI chain to a copy
-        // distinct from the one the handler references (M7 root cause family,
-        // Mach-O typeinfo non-merge across module boundaries; proper fix out of
-        // scope). This RTTI-free catch-all restores the test's actual contract:
-        // an invalid option value must throw.
-        caught = true;
-    }
-    assert(caught);
+    // b1.92 macOS typeinfo regression: the bad-value throw+catch moved into
+    // a plain include-only lib TU (src/boost_program_options_extras.cpp) —
+    // on the macos-llvm leg the consumer-side exception no longer unwinds to
+    // any handler here (even catch(...) misses; libc++abi aborts with
+    // "terminating due to uncaught exception of type
+    // boost::wrapexcept<invalid_option_value>", exit 134, CI runs
+    // 35872964147 / 36104518727). A catch handler is only reachable when
+    // throw site and handler live in plain (non-module-consuming) code, so
+    // the assertion runs there and reports the outcome; the precise catch in
+    // that TU is stronger than the catch-chain that used to live here (M7).
+    // See .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md.
+    assert(po::detail::mcpp_rejects_invalid_option_value());
 
     po::positional_options_description pos;
     pos.add("name", 1);

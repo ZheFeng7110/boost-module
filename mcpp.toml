@@ -99,6 +99,7 @@ sources = [
     "deps/boost/libs/chrono/src/*.cpp",
     "src/program_options.cppm",
     "deps/boost/libs/program_options/src/*.cpp",
+    "src/boost_program_options_extras.cpp",
     "src/stacktrace.cppm",
     "deps/boost/libs/stacktrace/src/basic.cpp",
     "deps/boost/libs/stacktrace/src/dump.cpp",
@@ -403,7 +404,7 @@ all = { implies = ["optional", "variant", "variant2", "any", "core", "container_
   sources = ["src/chrono.cppm", "deps/boost/libs/chrono/src/*.cpp"]
   implies = ["assert", "config", "core", "integer", "move", "ratio", "system", "type_traits"]
 [features.program_options]
-  sources = ["src/program_options.cppm", "deps/boost/libs/program_options/src/*.cpp"]
+  sources = ["src/program_options.cppm", "deps/boost/libs/program_options/src/*.cpp", "src/boost_program_options_extras.cpp"]
   implies = ["any", "assert", "function", "iterator", "lexical_cast", "smart_ptr"]
 [features.stacktrace]
   sources = ["src/stacktrace.cppm", "deps/boost/libs/stacktrace/src/basic.cpp", "deps/boost/libs/stacktrace/src/dump.cpp"]
