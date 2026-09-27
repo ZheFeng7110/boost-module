@@ -39,17 +39,18 @@ int main() {
     po::notify(vm2);
     assert(vm2["port"].as<int>() == 1234);
 
-    // b1.92 macOS typeinfo regression: the bad-value throw+catch moved into
-    // a plain include-only lib TU (src/boost_program_options_extras.cpp) —
-    // on the macos-llvm leg the consumer-side exception no longer unwinds to
-    // any handler here (even catch(...) misses; libc++abi aborts with
+    // b1.92 macOS typeinfo/weak-copy regression: the bad-value throw+catch
+    // lives in a plain include-only lib TU (src/boost_program_options_extras.cpp)
+    // and the generated module surface suppresses this TU's implicit
+    // instantiation of the throwing templates (typed_value<int,char> /
+    // validate<int,char>, extern template in gen_exports/program_options.inc;
+    // explicit instantiation in that lib TU). Before the suppression the
+    // linker's first-wins weak coalescing picked this consumer TU's copy as
+    // the actual throw site, where the exception aborted with
     // "terminating due to uncaught exception of type
-    // boost::wrapexcept<invalid_option_value>", exit 134, CI runs
-    // 35872964147 / 36104518727). A catch handler is only reachable when
-    // throw site and handler live in plain (non-module-consuming) code, so
-    // the assertion runs there and reports the outcome; the precise catch in
-    // that TU is stronger than the catch-chain that used to live here (M7).
-    // See .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md.
+    // boost::wrapexcept<invalid_option_value>" (exit 134, CI runs
+    // 35872964147 / 36104518727 / 36317554695). See
+    // .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md.
     assert(po::detail::mcpp_rejects_invalid_option_value());
 
     po::positional_options_description pos;

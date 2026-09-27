@@ -78,6 +78,18 @@ export namespace boost { namespace program_options {
   using boost::program_options::woption;
   using boost::program_options::wparsed_options;
   using boost::program_options::wvalue;
+  // b1.92 macOS (typeinfo/weak-copy regression): the consumer TU's implicit
+  // instantiation of the bad-value path (typed_value<int,char> vtable/xparse
+  // + validate<int,char> throw site) is emitted as a weak symbol and wins
+  // Mach-O/ELF first-wins coalescing over the library TU's copy, so the
+  // throw kept terminating with an uncaught wrapexcept<invalid_option_value>
+  // (CI run 36317554695). Suppress the consumer emission; the strong copies
+  // come from the explicit instantiations in
+  // src/boost_program_options_extras.cpp (thread/leaf clone_impl pattern,
+  // M7c/M9).
+  extern template class boost::program_options::typed_value<int, char>;
+  extern template void boost::program_options::validate<int, char>(
+      boost::any&, const std::vector<std::string>&, int*, long);
 }}
 
 export namespace boost { namespace program_options { namespace command_line_style {

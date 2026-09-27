@@ -17,12 +17,36 @@
 // 恢复有效, 断言强度反而高于此前的消费侧兜底链。消费者只看到返回 bool
 // 的函数声明 (tests/program_options.cpp 手工 extern 声明, 不占模块面)。
 //
+// 2026-09-27 补强: 仅把函数体搬进普通 TU 还不够 — `validate<int,char>` /
+// `typed_value<int,char>` 是头文件模板, 测试 TU 与库 TU 各自发射一份弱符号;
+// link order 上测试 TU (module consumer) 在前, ELF/Mach-O 都 first-wins
+// 选它, 实际抛出点仍是消费 TU 的代码 (CI run 36317554695 仍 SIGABRT)。
+// 因此在下方对本 TU 的两条模板路径**显式实例化** (强符号), 并在生成面
+// (src/gen_exports/program_options.inc, 经 scripts/patchs/program_options.patch
+// 重放) 加 extern template 抑制消费侧弱实例化 — 与 thread/leaf 的
+// clone_impl 先例 (M7c/M9) 同一机制, 保证抛出点与 landing pad 都落在本 TU。
+//
 // 详见 .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md。
 
 #include <boost/program_options.hpp>
 
 #include <string>
 #include <vector>
+
+namespace boost
+{
+namespace program_options
+{
+
+// 强实例化: 覆盖消费 TU 的隐式弱实例化 (extern template 已抑制其发射)。
+// typed_value<int,char> 的 vtable/xparse/notify 与 validate<int,char> 的
+// 抛出代码都固定在本普通 TU, 与服务侧 `store()`/`parse()` 的调用链一致。
+template class typed_value<int, char>;
+template void validate<int, char>(
+    boost::any&, const std::vector<std::string>&, int*, long);
+
+} // namespace program_options
+} // namespace boost
 
 namespace boost
 {

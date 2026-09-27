@@ -309,9 +309,12 @@ cobalt 先例) / 纯 include (T3 consumer rule)。每接入新库需重新核实
   target.unix sources 明确列表。
 - macOS Mach-O typeinfo 跨模块边界不合并 → 精确 catch 落空, 测试以
   `std::exception` 兜底; 1.92 升级后消费 TU 侧的展开路径整体失效
-  (连 RTTI 无关的 catch(...) 也未命中 → terminate 先于展开到达 handler),
-  throw+catch 移入库侧普通 TU (boost_program_options_extras.cpp, extras
-  先例; 见 2026-09-25-macos-typeinfo-catch-regression.md); 根治超范围。
+  (连 RTTI 无关的 catch(...) 也未命中 → terminate 先于展开到达 handler)。
+  修法: bad-value 断言搬入库侧普通 TU (boost_program_options_extras.cpp),
+  并对 `typed_value<int,char>`/`validate<int,char>` 显式实例化 + 生成面
+  `extern template` 抑制消费侧实例化, 把抛出点钉死在普通 TU (extras/
+  clone_impl 先例; 见 2026-09-25-macos-typeinfo-catch-regression.md);
+  根治超范围。
 - libc++ 22.1.8 `std::println` 格式串问题 → examples 改 `std::printf`。
 - POSIX timer 粒度 `_SC_CLK_TCK` (10ms) → 测试忙等前需 sleep。
 - clone_impl: 消费者 TU 隐式实例化发射无 thunk 的弱 vtable, ELF COMDAT group

@@ -387,12 +387,15 @@ EXTRAS = {
     # extern template in leaf.inc suppresses the consumer's instantiation;
     # this TU's explicit instantiation provides the complete vtable + thunks.
     "leaf": ["src/boost_leaf_extras.cpp"],
-    # b1.92 macOS typeinfo regression: the consumer-side throw+catch of
-    # wrapexcept<invalid_option_value> no longer unwinds on the macos-llvm
-    # leg (even catch(...) misses — terminate before phase 2 reaches the
-    # handler). The bad-value assertion therefore lives in this plain
-    # include-only TU (throw site and landing pad in the same TU, vanilla
-    # semantics); the consumer only calls the bool helper. See
+    # b1.92 macOS typeinfo/weak-copy regression: the consumer-side throw+catch
+    # of wrapexcept<invalid_option_value> did not unwind on the macos-llvm leg
+    # (even catch(...) missed). The bad-value assertion lives in this plain
+    # include-only TU (throw site + landing pad in one TU, vanilla semantics);
+    # its explicit instantiations of typed_value<int,char> / validate<int,char>
+    # are the only definitions — the generated module surface suppresses the
+    # consumer's implicit ones (extern template in program_options.inc), so
+    # the executed throw site cannot drift to a module-consumer TU via
+    # first-wins weak coalescing. See
     # .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md.
     "program_options": ["src/boost_program_options_extras.cpp"],
 }
