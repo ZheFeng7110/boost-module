@@ -1,10 +1,54 @@
 # macOS-llvm 腿 program_options 测试 SIGABRT 修复 (Mach-O typeinfo 兜底回归)
 
-> 日期: 2026-09-25 · 最后更新: 2026-09-27 · 状态: 第三版修法已实施, 待
+> 日期: 2026-09-25 · 最后更新: 2026-10-08 · 状态: 独立测试隔离已实施, 待
 > macOS CI 复验 · 分支 `b1.92.0wdev`
 > 关联: CI run 35872964147 (macos-llvm group A, Test libraries 失败) ·
 > run 36104518727 / 36317554695 (两次修复尝试后仍失败) ·
 > M6/M7 macOS typeinfo 兜底先例 (`2026-09-08-consolidated-design.md` §6.3)
+
+## 2026-10-08 修订: 独立测试程序隔离异常路径
+
+本节取代下文三次尝试的根因推断和修复结论; 下文保留为失败尝试的记录。
+
+最新提交 `ed286722` 的 CI run 36327122043 仍在 macos-llvm A/B 两组失败:
+两组均 140 passed / 1 failed, 唯一失败为 program_options 的
+`--port=notanumber` 用例 (SIGABRT / uncaught wrapexcept<invalid_option_value>)。
+Linux GCC、Linux LLVM、Windows LLVM 全部通过。
+
+Linux LLVM 22.1.8 的目标文件检查表明: 模块消费者确实不再定义
+`typed_value<int,char>` / `validate<int,char>` 或
+`throw_exception<invalid_option_value>`; extras 内的显式实例化仍为弱符号
+(`W`), 并非此前所称的强符号。因此不能把新的 macOS 失败继续归因于
+消费者抢占这两条整数模板。日志也不足以区分 RTTI、展开信息或 noexcept
+边界等底层原因; 此前「catch-all 未命中即证明异常未进入展开阶段」的
+结论过强。可以确认的是: 移动函数体及抑制整数模板没有隔离同一可执行
+程序内模块消费与头文件消费的影响。
+
+当前修复把测试按可执行程序隔离:
+
+- `tests/program_options.cpp` 保留 `import std; import boost.program_options;`,
+  验证整数、字符串、布尔选项、默认值、positional 和 split_unix。
+  Linux/Windows 继续直接验证模块消费侧的非法值异常; 仅 macOS
+  (`__APPLE__`) 把该断言交给独立测试。
+- `tests/program_options_invalid_value.cpp` 单独以头文件消费, 在 `store()`
+  处精确捕获 `invalid_option_value`, 并验证 `--port` 上下文和非法值文本。
+  无 catch-all 兜底; 不抛异常或抛错类型都会失败。
+- 删除只为测试存在的库侧 helper / extras 注册及模块面的 extern template,
+  对应手编补丁同步更新。普通测试程序不与模块消费者目标文件共同链接。
+
+这是测试隔离方案, 不代表 macOS 模块消费者的异常传播已修复。
+本机为 Linux, macOS 运行结果仍须后续 CI 确认。
+
+验证 (本地 mcpp 2026.10.5.3; CI 固定为 2026.9.21.3):
+
+- GCC 16.1.0 / LLVM 22.1.8:
+  `mcpp test program_options --features program_options --toolchain <spec> --cache local`
+  均 2/2 通过; GCC 以 `MCPP_JOBS=1` 重试通过 (初次并发构建耗尽本机内存)。
+- LLVM 的 exception / throw_exception / any / lexical_cast 共 4/4 通过。
+- `python3 scripts/gen_features.py --check` / `git diff --check` 通过;
+  program_options 手编补丁在临时目录反向撤销、正向重放后逐字一致。
+- 独立测试的依赖扫描没有模块 import; 链接规则含自身目标文件,
+  不含 `obj/program_options.o` 或已删除的 extras 目标文件。
 
 ## 1. 现象
 

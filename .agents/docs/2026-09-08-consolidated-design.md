@@ -307,14 +307,11 @@ cobalt 先例) / 纯 include (T3 consumer rule)。每接入新库需重新核实
 
 - pthread `once.cpp` 是伞文件 (include once_atomic.cpp), glob 会双编 →
   target.unix sources 明确列表。
-- macOS Mach-O typeinfo 跨模块边界不合并 → 精确 catch 落空, 测试以
-  `std::exception` 兜底; 1.92 升级后消费 TU 侧的展开路径整体失效
-  (连 RTTI 无关的 catch(...) 也未命中 → terminate 先于展开到达 handler)。
-  修法: bad-value 断言搬入库侧普通 TU (boost_program_options_extras.cpp),
-  并对 `typed_value<int,char>`/`validate<int,char>` 显式实例化 + 生成面
-  `extern template` 抑制消费侧实例化, 把抛出点钉死在普通 TU (extras/
-  clone_impl 先例; 见 2026-09-25-macos-typeinfo-catch-regression.md);
-  根治超范围。
+- macOS program_options 非法值测试中止: catch-all、库侧 helper 和整数模板
+  显式实例化均未修复 (最新失败 run 36327122043)。当前把非法值检查放入
+  独立 include-only 测试程序, 保留非 macOS 的模块异常覆盖, 移除测试专用
+  extras 和 extern template。底层 RTTI/展开原因尚未确定, macOS 待 CI
+  复验; 见 2026-09-25-macos-typeinfo-catch-regression.md 的 2026-10-08 修订。
 - libc++ 22.1.8 `std::println` 格式串问题 → examples 改 `std::printf`。
 - POSIX timer 粒度 `_SC_CLK_TCK` (10ms) → 测试忙等前需 sleep。
 - clone_impl: 消费者 TU 隐式实例化发射无 thunk 的弱 vtable, ELF COMDAT group
@@ -403,7 +400,8 @@ dump_avx2/ssse3 不入包; atomic sse41 走探测失败回退; type_erasure `any
   dll `program_location` MSVC 风味崩 (测试只验默认构造)。
 - 模块不能导出 `std::tuple_size` 特化 (GMF 声明消费者不可见)。
 - program_options: 多值/无效值在 store() 阶段抛异常 (非 notify); macOS
-  测试 catch 需 `std::exception` 兜底。
+  非法值路径使用独立 include-only 测试程序精确捕获, 避免同一程序混入
+  模块消费者的异常相关实例化。
 - parameter 的 `BOOST_PARAMETER_NAME(index)` 生成关键字 `_index` (下划线前缀);
   tti 用组合形式成员函数探测; vmd 的 `(a)(b)` 是 sequence 非 tuple。
 - hof `reverse_fold` 按右到左折叠 (与 `fold` 方向相反)。

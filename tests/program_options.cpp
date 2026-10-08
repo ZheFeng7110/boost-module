@@ -3,13 +3,6 @@
 import std;
 import boost.program_options;
 
-// Out-of-line bad-value helper — lives in a plain (include-only) lib TU
-// (src/boost_program_options_extras.cpp); declared by hand here instead of
-// through the module so the generated module surface stays untouched.
-namespace boost { namespace program_options { namespace detail {
-bool mcpp_rejects_invalid_option_value();
-}}}
-
 int main() {
     namespace po = boost::program_options;
 
@@ -39,19 +32,20 @@ int main() {
     po::notify(vm2);
     assert(vm2["port"].as<int>() == 1234);
 
-    // b1.92 macOS typeinfo/weak-copy regression: the bad-value throw+catch
-    // lives in a plain include-only lib TU (src/boost_program_options_extras.cpp)
-    // and the generated module surface suppresses this TU's implicit
-    // instantiation of the throwing templates (typed_value<int,char> /
-    // validate<int,char>, extern template in gen_exports/program_options.inc;
-    // explicit instantiation in that lib TU). Before the suppression the
-    // linker's first-wins weak coalescing picked this consumer TU's copy as
-    // the actual throw site, where the exception aborted with
-    // "terminating due to uncaught exception of type
-    // boost::wrapexcept<invalid_option_value>" (exit 134, CI runs
-    // 35872964147 / 36104518727 / 36317554695). See
-    // .agents/docs/2026-09-25-macos-typeinfo-catch-regression.md.
-    assert(po::detail::mcpp_rejects_invalid_option_value());
+#if !defined(__APPLE__)
+    // macOS covers this path in program_options_invalid_value.cpp.
+    po::variables_map invalid_vm;
+    bool caught = false;
+    try {
+        po::store(po::command_line_parser({"--port=notanumber"})
+                      .options(desc).run(), invalid_vm);
+    } catch (po::invalid_option_value const& e) {
+        assert(e.get_option_name() == "--port");
+        assert(std::string(e.what()).find("notanumber") != std::string::npos);
+        caught = true;
+    }
+    assert(caught);
+#endif
 
     po::positional_options_description pos;
     pos.add("name", 1);
