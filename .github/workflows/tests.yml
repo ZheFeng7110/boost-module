@@ -1,10 +1,10 @@
 # Boost 1.92.0 C++23 module layer — CI matrix (M6).
 #
 # 编译/测试矩阵 (对应 .agents/plan/boost-mcpp-module-plan.md M6):
-#   windows-llvm-msvc   windows-latest  llvm@22.1.8 → x86_64-windows-msvc   (用 runner 自带 MSVC)
-#   linux-gcc           ubuntu-24.04    gcc@16.1.0  → x86_64-linux-gnu
-#   linux-llvm          ubuntu-24.04    llvm@22.1.8 → x86_64-linux-gnu
-#   macos-llvm          macos-14        llvm@22.1.8 → aarch64-macos
+#   windows-llvm-msvc   windows-latest / windows-11-arm  llvm@22.1.8 → x86_64/arm64-windows-msvc
+#   linux-gcc           ubuntu-24.04 / ubuntu-24.04-arm  gcc@16.1.0  → x86_64/aarch64-linux-gnu
+#   linux-llvm          ubuntu-24.04 / ubuntu-24.04-arm  llvm@22.1.8 → x86_64/aarch64-linux-gnu
+#   macos-llvm          macos-13 / macos-latest          llvm@22.1.8 → x86_64/arm64-macos
 # (windows gcc/mingw 先不做 — 移交后续里程碑)
 #
 # 门禁按组拆分 (2026-09-21): `test` job 的 matrix 增加 group 轴 (A/B), 每个 OS
@@ -64,17 +64,21 @@ env:
 jobs:
   # M12 门禁: 每个 OS 上 group A / group B 是两条独立腿 (matrix.group), 并行执行。
   test:
-    name: ${{ matrix.target.name }} (group ${{ matrix.group }})
+    name: ${{ matrix.target.name }}-${{ matrix.target.arch }} (group ${{ matrix.group }})
     runs-on: ${{ matrix.target.os }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         target:
-          - { name: windows-llvm-msvc, os: windows-latest, toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
-          - { name: linux-gcc,         os: ubuntu-24.04,  toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
-          - { name: linux-llvm,        os: ubuntu-24.04,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
-          - { name: macos-llvm,        os: macos-14,      toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: windows-llvm-msvc, os: windows-latest,   arch: x86_64, mcpp: windows-x86_64, toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: windows-llvm-msvc, os: windows-11-arm,   arch: arm64,  mcpp: windows-arm64,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: linux-gcc,         os: ubuntu-24.04,     arch: x86_64, mcpp: linux-x86_64,   toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
+          - { name: linux-gcc,         os: ubuntu-24.04-arm, arch: arm64,  mcpp: linux-aarch64,  toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
+          - { name: linux-llvm,        os: ubuntu-24.04,     arch: x86_64, mcpp: linux-x86_64,   toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: linux-llvm,        os: ubuntu-24.04-arm, arch: arm64,  mcpp: linux-aarch64,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: macos-llvm,        os: macos-26-intel,   arch: x86_64, mcpp: macosx-x86_64,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
+          - { name: macos-llvm,        os: macos-latest,     arch: arm64,  mcpp: macosx-arm64,   toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
         group: [A, B]
     steps:
       - uses: actions/checkout@v7
@@ -87,9 +91,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.mcpp
-          key: mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-v${{ env.MCPP_VERSION }}
+          key: mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-${{ matrix.target.arch }}-v${{ env.MCPP_VERSION }}
           restore-keys: |
-            mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-
+            mcpp-${{ matrix.target.os }}-${{ matrix.target.name }}-${{ matrix.target.arch }}-
 
       - name: Install mcpp
         shell: bash
@@ -97,10 +101,10 @@ jobs:
           set -euo pipefail
           VER="$MCPP_VERSION"
           BASE="https://github.com/mcpp-community/mcpp/releases/download/v${VER}"
+          PLAT="${{ matrix.target.mcpp }}"
           case "$RUNNER_OS" in
-            Linux)   PLAT="linux-x86_64";   EXT="tar.gz" ;;
-            macOS)   PLAT="macosx-arm64";   EXT="tar.gz" ;;
-            Windows) PLAT="windows-x86_64"; EXT="zip"    ;;
+            Linux|macOS) EXT="tar.gz" ;;
+            Windows)     EXT="zip"    ;;
             *) echo "unsupported runner os: $RUNNER_OS"; exit 1 ;;
           esac
           WORK=$(mktemp -d)
@@ -150,7 +154,7 @@ jobs:
   # 用 `mcpp run -p <member>` 逐个构建并运行各个 example。单独成 job, 且
   # needs test —— group A/B 两腿全部成功后才会跑。
   examples:
-    name: ${{ matrix.name }} (examples)
+    name: ${{ matrix.name }}-${{ matrix.arch }} (examples)
     needs: [test]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -160,18 +164,50 @@ jobs:
         include:
           - name: windows-llvm-msvc
             os: windows-latest
+            arch: x86_64
+            mcpp: windows-x86_64
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+          - name: windows-llvm-msvc
+            os: windows-11-arm
+            arch: arm64
+            mcpp: windows-arm64
             toolchain: llvm@22.1.8
             install: "llvm 22.1.8"
           - name: linux-gcc
             os: ubuntu-24.04
+            arch: x86_64
+            mcpp: linux-x86_64
+            toolchain: gcc@16.1.0
+            install: "gcc 16.1.0"
+          - name: linux-gcc
+            os: ubuntu-24.04-arm
+            arch: arm64
+            mcpp: linux-aarch64
             toolchain: gcc@16.1.0
             install: "gcc 16.1.0"
           - name: linux-llvm
             os: ubuntu-24.04
+            arch: x86_64
+            mcpp: linux-x86_64
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+          - name: linux-llvm
+            os: ubuntu-24.04-arm
+            arch: arm64
+            mcpp: linux-aarch64
             toolchain: llvm@22.1.8
             install: "llvm 22.1.8"
           - name: macos-llvm
-            os: macos-14
+            os: macos-26-intel
+            arch: x86_64
+            mcpp: macosx-x86_64
+            toolchain: llvm@22.1.8
+            install: "llvm 22.1.8"
+          - name: macos-llvm
+            os: macos-latest
+            arch: arm64
+            mcpp: macosx-arm64
             toolchain: llvm@22.1.8
             install: "llvm 22.1.8"
     steps:
@@ -181,9 +217,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.mcpp
-          key: mcpp-${{ matrix.os }}-${{ matrix.name }}-v${{ env.MCPP_VERSION }}
+          key: mcpp-${{ matrix.os }}-${{ matrix.name }}-${{ matrix.arch }}-v${{ env.MCPP_VERSION }}
           restore-keys: |
-            mcpp-${{ matrix.os }}-${{ matrix.name }}-
+            mcpp-${{ matrix.os }}-${{ matrix.name }}-${{ matrix.arch }}-
 
       - name: Install mcpp
         shell: bash
@@ -191,10 +227,10 @@ jobs:
           set -euo pipefail
           VER="$MCPP_VERSION"
           BASE="https://github.com/mcpp-community/mcpp/releases/download/v${VER}"
+          PLAT="${{ matrix.mcpp }}"
           case "$RUNNER_OS" in
-            Linux)   PLAT="linux-x86_64";   EXT="tar.gz" ;;
-            macOS)   PLAT="macosx-arm64";   EXT="tar.gz" ;;
-            Windows) PLAT="windows-x86_64"; EXT="zip"    ;;
+            Linux|macOS) EXT="tar.gz" ;;
+            Windows)     EXT="zip"    ;;
             *) echo "unsupported runner os: $RUNNER_OS"; exit 1 ;;
           esac
           WORK=$(mktemp -d)
@@ -241,9 +277,9 @@ jobs:
         working-directory: examples
 
       # Profile feature (backend = "log-avx2"): x86_64-only (-mavx2), so skip
-      # the arm64 macOS leg. See .agents/docs/2026-09-21-feature-macro-profiles.md.
+      # the arm64 legs. See .agents/docs/2026-09-21-feature-macro-profiles.md.
       - name: Build & run example (profiles_usage, x86_64)
-        if: matrix.name != 'macos-llvm'
+        if: matrix.arch == 'x86_64'
         shell: bash
         run: mcpp run -p profiles_usage
         working-directory: examples
