@@ -66,6 +66,13 @@ jobs:
       GITCODE_TOKEN: ${{ secrets.GITCODE_TOKEN }}
       # Disable the CLI's background npm update check (CI is already non-interactive).
       GC_NO_UPDATE_CHECK: "1"
+      # The gitcode (atomgit-cli) HTTP client timeout is GC_TIMEOUT, defaulting to
+      # 30s. Putting the 40-85 MB release assets to file.gitcode.com from a
+      # GitHub-hosted runner often exceeds that, causing "context deadline
+      # exceeded (Client.Timeout exceeded while awaiting headers)". Raise it to
+      # 10 minutes, matching the CLI's internal upload timeout.
+      # Note: the value is parsed as a Go duration, so use "10m" (not "10min").
+      GC_TIMEOUT: "10m"
 
     steps:
       - name: Checkout (all history)
