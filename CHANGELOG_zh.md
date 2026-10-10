@@ -7,6 +7,57 @@
 v0.1.0）。2026-09-22 之前发布的条目使用历史的 `b<boost版本>w<封装版本>` 拼写,
 原样保留。
 
+## 1.92.0.0.0.0 (2026-10-10, 正式版)
+
+Boost 1.92.0 的首个正式版（git tag `v1.92.0.0.0.0`）。vendored 上游重导、导出面重生成;
+模块/feature 计数与可消费集合与 `1.91.0.0.1.0` 形态一致（116 模块 / 118 feature /
+默认 49 库闭包 / 可消费 138 库）。发布自动化补全: tag push 时同时镜像到 GitCode 并把
+新版本登记进 mcpp package index。
+
+### 内容清单
+
+- **116 个模块接口**（`src/*.cppm`）：消费者 `import boost.<lib>;` / 汇总 `import boost;`。
+- **118 个库 feature**：116 模块 feature + `log` / `unit_test_framework` 两个无模块
+  feature; 另有 **2 个 profile feature**（`backend-log-ssse3` / `backend-log-avx2`,
+  x86_64 Boost.Log dump 后端）。
+- **默认 49 库闭包**（`[features].default`），其余 opt-in。
+- **封装可消费总数 138 库** = 116 模块 + 2 编译库 include-only（log、test）+
+  20 纯 include-only。
+- **测试**: 默认集 142/142 smoke 通过; CI 五腿
+  （windows-llvm-msvc x86_64 / linux-gcc x86_64 + arm64 / linux-llvm x86_64 /
+  macos-llvm arm64）A/B 两组全量门禁。
+
+### 自 v1.91.0.0.1.0 以来的变更
+
+- **上游 Boost 1.92.0 重导**: `deps/boost/` 由 `1.91.0` 升至 `1.92.0`
+  （`BOOST_VERSION 109200`、`BOOST_LIB_VERSION "1_92"`）, 全部 vendored 补丁重放,
+  `src/gen_exports/*.inc|*.deps`、`src/*.cppm`、`mcpp.toml [features]` 及
+  `scripts/features.lst` 全量重生成。
+- **导出面**: 按 1.92 头集重扫 `scripts/libs.json`（asio/container/graph/lockfree 的
+  curated 新增; 恢复历史排除项）, 实际仅 asio / container / graph / lockfree 变化;
+  `decimal` 的 1.92 平台专属 int128 实体按上游条件加守卫, 使 macOS arm64 /
+  windows-msvc 可编译; `stacktrace` feature 增编 `src/dump.cpp`; asio vendored 补丁
+  由 6 文件缩为 2。
+- **macOS 异常处理**: `[target.macos.build]` 改用 Apple `/usr/bin/ld` —— LLVM 22.1.8 的
+  `ld64.lld` 可能生成重复 unwind 条目致异常分发失效（上游 LLVM issue 216154）。
+  `program_options` 非法值回归拆为模块侧用例 + 独立 include-only 测试
+  （新增 `tests/program_options_invalid_value.cpp`）。
+- **发布自动化**: 新增 GitCode `mirror` job（强制同步分支/tag 并发布内容一致的
+  Release, 用中文 notes）, 以及非预览 tag 的 `publish-index` job（在
+  `pkgs/z/ZheFeng7110.boost.lua` 前插新版本并向上游 mcpp-index 开 PR）; release 标题
+  改为直接使用 tag。
+- **CI**: mcpp 钉到 `2026.10.8.1`; runner 系统版本更新; 新增 Linux ARM64 (gcc) 腿;
+  移除无 mcpp 发行资产的宿主（macOS x86_64、Windows ARM64、Linux ARM64 LLVM）。
+- **文档/示例**: 以 mcpp package index 作为首选渠道（git 依赖备选, 注明中国大陆镜像）;
+  `examples/git_dep_usage` 指向 1.92 升级 revision。
+- 无模块、feature、计数或 API 拼写变更; 支持的库集合不变。
+
+### 已知限制
+
+正式版从简列出; 详见 release notes（`docs/release_notes/v1.92.0.0.0.0.md`）与
+[架构文档 §4](docs/architecture.md#4-已知限制-消费者须知)。mcpp package index 一项不再
+待做。
+
 ## 1.91.0.0.1.0 (2026-09-22, 正式版次版本)
 
 模块封装次版本 `1.91.0.0.1.0`（git tag `v1.91.0.0.1.0`）。模块/feature 计数与可消费面

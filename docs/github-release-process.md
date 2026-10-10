@@ -10,8 +10,9 @@
 
 ## 0. Prerequisites (release bar)
 
-- [ ] All four CI legs (windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64)
-      green for the commit to be released; both A/B gate groups pass.
+- [ ] All CI legs (windows-clang-msvc x86_64 / linux-gcc x86_64 + arm64 / linux-llvm
+      x86_64 / macos-llvm arm64) green for the commit to be released; both A/B gate groups
+      pass.
 - [ ] `uv run scripts/gen_features.py --check` passes (zero drift between the features
       block and features.lst).
 - [ ] `uv run scripts/reapply_hand_edits.py` re-runs idempotently with zero changes
@@ -67,8 +68,12 @@ The GitHub Release is created **automatically** by the
 is pushed: it extracts `docs/release_notes/<tag>.md` as the release body (**fails the run
 if the file is missing**), runs `scripts/package-source.sh` to build the source archives
 (`.zip` / `.tar.gz` / `.tar.xz` / `.7z` + `.sha256` checksums), and attaches them to a
-release titled `Release <tag>`. Tags ending in `-preview` are published with the
-prerelease flag set.
+release titled `<tag>`. Tags ending in `-preview` are published with the prerelease flag set.
+Two further jobs run after the GitHub Release: `mirror` force-syncs every branch/tag to the
+GitCode mirror (`gitcode.com/ZheFeng7/boost-module`) and publishes a matching Release whose
+body is `docs/zh/release_notes/<tag>.md` (also required), and `publish-index` (stable tags
+only) registers the version in the mcpp package index (`pkgs/z/ZheFeng7110.boost.lua`) and
+opens the upstream PR.
 
 Monitor the workflow run (`Actions` tab, `Release` workflow). Manual creation is only the
 fallback if the automation failed after the prerequisites were fixed:
@@ -76,7 +81,7 @@ fallback if the automation failed after the prerequisites were fixed:
 ```bash
 bash scripts/package-source.sh
 gh release create <tag> \
-  --title "Release <tag>" \
+  --title "<tag>" \
   --notes-file docs/release_notes/<tag>.md \
   target/dist/* \
   --prerelease          # mandatory for previews; drop for stable releases
@@ -95,6 +100,8 @@ gh release create <tag> \
 - [ ] Release page visible, notes render correctly, tag commit is correct; the `Release`
       workflow ran green and the source archives (zip / tar.gz / tar.xz / 7z + sha256) are
       attached to the release.
+- [ ] The `mirror` job published the matching GitCode Release (same assets, Chinese notes),
+      and for a stable tag the `publish-index` job opened the mcpp-index registration PR.
 - [ ] Consumer probe: a temporary project with a `git = ... tag = <tag>` dependency
       declaration goes through build+run (at least the default set of the three
       configurations in architecture.md §2.1).
@@ -111,5 +118,5 @@ gh release create <tag> \
 |---|---|---|
 | `--prerelease` | yes (set automatically by the workflow for `-preview` tags) | no |
 | tag suffix | `-preview` | none (e.g. `v1.92.0.0.0.0`) |
-| mcpp package index (T3) | not published | boost.lua integration + registry consumption probe mandatory |
+| mcpp package index (T3) | not published | registered automatically by the `publish-index` job (descriptor PR; registry consumption probe still recommended) |
 | Known-limitation disclosure | full list | reduced to still-valid entries |

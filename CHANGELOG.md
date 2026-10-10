@@ -8,6 +8,60 @@ six-segment numeric `v<boost version>.<wrapper version>` format
 2026-09-22 use the historical `b<boost version>w<wrapper version>` spelling and are kept
 verbatim.
 
+## 1.92.0.0.0.0 (2026-10-10, stable)
+
+First stable release for Boost 1.92.0 (git tag `v1.92.0.0.0.0`). The vendored upstream is
+re-imported and the export surface regenerated; module/feature counts and the consumable set
+keep the same shape as `1.91.0.0.1.0` (116 modules / 118 features / 49-library default
+closure / 138 consumable). Release automation is now complete: the tag push also mirrors the
+release to GitCode and registers the version on the mcpp package index.
+
+### Contents
+
+- **116 module interfaces** (`src/*.cppm`): consumers `import boost.<lib>;` or the umbrella
+  `import boost;`.
+- **118 library features**: 116 module features + two module-less features, `log` and
+  `unit_test_framework`; plus **2 profile features** (`backend-log-ssse3` /
+  `backend-log-avx2`, x86_64 Boost.Log dump backends).
+- **Default 49-library closure** (`[features].default`); everything else is opt-in.
+- **138 libraries consumable in total** = 116 modules + 2 compiled libraries consumed
+  include-only (log, test) + 20 pure include-only.
+- **Testing**: 142/142 smoke tests; five CI legs (windows-llvm-msvc x86_64 / linux-gcc
+  x86_64 + arm64 / linux-llvm x86_64 / macos-llvm arm64) with full A/B gating.
+
+### Changes Since v1.91.0.0.1.0
+
+- **Upstream Boost 1.92.0 re-import**: `deps/boost/` bumped `1.91.0 → 1.92.0`
+  (`BOOST_VERSION 109200`, `BOOST_LIB_VERSION "1_92"`), all vendored patches replayed, and
+  `src/gen_exports/*.inc|*.deps`, `src/*.cppm`, `mcpp.toml [features]` plus
+  `scripts/features.lst` fully regenerated.
+- **Export surface**: `scripts/libs.json` rescanned for the 1.92 header set (curated additions
+  under asio/container/graph/lockfree; historical exclusions restored). Only asio / container /
+  graph / lockfree actually change. `decimal` 1.92 platform-only int128 entities are now guarded
+  by the upstream conditions so macOS arm64 / windows-msvc compile; the `stacktrace` feature adds
+  `src/dump.cpp`; the asio vendored patch shrinks from 6 files to 2.
+- **macOS exception handling**: use Apple's `/usr/bin/ld` via `[target.macos.build]` because
+  LLVM 22.1.8's `ld64.lld` can emit duplicate unwind entries that break exception dispatch
+  (upstream LLVM issue 216154). The `program_options` invalid-value regression is split into a
+  module-side check plus a dedicated include-only test (new `tests/program_options_invalid_value.cpp`).
+- **Release automation**: a GitCode `mirror` job force-syncs branches/tags and publishes a
+  matching Release (Chinese notes), and a `publish-index` job registers the version in
+  `pkgs/z/ZheFeng7110.boost.lua` and opens the upstream mcpp-index PR for stable tags; the
+  release title is now just the tag.
+- **CI**: mcpp pinned to `2026.10.8.1`; runner OS updated; Linux ARM64 (gcc) legs added; hosts
+  without mcpp release binaries dropped (macOS x86_64, Windows ARM64, Linux ARM64 LLVM).
+- **Docs/examples**: the mcpp package index is presented as the primary channel (git dependency
+  kept as the alternative, with the Mainland-China mirror noted); `examples/git_dep_usage`
+  points at the 1.92 upgrade revision.
+- No module, feature, count, or API-spelling change; supported library set unchanged.
+
+### Known Limitations
+
+Kept concise for the stable release; see the release notes
+(`docs/release_notes/v1.92.0.0.0.0.md`) and
+[architecture doc §4](docs/architecture.md#4-known-limitations-consumer-notes). The mcpp
+package-index item is no longer pending.
+
 ## 1.91.0.0.1.0 (2026-09-22, stable minor)
 
 Wrapper minor release `1.91.0.0.1.0` (git tag `v1.91.0.0.1.0`). Module/feature counts and

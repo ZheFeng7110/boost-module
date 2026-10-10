@@ -9,8 +9,8 @@
 
 ## 0. 前置条件 (发布门槛)
 
-- [ ] CI 四腿 (windows-clang-msvc / linux-gcc / linux-llvm / macos-llvm-arm64)
-      对待发布 commit 全绿, A/B 两组门禁均通过。
+- [ ] CI 全腿 (windows-clang-msvc x86_64 / linux-gcc x86_64 + arm64 /
+      linux-llvm x86_64 / macos-llvm arm64) 对待发布 commit 全绿, A/B 两组门禁均通过。
 - [ ] `uv run scripts/gen_features.py --check` 通过 (features 块与
       features.lst 零漂移)。
 - [ ] `uv run scripts/reapply_hand_edits.py` 幂等复跑零改动
@@ -61,7 +61,11 @@ git push origin <tag>
 **自动创建**: workflow 提取 `docs/release_notes/<tag>.md` 作为 release 正文
 (**文件缺失则直接报错失败**), 运行 `scripts/package-source.sh` 打出源码包
 (`.zip` / `.tar.gz` / `.tar.xz` / `.7z` + `.sha256` 校验文件) 并作为附件上传,
-release 标题为 `Release <tag>`; 以 `-preview` 结尾的 tag 自动加 prerelease 标记。
+release 标题为 `<tag>`; 以 `-preview` 结尾的 tag 自动加 prerelease 标记。GitHub Release
+生成后另有两个 job: `mirror` 把全部分支/tag 强制同步到 GitCode 镜像
+(`gitcode.com/ZheFeng7/boost-module`) 并发布内容一致的 Release（正文取
+`docs/zh/release_notes/<tag>.md`, 同样必须存在）; `publish-index`（仅稳定 tag）把新版本
+登记进 mcpp package index (`pkgs/z/ZheFeng7110.boost.lua`) 并向上游开 PR。
 
 在 Actions 页的 `Release` workflow 中观察运行结果。仅当修复前置条件后自动化
 仍失败时, 才手动兜底:
@@ -69,7 +73,7 @@ release 标题为 `Release <tag>`; 以 `-preview` 结尾的 tag 自动加 prerel
 ```bash
 bash scripts/package-source.sh
 gh release create <tag> \
-  --title "Release <tag>" \
+  --title "<tag>" \
   --notes-file docs/release_notes/<tag>.md \
   target/dist/* \
   --prerelease          # 预览版必须; 正式版去掉本项
@@ -87,6 +91,8 @@ gh release create <tag> \
 
 - [ ] Release 页面可见, notes 渲染正常, 指向的 tag commit 正确; `Release`
       workflow 运行成功, 源码包 (zip / tar.gz / tar.xz / 7z + sha256) 已挂到 release 附件。
+- [ ] `mirror` job 已在 GitCode 发布内容一致的 Release（同一附件 + 中文 notes）;
+      稳定 tag 的 `publish-index` job 已开出 mcpp-index 登记 PR。
 - [ ] 消费者 probe: 临时工程以 `git = ... tag = <tag>` 依赖声明走一遍
       build+run (architecture.md §2.1 的三种配置中至少默认集一种)。
 - [ ] `CHANGELOG.md` 与 `docs/release_notes/` 与实际发布一致
@@ -101,5 +107,5 @@ gh release create <tag> \
 |---|---|---|
 | `--prerelease` | 加 (workflow 对 `-preview` tag 自动设置) | 不加 |
 | tag 后缀 | `-preview` | 无 (如 `v1.92.0.0.0.0`) |
-| mcpp package index (T3) | 不上架 | boost.lua 对接 + registry 消费 probe 必做 |
+| mcpp package index (T3) | 不上架 | 由 `publish-index` job 自动登记描述符 PR（仍建议做 registry 消费 probe） |
 | 已知限制披露 | 全量 | 缩减为仍有效的条目 |
