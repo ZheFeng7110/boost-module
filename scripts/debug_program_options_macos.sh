@@ -14,7 +14,7 @@ if [[ -n "$test_bin" ]]; then
     -o bt -- "$test_bin" || true
 fi
 
-echo "=== relink with DWARF unwind metadata ==="
+echo "=== inspect unwind metadata and compare linkers ==="
 python3 - <<'PY'
 import pathlib
 import shlex
@@ -32,13 +32,29 @@ for ninja in pathlib.Path('target').rglob('build.ninja'):
             continue
         objects = shlex.split(line.split(': cxx_link ', 1)[1].split(' | ', 1)[0])
         unit_flags = lines[i + 1].split('=', 1)[1].strip()
-        command = (shlex.split(variables['cxx']) + objects +
-                   ['-o', 'bin/program_options_dwarf'] +
-                   shlex.split(variables['ldflags']) + shlex.split(unit_flags) +
-                   ['-Wl,-no_compact_unwind'])
-        subprocess.run(command, cwd=ninja.parent, check=True)
-        result = subprocess.run(['bin/program_options_dwarf'], cwd=ninja.parent)
-        print('DWARF unwind result:', result.returncode, flush=True)
+        compiler = shlex.split(variables['cxx'])
+        flags = shlex.split(variables['ldflags']) + shlex.split(unit_flags)
+        flags = [f for f in flags if not f.startswith('-fuse-ld=')]
+        for name, linker in [('lld', '-fuse-ld=lld'), ('apple', '-fuse-ld=/usr/bin/ld')]:
+            output = 'bin/program_options_' + name
+            command = compiler + objects + ['-o', output] + flags + [linker]
+            subprocess.run(command, cwd=ninja.parent, check=True)
+            result = subprocess.run([output], cwd=ninja.parent)
+            print(name, 'linker result:', result.returncode, flush=True)
+            objdump = pathlib.Path(compiler[0]).parent / 'llvm-objdump'
+            dump = subprocess.check_output([str(objdump), '--unwind-info', output],
+                                           cwd=ninja.parent, text=True)
+            entries = [l.strip() for l in dump.splitlines() if 'function offset=' in l]
+            previous = None
+            duplicates = 0
+            for entry in entries:
+                address = entry.split('function offset=', 1)[1].split(',', 1)[0]
+                if previous and address == previous[0]:
+                    duplicates += 1
+                    if duplicates <= 10:
+                        print('duplicate unwind:', previous[1], entry, flush=True)
+                previous = address, entry
+            print(name, 'duplicate unwind entry count:', duplicates, flush=True)
 PY
 
 echo "=== generated compile/link rules ==="

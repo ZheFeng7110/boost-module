@@ -726,10 +726,10 @@ ldflags = ["-pthread"]
 # LLVM 22.1.8's lld-macho can emit a duplicate zero-unwind entry when a
 # zero-length __TEXT,__text input precedes a throwing function. libunwind then
 # selects that entry and reports end-of-stack during phase one, so even
-# catch(...) cannot receive the exception. Disable compact unwind on macOS and
-# keep the DWARF EH tables, which avoids the lld-macho layout bug.
+# catch(...) cannot receive the exception. Use Apple's linker on macOS;
+# lld-macho ignores -no_compact_unwind (llvm/llvm-project#216154).
 [target.macosx.build]
-ldflags = ["-Wl,-no_compact_unwind"]
+ldflags = ["-fuse-ld=/usr/bin/ld"]
 
 # M8: src/boost.cppm 已删 (汇总模块由 build.mcpp 生成)。lib root 指向
 # MCPP_OUT_DIR 内的构建期产物 (docs/30 "Dependencies' build.mcpp": 包根可能只读

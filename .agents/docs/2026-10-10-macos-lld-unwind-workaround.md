@@ -6,6 +6,15 @@ shadows the real entry, causing libunwind to stop during phase one and making
 all handlers unreachable. This affected the include-only
 `program_options_invalid_value` test in group A.
 
-The macOS target now passes `-Wl,-no_compact_unwind`, preserving DWARF EH
-tables instead of the affected compact-unwind index. Linux and Windows retain
-their existing link flags.
+The macOS target uses Apple's `/usr/bin/ld` via
+`-fuse-ld=/usr/bin/ld`. `ld64.lld` ignores `-no_compact_unwind`; the same-input
+relink with that flag still aborts (run 38029410684). Linux and Windows retain
+their existing link flags. Both the module consumer and include-only consumer
+now exercise the invalid-value exception path on macOS.
+
+Evidence so far: LLDB shows `__cxa_throw` calling `failed_throw` directly for
+`invalid_option_value`, while the preceding `bad_lexical_cast` is caught.
+Omitting the preceding library build does not change the failure. An Apple
+clang standalone build passes. This is consistent with the layout-dependent
+LLD defect described in [LLVM issue 216154](https://github.com/llvm/llvm-project/issues/216154);
+verification of the same-object linker comparison is pending CI.
