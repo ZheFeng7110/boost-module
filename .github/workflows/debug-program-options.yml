@@ -1,0 +1,39 @@
+name: Debug program_options
+on:
+  pull_request:
+    branches: [b1.92.0wdev]
+jobs:
+  debug:
+    if: github.head_ref == 'fix/program-options-macos-ci'
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          path: ~/.mcpp
+          key: mcpp-macos-latest-macos-llvm-arm64-v2026.10.8.1
+      - name: Install pinned mcpp and LLVM
+        shell: bash
+        run: |
+          set -euo pipefail
+          work=$(mktemp -d)
+          base=https://github.com/mcpp-community/mcpp/releases/download/v2026.10.8.1
+          asset=mcpp-2026.10.8.1-macosx-arm64.tar.gz
+          curl -fsSL --retry 5 "$base/$asset" -o "$work/$asset"
+          curl -fsSL --retry 5 "$base/$asset.sha256" -o "$work/$asset.sha256"
+          test "$(shasum -a 256 "$work/$asset" | awk '{print $1}')" = "$(awk '{print $1}' "$work/$asset.sha256")"
+          mkdir -p "$HOME/.mcpp"
+          tar -xzf "$work/$asset" -C "$HOME/.mcpp" --strip-components=1
+          echo "$HOME/.mcpp/bin" >> "$GITHUB_PATH"
+          "$HOME/.mcpp/bin/mcpp" toolchain install llvm 22.1.8
+          "$HOME/.mcpp/bin/mcpp" toolchain default llvm@22.1.8
+      - name: Test group A without preceding library build
+        shell: bash
+        run: |
+          features=$(ruby -ryaml -e 'puts YAML.load_file(".github/workflows/tests.yml")["env"]["BOOST_GROUP_A"]')
+          mcpp test program_options --features "$features"
+      - name: Compare unwind metadata and collect backtraces
+        if: always()
+        shell: bash
+        run: bash scripts/debug_program_options_macos.sh

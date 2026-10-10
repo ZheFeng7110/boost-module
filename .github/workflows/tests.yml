@@ -67,6 +67,7 @@ env:
 jobs:
   # M12 门禁: 每个 OS 上 group A / group B 是两条独立腿 (matrix.group), 并行执行。
   test:
+    if: github.head_ref != 'fix/program-options-macos-ci'
     name: ${{ matrix.target.name }}-${{ matrix.target.arch }} (group ${{ matrix.group }})
     runs-on: ${{ matrix.target.os }}
     timeout-minutes: 90
