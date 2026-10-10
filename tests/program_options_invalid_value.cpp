@@ -1,5 +1,4 @@
-// Keep the exception path in a separate include-only executable: sharing a
-// binary with the module consumer still aborts on macOS (CI run 36327122043).
+// Include-only coverage for invalid-value exceptions and option context.
 #include "test_assert.hpp"
 #include <boost/program_options.hpp>
 

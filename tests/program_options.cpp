@@ -32,8 +32,6 @@ int main() {
     po::notify(vm2);
     assert(vm2["port"].as<int>() == 1234);
 
-#if !defined(__APPLE__)
-    // macOS covers this path in program_options_invalid_value.cpp.
     po::variables_map invalid_vm;
     bool caught = false;
     try {
@@ -45,7 +43,6 @@ int main() {
         caught = true;
     }
     assert(caught);
-#endif
 
     po::positional_options_description pos;
     pos.add("name", 1);

@@ -3,11 +3,12 @@
 # 编译/测试矩阵 (对应 .agents/plan/boost-mcpp-module-plan.md M6):
 #   windows-llvm-msvc   windows-latest                    llvm@22.1.8 → x86_64-windows-msvc
 #   linux-gcc           ubuntu-24.04 / ubuntu-24.04-arm  gcc@16.1.0  → x86_64/aarch64-linux-gnu
-#   linux-llvm          ubuntu-24.04 / ubuntu-24.04-arm  llvm@22.1.8 → x86_64/aarch64-linux-gnu
+#   linux-llvm          ubuntu-24.04                     llvm@22.1.8 → x86_64-linux-gnu
 #   macos-llvm          macos-latest                     llvm@22.1.8 → arm64-macos
 # (windows gcc/mingw 先不做 — 移交后续里程碑)
 # mcpp v2026.10.8.1 不提供 windows-arm64 / macosx-x86_64 发布资产,
 # 因此 test 和 examples 均不包含这两个主机平台。
+# llvm@22.1.8 不支持 linux-arm64 主机, test 和 examples 均排除该组合。
 #
 # 门禁按组拆分 (2026-09-21): `test` job 的 matrix 增加 group 轴 (A/B), 每个 OS
 # 上两条腿并行, 不再把 A+B+examples 串在一个 job 里 (linux-gcc 曾因此撞 2h 上限);
@@ -77,7 +78,6 @@ jobs:
           - { name: linux-gcc,         os: ubuntu-24.04,     arch: x86_64, mcpp: linux-x86_64,   toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
           - { name: linux-gcc,         os: ubuntu-24.04-arm, arch: arm64,  mcpp: linux-aarch64,  toolchain: "gcc@16.1.0",  install: "gcc 16.1.0" }
           - { name: linux-llvm,        os: ubuntu-24.04,     arch: x86_64, mcpp: linux-x86_64,   toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
-          - { name: linux-llvm,        os: ubuntu-24.04-arm, arch: arm64,  mcpp: linux-aarch64,  toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
           - { name: macos-llvm,        os: macos-latest,     arch: arm64,  mcpp: macosx-arm64,   toolchain: "llvm@22.1.8", install: "llvm 22.1.8" }
         group: [A, B]
     steps:
@@ -186,12 +186,6 @@ jobs:
             os: ubuntu-24.04
             arch: x86_64
             mcpp: linux-x86_64
-            toolchain: llvm@22.1.8
-            install: "llvm 22.1.8"
-          - name: linux-llvm
-            os: ubuntu-24.04-arm
-            arch: arm64
-            mcpp: linux-aarch64
             toolchain: llvm@22.1.8
             install: "llvm 22.1.8"
           - name: macos-llvm
