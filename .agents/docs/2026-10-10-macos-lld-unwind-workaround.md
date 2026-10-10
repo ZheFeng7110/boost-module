@@ -27,4 +27,5 @@ throwing function reproduces duplicate entries using the installed LLVM
 Use `[target.macos.build]`, as documented by mcpp; `macosx` is the registry
 artifact spelling and does not select this target's build settings. The
 temporary diagnostic workflow and scripts have been removed. The complete
-Tests matrix will verify the final configuration and restored module test.
+Tests matrix passed 15/15 jobs, including the restored module test and all
+examples.
