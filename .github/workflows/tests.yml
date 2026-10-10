@@ -67,7 +67,6 @@ env:
 jobs:
   # M12 门禁: 每个 OS 上 group A / group B 是两条独立腿 (matrix.group), 并行执行。
   test:
-    if: github.head_ref != 'fix/program-options-macos-ci'
     name: ${{ matrix.target.name }}-${{ matrix.target.arch }} (group ${{ matrix.group }})
     runs-on: ${{ matrix.target.os }}
     timeout-minutes: 90
@@ -152,11 +151,6 @@ jobs:
       - name: Test libraries (group ${{ matrix.group }})
         shell: bash
         run: mcpp test --features "${{ (matrix.group == 'A' && env.BOOST_GROUP_A) || env.BOOST_GROUP_B }}"
-
-      - name: Diagnose program_options on macOS
-        if: failure() && runner.os == 'macOS' && matrix.group == 'A'
-        shell: bash
-        run: bash scripts/debug_program_options_macos.sh
 
   # examples/ 是一个 workspace (members: default_usage, git_dep_usage),
   # 用 `mcpp run -p <member>` 逐个构建并运行各个 example。单独成 job, 且

@@ -728,7 +728,7 @@ ldflags = ["-pthread"]
 # selects that entry and reports end-of-stack during phase one, so even
 # catch(...) cannot receive the exception. Use Apple's linker on macOS;
 # lld-macho ignores -no_compact_unwind (llvm/llvm-project#216154).
-[target.macosx.build]
+[target.macos.build]
 ldflags = ["-fuse-ld=/usr/bin/ld"]
 
 # M8: src/boost.cppm 已删 (汇总模块由 build.mcpp 生成)。lib root 指向

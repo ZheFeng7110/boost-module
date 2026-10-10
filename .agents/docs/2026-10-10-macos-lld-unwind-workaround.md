@@ -17,4 +17,14 @@ Evidence so far: LLDB shows `__cxa_throw` calling `failed_throw` directly for
 Omitting the preceding library build does not change the failure. An Apple
 clang standalone build passes. This is consistent with the layout-dependent
 LLD defect described in [LLVM issue 216154](https://github.com/llvm/llvm-project/issues/216154);
-verification of the same-object linker comparison is pending CI.
+run 38030544249 confirms the same-object linker comparison: LLD aborts with
+SIGABRT, while Apple's linker produces a passing executable. The LLD binary
+contains duplicate second-level unwind entries, including zero encodings at
+the same address as real encodings. A minimal data-only TU followed by a
+throwing function reproduces duplicate entries using the installed LLVM
+22.1.8 toolchain cross-linking Mach-O on Linux.
+
+Use `[target.macos.build]`, as documented by mcpp; `macosx` is the registry
+artifact spelling and does not select this target's build settings. The
+temporary diagnostic workflow and scripts have been removed. The complete
+Tests matrix will verify the final configuration and restored module test.
