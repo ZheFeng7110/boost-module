@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = [
-#     "libclang",
-# ]
-# ///
 """gen_audit.py — audit target libraries for entities that cannot be exported.
 
 Default mode (linkage audit), per library:

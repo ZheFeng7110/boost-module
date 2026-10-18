@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = [
-#     "libclang",
-# ]
-# ///
 """boost_common.py — shared plumbing for the M2 module-export generators.
 
 Handles the M1 vendored layout: all library headers live under deps/boost/boost/
@@ -23,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEPS = ROOT / "deps" / "boost"
 BOOST_ROOT = DEPS / "boost"          # aggregated include root (all lib headers)
 SCRIPTS = ROOT / "scripts"
-LIBS_JSON = SCRIPTS / "libs.json"
+LIBS_JSON = SCRIPTS / "meta_datas" / "libs.json"
 CURATED_DIR = SCRIPTS / "curated"
 GEN_DIR = ROOT / "src" / "gen_exports"
 # gitignored scratch area for generator caches (gate verdicts, incremental-skip

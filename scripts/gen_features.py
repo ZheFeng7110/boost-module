@@ -50,10 +50,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MCPP_TOML = ROOT / "mcpp.toml"
-LIBS_JSON = ROOT / "scripts" / "libs.json"
+LIBS_JSON = ROOT / "scripts" / "meta_datas" / "libs.json"
 DEPS_DIR = ROOT / "src" / "gen_exports"
-FEATURES_LST = ROOT / "scripts" / "features.lst"
-PROFILES_LST = ROOT / "scripts" / "profiles.lst"
+FEATURES_LST = ROOT / "scripts" / "meta_datas" / "features.lst"
+PROFILES_LST = ROOT / "scripts" / "meta_datas" / "profiles.lst"
 
 # The full module-library list — derived from boost_common.TARGET_LIBS (which
 # knows the tier tables). boost_common has no hard dependency on libclang at

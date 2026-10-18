@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = [
-#     "libclang",
-# ]
-# ///
 """gen_exports.py — generate export using-lists for the Boost module layer.
 
 For each target library, parses one "bundle" TU that includes all of the
@@ -35,7 +29,7 @@ template's enclosing namespaces (A2); macro-expanded / aliased references
 remain uncovered.
 
 Usage:
-    python scripts/gen_exports.py --scan            # regenerate scripts/libs.json
+    python scripts/gen_exports.py --scan            # regenerate scripts/meta_datas/libs.json
     python scripts/gen_exports.py                   # all 27 target libs
     python scripts/gen_exports.py --libs optional system --full-closure
     python scripts/gen_exports.py --emit-cppm       # also draft src/<lib>.cppm
@@ -1457,7 +1451,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scan", action="store_true",
-                    help="regenerate scripts/libs.json from the heuristic and exit")
+                    help="regenerate scripts/meta_datas/libs.json from the heuristic and exit")
     ap.add_argument("--libs", nargs="*", default=None,
                     help="subset of target libraries (default: all 27)")
     ap.add_argument("--out", type=Path, default=bc.ROOT,

@@ -8,3 +8,4 @@ target/
 
 scripts/_gen_exports-cache/
 scripts/_deps/
+scripts/.venv/

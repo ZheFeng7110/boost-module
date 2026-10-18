@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """fetch_mingw_sysroot.py — fetch the pinned MinGW-w64 GCC sysroot used by the
 export generator.
 
