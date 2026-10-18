@@ -1,0 +1,85 @@
+# Verify the committed outputs of the repository's generation scripts.
+# The three latest labels are the mainstream x86_64/arm64 hosted runners;
+# no separate Linux/Windows ARM or macOS Intel legs are needed here.
+name: Generated scripts
+
+on:
+  push:
+    branches: [b1.92.0wdev]
+    paths:
+      - ".github/workflows/scripts.yml"
+      - "scripts/**"
+      - "src/**"
+      - "deps/boost/**"
+      - "mcpp.toml"
+  pull_request:
+    branches: [b1.92.0wdev]
+    paths:
+      - ".github/workflows/scripts.yml"
+      - "scripts/**"
+      - "src/**"
+      - "deps/boost/**"
+      - "mcpp.toml"
+
+concurrency:
+  group: generated-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    env:
+      GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # import_boost is platform-independent and intentionally owned by
+          # one leg, so an update does not trigger three large downloads.
+          - os: ubuntu-latest
+            check_import_boost: true
+          - os: windows-latest
+            check_import_boost: false
+          - os: macos-latest
+            check_import_boost: false
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: scripts/uv.lock
+
+      # fetch_mingw_sysroot.py already verifies and reuses files in this
+      # directory. Persist the compressed archive across fresh GitHub runners
+      # so only the first run for each OS downloads it.
+      - name: Cache MinGW sysroot archive
+        uses: actions/cache@v6
+        with:
+          path: scripts/_deps/_archives
+          key: mingw-sysroot-archive-${{ runner.os }}-${{ hashFiles('scripts/fetch_mingw_sysroot.py') }}
+          restore-keys: |
+            mingw-sysroot-archive-${{ runner.os }}-
+
+      - name: Install script dependencies
+        run: uv sync --project scripts --locked
+
+      - name: Verify generated scripts (including import_boost when changed)
+        if: matrix.check_import_boost
+        run: uv run --project scripts --locked python scripts/ci/verify_generated.py --import-boost-if-changed
+
+      - name: Verify generated scripts
+        if: ${{ !matrix.check_import_boost }}
+        run: uv run --project scripts --locked python scripts/ci/verify_generated.py
