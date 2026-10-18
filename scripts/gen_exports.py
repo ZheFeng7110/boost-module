@@ -38,6 +38,7 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from collections import deque
@@ -71,11 +72,24 @@ def _code_hash():
 _CLANG_VERSION = None
 
 
+def _clang_command(*args):
+    """Build the clang++ command used by the syntax gate.
+
+    xlings' host LLVM package installs a default config file for native builds.
+    The generator is a cross-target MinGW parse, so CI can request that clang
+    ignore the host config while retaining the explicit target/sysroot flags.
+    """
+    command = [os.environ.get("CXX") or "clang++"]
+    if os.environ.get("CLANG_NO_DEFAULT_CONFIG"):
+        command.append("--no-default-config")
+    return command + list(args)
+
+
 def _clang_version():
     global _CLANG_VERSION
     if _CLANG_VERSION is None:
         import subprocess
-        r = subprocess.run(["clang++", "--version"], capture_output=True,
+        r = subprocess.run(_clang_command("--version"), capture_output=True,
                            text=True)
         _CLANG_VERSION = (r.stdout or r.stderr).splitlines()[0] \
             if (r.stdout or r.stderr) else "unknown"
@@ -1690,7 +1704,7 @@ def _parse_bundle(lib, headers, use_cache=True):
     gate_args = ["-fsyntax-only", *bc.CLANG_ARGS, *extra]
 
     def gate():
-        r = subprocess.run(["clang++", *gate_args, str(bundle)],
+        r = subprocess.run(_clang_command(*gate_args, str(bundle)),
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
 
@@ -1701,6 +1715,7 @@ def _parse_bundle(lib, headers, use_cache=True):
     gh.update(b"closure:" + _closure_hash(lib, gfm).encode())
     gh.update(b"extra:" + ",".join(extra).encode())
     gh.update(("gate:clang++ " + " ".join(gate_args)).encode())
+    gh.update(b"clang-command:" + " ".join(_clang_command()).encode())
     gh.update(b"clang:" + _clang_version().encode())
     gkey = gh.hexdigest()
     gate_cache = bc.CACHE_DIR / (lib + ".gate.json")

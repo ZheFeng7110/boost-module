@@ -282,9 +282,24 @@ CLANG_ARGS = [
 def _append_resource_dir():
     """Locate libclang's bundled clang resource dir (bin/libclang.dll or
     lib/libclang.so ↔ ../lib/clang/<ver>/include) and add it to CLANG_ARGS
-    (idempotent). pip's libclang wheel ships no resource dir at all — then the
-    caller must point LIBCLANG_PATH at a full LLVM install; without it parses
-    degrade silently (see CLANG_ARGS note)."""
+    (idempotent). CI may provide the resource directory explicitly through
+    CLANG_RESOURCE_DIR when the selected full LLVM installation contains the
+    clang++ driver and builtin headers but not a libclang shared library.
+    pip's libclang wheel ships no resource dir at all — without an explicit
+    directory or a full LLVM installation, parses degrade silently (see
+    CLANG_ARGS note)."""
+    explicit = os.environ.get("CLANG_RESOURCE_DIR")
+    if explicit:
+        inc = Path(explicit).expanduser()
+        if not (inc.is_dir() and (inc / "stddef.h").is_file()):
+            raise RuntimeError(
+                "CLANG_RESOURCE_DIR does not contain clang builtin headers: "
+                + str(inc)
+            )
+        flag = "-I{}".format(inc)
+        if flag not in CLANG_ARGS:
+            CLANG_ARGS.append(flag)
+        return
     try:
         import clang.cindex as ci
         # Two loading modes: set_library_path(dir) leaves library_path set,

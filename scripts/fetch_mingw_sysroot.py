@@ -348,8 +348,11 @@ def probe(root, target=TARGET, quiet=False):
            "#include <vector>\n"
            "int probe() { std::vector<std::string> v; "
            "v.emplace_back(\"x\"); return (int)v.size(); }\n")
-    cmd = [clangxx, "--target=" + target, "--sysroot=" + str(root),
-           "-std=c++23", "-w", "-fsyntax-only", "-x", "c++", "-"]
+    cmd = [clangxx]
+    if os.environ.get("CLANG_NO_DEFAULT_CONFIG"):
+        cmd.append("--no-default-config")
+    cmd.extend(["--target=" + target, "--sysroot=" + str(root),
+                "-std=c++23", "-w", "-fsyntax-only", "-x", "c++", "-"])
     r = subprocess.run(cmd, input=src, capture_output=True, text=True,
                        cwd=str(ROOT))
     if r.returncode != 0:

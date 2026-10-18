@@ -41,3 +41,35 @@ descriptor，`package-source.sh` 是发布打包动作，也不属于本 CI 的�
 `actions/cache` 按操作系统缓存；缓存 key 包含脚本哈希，且脚本仍会在复用前校验
 固定 SHA-256。uv 项目环境由 `scripts/pyproject.toml` 和锁文件提供 `libclang`
 依赖。
+
+## 统一 LLVM 工具链
+
+### 背景
+
+CI 原先直接使用 GitHub hosted runner 自带的 `clang++`，并通过 uv 安装的
+pip `libclang` 解析固定的 MinGW GCC 16.1.0 sysroot。runner 的 Clang 版本会
+变化，pip wheel 也不带完整的 Clang builtin resource directory，导致
+`malloc.h` 找不到 `mm_malloc.h`，并进一步造成 `__builtin_popcountg` 诊断和
+生成结果漂移。
+
+### 方案
+
+三个 CI 平台统一通过 xlings 安装并选择 LLVM 22.1.8：
+
+- xlings 本身固定为 `2026.10.17.1`；
+- `clang++` 通过 `CXX` 指向 LLVM payload 中的绝对路径；
+- `CLANG_RESOURCE_DIR` 指向同一 LLVM payload 的
+  `lib/clang/22/include`；
+- `CLANG_NO_DEFAULT_CONFIG=1` 禁用 xlings 为宿主机生成的默认 clang 配置，
+  避免宿主机 libc++/sysroot 参数污染 MinGW 目标解析；
+- 生成器继续使用 Python `clang.cindex`，但显式注入统一 LLVM 的 builtin
+  headers，从而解决 pip `libclang` wheel 无 resource directory 的问题。
+
+xlings 的 LLVM payload 提供完整 clang++ 驱动和 builtin headers，但不一定
+提供 `libclang` 共享库；因此不强制覆盖 uv 环境中的 Python libclang 动态库。
+解析所需的 builtin headers 和实际 gate 使用的 clang++ 均来自 LLVM 22.1.8，
+避免 runner 默认工具链参与生成。
+
+CI 在运行生成器前检查 `clang++` 和 `mm_malloc.h` 的绝对路径，并打印
+`clang++ --version` 与 `-print-resource-dir`。`fetch_mingw_sysroot.py` 使用同一
+`CXX`，`gen_exports.py` 的 libclang parse 使用 `CLANG_RESOURCE_DIR`。
