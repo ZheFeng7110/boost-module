@@ -210,7 +210,7 @@ jobs:
           git fetch --force upstream main
           git switch -c "$BRANCH" upstream/main
 
-          python3 ../scripts/update_mcpp_index.py \
+          python3 ../scripts/ci/update_mcpp_index.py \
             --file pkgs/z/ZheFeng7110.boost.lua \
             --key "$KEY" \
             --global-url "$GLOBAL_URL" \

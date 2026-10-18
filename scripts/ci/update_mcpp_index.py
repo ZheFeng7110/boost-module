@@ -10,7 +10,7 @@ It is idempotent: running it twice with the same `--key` replaces the block
 instead of duplicating it.
 
 Usage:
-    python3 scripts/update_mcpp_index.py \
+    python3 scripts/ci/update_mcpp_index.py \
         --file pkgs/z/ZheFeng7110.boost.lua \
         --key 1.91.0.0.2.0 \
         --global-url https://github.com/.../boost-module-v1.91.0.0.2.0.tar.xz \

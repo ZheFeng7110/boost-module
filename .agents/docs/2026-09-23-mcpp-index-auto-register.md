@@ -50,7 +50,7 @@ fork 与 `gh pr create` 都用它。
 
 ### 2.5 描述符更新逻辑独立成脚本
 
-`scripts/update_mcpp_index.py`（仅标准库）：
+`scripts/ci/update_mcpp_index.py`（仅标准库）：
 
 - 按行扫描，删除已存在的同 key 块（幂等：重跑只会替换，不会重复）；
 - 用平台名锚定 `        linux = {` / `macosx = {` / `windows = {` 三处，把新块
@@ -86,7 +86,7 @@ push tag (非 -preview)
        4. actions/checkout ZheFeng7110/mcpp-index → mcpp-index/（PAT）
        5. cd mcpp-index；add upstream；fetch upstream main；
           switch -c boost-module-<tag> upstream/main
-       6. python3 scripts/update_mcpp_index.py --file pkgs/z/ZheFeng7110.boost.lua ...
+       6. python3 scripts/ci/update_mcpp_index.py --file pkgs/z/ZheFeng7110.boost.lua ...
        7. git add / commit / push --force origin <branch>
        8. gh pr create → mcpplibs/mcpp-index
 ```
@@ -100,7 +100,7 @@ xpm key 为去掉前导 `v` 的 tag（如 `v1.91.0.0.2.0` → `1.91.0.0.2.0`）�
 
 ## 4. 验证
 
-- `scripts/update_mcpp_index.py` 在 `ZheFeng7110.boost.lua` 副本上运行，diff 为
+- `scripts/ci/update_mcpp_index.py` 在 `ZheFeng7110.boost.lua` 副本上运行，diff 为
   三个平台各前插一个新块、旧块不动；重复运行只替换不重复。
 - `mcpp xpkg parse` 解析结果 `parse OK`，且版本顺序为新版本在前。
 - 用本地仓库模拟 fork/upstream 走完整 git 序列（fetch upstream main → switch →
