@@ -35,7 +35,7 @@ descriptor，`package-source.sh` 是发布打包动作，也不属于本 CI 的�
 
 ## 平台矩阵
 
-`.github/workflows/scripts.yml` 使用 `ubuntu-latest`、`windows-latest` 和
+`.github/workflows/verify-scripts.yml` 使用 `ubuntu-latest`、`windows-latest` 和
 `macos-latest` 各运行一条 leg，不增加 Linux ARM、Windows ARM 或 macOS Intel
 专用 leg。`fetch_mingw_sysroot.py` 的 `scripts/_deps/_archives/` 由
 `actions/cache` 按操作系统缓存；缓存 key 包含脚本哈希，且脚本仍会在复用前校验

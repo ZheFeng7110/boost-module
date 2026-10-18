@@ -1,7 +1,7 @@
 # Verify the committed outputs of the repository's generation scripts.
 # The three latest labels are the mainstream x86_64/arm64 hosted runners;
 # no separate Linux/Windows ARM or macOS Intel legs are needed here.
-name: Generated scripts
+name: Verify Generation Scripts
 
 env:
   # Keep the export generator on the same LLVM release on every hosted runner.
