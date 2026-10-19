@@ -39,7 +39,6 @@ jobs:
     timeout-minutes: 180
     env:
       GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-      LLVM_PATH: ~/llvm
     strategy:
       fail-fast: false
       matrix:
@@ -80,61 +79,100 @@ jobs:
       # with pip's libclang 18 corrupts the AST even though clang++ passes.
       # Install the full upstream release so the driver, C API and builtin
       # headers all come from LLVM 23, as used by the committed snapshots.
+      # Keep the compressed archive and the extracted prefix in fixed homes:
+      # `~/llvm/archive` and `~/llvm/dist`. `~` is not expanded by bash inside
+      # double quotes (the previous job-level `LLVM_PATH: ~/llvm` therefore
+      # failed the Unix existence checks), and the two trees need independent
+      # caches: a failed extraction must not discard a verified archive.
       - name: Restore extracted LLVM
-        id: llvm-cache
+        id: llvm-dist
         uses: actions/cache/restore@v6
         with:
-          path: ${{ env.LLVM_PATH }}
-          key: llvm-extracted-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.LLVM_VERSION }}-${{ matrix.llvm_sha256 }}
+          path: ~/llvm/dist
+          key: llvm-dist-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.LLVM_VERSION }}-${{ matrix.llvm_sha256 }}
 
-      - name: Install full LLVM ${{ env.LLVM_VERSION }}
-        if: steps.llvm-cache.outputs.cache-hit != 'true'
+      - name: Restore LLVM archive
+        id: llvm-archive
+        if: steps.llvm-dist.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/llvm/archive
+          key: llvm-archive-v1-${{ runner.os }}-${{ runner.arch }}-${{ env.LLVM_VERSION }}-${{ matrix.llvm_sha256 }}
+
+      - name: Download LLVM ${{ env.LLVM_VERSION }} archive
+        id: llvm-download
+        if: steps.llvm-dist.outputs.cache-hit != 'true' && steps.llvm-archive.outputs.cache-hit != 'true'
         shell: bash
         env:
           LLVM_ARCHIVE: ${{ matrix.llvm_archive }}
           LLVM_SHA256: ${{ matrix.llvm_sha256 }}
         run: |
           set -euo pipefail
-          LLVM_PREFIX="$LLVM_PATH"
-
-          # The Windows runner's GNU tar interprets `-f D:/...` as a remote archive.
-          # Read the verified archive through stdin and use a `cygpath -u` destination
-          # in Git Bash. Keep `LLVM_PATH` in the job environment in native form so both
-          # cache restores and PowerShell configuration work without installation.
-          if [[ "$RUNNER_OS" == Windows ]]; then
-            LLVM_PREFIX="$(cygpath -u "$LLVM_PREFIX")"
-          fi
+          # `$HOME` is the runner's home in Git Bash (`/c/Users/...`) and Unix.
+          LLVM_ARCHIVES="$HOME/llvm/archive"
+          ARCHIVE="$LLVM_ARCHIVES/$LLVM_ARCHIVE"
+          mkdir -p "$LLVM_ARCHIVES"
 
           curl --fail --location --retry 3 \
             "https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/$LLVM_ARCHIVE" \
-            --output "$RUNNER_TEMP/$LLVM_ARCHIVE"
+            --output "$ARCHIVE.part"
+
+          # Native Python cannot open Git Bash's `/c/...` paths; hand it the
+          # same file in native form instead of re-deriving `$HOME`.
+          LLVM_ARCHIVE_FILE="$ARCHIVE.part"
+          if [[ "${RUNNER_OS:-}" == Windows ]]; then
+            LLVM_ARCHIVE_FILE="$(cygpath -w "$LLVM_ARCHIVE_FILE")"
+          fi
+          export LLVM_ARCHIVE_FILE
 
           python - <<'PY'
           import hashlib
           import os
           from pathlib import Path
-          archive = Path(os.environ["RUNNER_TEMP"]) / os.environ["LLVM_ARCHIVE"]
-          with archive.open("rb") as f:
+          with Path(os.environ["LLVM_ARCHIVE_FILE"]).open("rb") as f:
               digest = hashlib.file_digest(f, "sha256").hexdigest()
           if digest != os.environ["LLVM_SHA256"]:
               raise SystemExit("LLVM archive SHA-256 mismatch: " + digest)
           PY
 
+          # Only promote a verified archive; a later cache hit can then trust it.
+          mv "$ARCHIVE.part" "$ARCHIVE"
+
+      # Persist the archive even if extraction fails below.
+      - name: Save LLVM archive
+        if: steps.llvm-download.outcome == 'success'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/llvm/archive
+          key: ${{ steps.llvm-archive.outputs.cache-primary-key }}
+
+      - name: Extract LLVM ${{ env.LLVM_VERSION }}
+        if: steps.llvm-dist.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          LLVM_ARCHIVE: ${{ matrix.llvm_archive }}
+        run: |
+          set -euo pipefail
+          LLVM_PREFIX="$HOME/llvm/dist"
+          ARCHIVE="$HOME/llvm/archive/$LLVM_ARCHIVE"
+          test -f "$ARCHIVE"
           mkdir -p "$LLVM_PREFIX"
-          # GNU tar treats a Windows drive letter in -f as a remote host.
-          # Reading stdin avoids that interpretation on every platform.
-          tar -xJf - -C "$LLVM_PREFIX" --strip-components=1 < "$RUNNER_TEMP/$LLVM_ARCHIVE"
-          rm "$RUNNER_TEMP/$LLVM_ARCHIVE"
+          # Read the archive through stdin: GNU tar on the Windows runner treats
+          # a drive letter in `-f D:/...` as a remote host.
+          tar -xJf - -C "$LLVM_PREFIX" --strip-components=1 < "$ARCHIVE"
 
       - name: Configure LLVM generator environment (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          LLVM_PREFIX="$LLVM_PATH"
+          LLVM_PREFIX="$HOME/llvm/dist"
           test -x "$LLVM_PREFIX/bin/clang++"
           test -f "$LLVM_PREFIX/lib/clang/$LLVM_MAJOR/include/mm_malloc.h"
           echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
+          # Export the resolved prefix: downstream Python reads `LLVM_PATH` and
+          # does not expand `~`.
+          echo "LLVM_PATH=$LLVM_PREFIX" >> "$GITHUB_ENV"
           echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"
           echo "CLANG_RESOURCE_DIR=$LLVM_PREFIX/lib/clang/$LLVM_MAJOR/include" >> "$GITHUB_ENV"
           echo "CLANG_NO_DEFAULT_CONFIG=1" >> "$GITHUB_ENV"
@@ -148,12 +186,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $llvmPrefix = $env:LLVM_PATH
+          $llvmPrefix = Join-Path $env:USERPROFILE "llvm\dist"
           $clangxx = Join-Path $llvmPrefix "bin\clang++.exe"
           $resource = Join-Path $llvmPrefix "lib\clang\$env:LLVM_MAJOR\include"
           if (-not (Test-Path $clangxx)) { throw "missing $clangxx" }
           if (-not (Test-Path (Join-Path $resource "mm_malloc.h"))) { throw "missing mm_malloc.h under $resource" }
           "$llvmPrefix\bin" >> $env:GITHUB_PATH
+          # Native path so downstream Python's `LLVM_PATH` lookup works.
+          "LLVM_PATH=$llvmPrefix" >> $env:GITHUB_ENV
           "CXX=$clangxx" >> $env:GITHUB_ENV
           "CLANG_RESOURCE_DIR=$resource" >> $env:GITHUB_ENV
           "CLANG_NO_DEFAULT_CONFIG=1" >> $env:GITHUB_ENV
@@ -163,11 +203,11 @@ jobs:
       # Save after installation checks, even if later generation checks fail.
       # Exact keys only: never reuse another release's parser or headers.
       - name: Save extracted LLVM
-        if: steps.llvm-cache.outputs.cache-hit != 'true'
+        if: steps.llvm-dist.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
-          path: ${{ env.LLVM_PATH }}
-          key: ${{ steps.llvm-cache.outputs.cache-primary-key }}
+          path: ~/llvm/dist
+          key: ${{ steps.llvm-dist.outputs.cache-primary-key }}
 
       # fetch_mingw_sysroot.py already verifies and reuses files in this
       # directory. Persist the compressed archive across fresh GitHub runners
