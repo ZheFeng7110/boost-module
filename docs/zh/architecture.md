@@ -216,12 +216,8 @@ pendings (库已降级 include-only)、variant `apply_visitor` 自由函数 ICE
 
 ## 6. 辅助脚本
 
-脚本依赖 **libclang** (`scripts/gen_exports.py` / `scripts/gen_audit.py` 用它解析
-Boost 头文件的 AST)。未安装 libclang 时需先安装：
-
-```bash
-pip install libclang        # 或设置 LIBCLANG_PATH 指向本地 LLVM 的 libclang.dll
-```
+脚本依赖 **libclang**（`scripts/gen_exports.py` / `scripts/gen_audit.py` 用它解析
+Boost 头文件的 AST），需要 Python 绑定及完整 LLVM 安装，环境要求见下文。
 
 `scripts/gen_exports.py` 还会以 mingw triple（`x86_64-w64-mingw32`，
 `boost_common.GEN_TARGET`）驱动 clang，以复现已提交的 mingw 风味
@@ -236,8 +232,23 @@ uv run scripts/fetch_mingw_sysroot.py   # 下载到 scripts/_deps/ (gitignored)
 未设置 `BOOST_MODULE_GEN_SYSROOT` 时，`scripts/boost_common.py` 会对默认
 mingw target 自动使用 `scripts/_deps/` 下的 sysroot。
 
-安装了 [uv](https://docs.astral.sh/uv/) 的用户无需手动安装 —— 脚本带 PEP 723 内联元数据，
-`uv run` 会自动创建带 libclang 的临时环境：
+重现已提交快照需要完整的 **LLVM 23.1.3**：`clang++`、libclang 动态库及配套内建头文件。
+`uv sync --project scripts` 安装 Python 绑定，但 wheel 附带的 libclang 18 不能替代 LLVM 23。
+选择顺序为 `LIBCLANG_PATH`（动态库文件、目录或 LLVM 安装根目录）、`LLVM_PATH`
+（安装根目录），最后查找 `CXX` 或 PATH 上 `clang++` 所属的完整安装，优先于 wheel。
+缺少内建头文件时提前报错，不再静默丢失导出项并拖到补丁重放时失败。
+
+```bash
+uv sync --project scripts
+# LLVM 23 不在 PATH 上时可显式指定：
+export LIBCLANG_PATH=/path/to/llvm-23
+export CXX=/path/to/llvm-23/bin/clang++
+cd scripts
+uv run ci/verify_generated.py   # 要求工作区干净
+```
+
+脚本共用 `scripts/` 下的 [uv](https://docs.astral.sh/uv/) 项目。从仓库根目录运行时使用
+`uv run --project scripts python scripts/<name>.py`；以下为已经激活 Python 环境时的等价调用：
 
 ```bash
 uv run scripts/gen_exports.py --scan                 # 重新生成 scripts/libs.json
@@ -250,8 +261,8 @@ uv run scripts/import_boost.py                       # 重新导入官方 boost 
 uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 修补, 重跑本脚本回放 (必须!)
 ```
 
-> 不用 uv 时照常 `python scripts/xxx.py` 运行即可（shebang 保持普通 `#!/usr/bin/env python3`，
-> 内联元数据只是注释）。
+> 不用 uv 时先 `pip install libclang` 安装 Python 绑定，再运行 `python scripts/xxx.py`；
+> 仍需完整 LLVM 安装。
 
 各脚本职责：
 
@@ -272,6 +283,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
   默认集 = 49 库闭包，其余 opt-in（`--features <feature>` 显式激活）。
 - `scripts/gen_audit.py` — 输出需手工替代的 static-inline / 内部链接实体清单；
   `--macros` 统计各库公共头的宏注入面（M10 T3 include-only 名单的核实输入）。
+  链接审计跳过没有生成 bundle 的手写 `LIBS_SPECIAL` 模块，其头文件仍参与 `--macros`。
 - `scripts/reapply_hand_edits.py` — 重生成 `.inc`/`.cppm` 后一键重放全部手编
   （core/scope/algorithm 的 gcc 变通、`.inc` 平台守卫、算法头注释约定），幂等。
   字符串补丁以统一 diff 形式存于 `scripts/patchs/<module>.patch`（一个模块一个

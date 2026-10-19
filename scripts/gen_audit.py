@@ -294,6 +294,11 @@ def main() -> int:
     libs = args.libs or bc.TARGET_LIBS
     total = [0, 0, 0, 0]
     for lib in libs:
+        # Hand-written modules such as boost.version intentionally have no
+        # gen_exports bundle TU. Their headers still participate in --macros.
+        if lib in bc.LIBS_SPECIAL:
+            print("skip {} (hand-written module, no generated bundle)".format(lib))
+            continue
         headers = bc.headers_of(lib)
         n = audit_lib(lib, headers, args.out)
         total = [t + x for t, x in zip(total, n)]

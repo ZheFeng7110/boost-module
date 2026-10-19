@@ -207,6 +207,7 @@ def _skip_key(lib, gfm_headers, upstream_keys, libs, full_closure,
     h.update(b"closure:" + _closure_hash(lib, gfm_headers).encode())
     h.update(b"extra:" + ",".join(EXTRA_DEFINES.get(lib, ())).encode())
     h.update(b"clang_args:" + " ".join(bc.CLANG_ARGS).encode())
+    h.update(b"libclang:" + bc.libclang_version().encode())
     curated = bc.CURATED_DIR / (lib + ".txt")
     if curated.exists():
         h.update(b"curated:" + curated.read_bytes())
@@ -1491,6 +1492,8 @@ def main() -> int:
         return 0
 
     ci = bc.get_ci()
+    print("AST parser: {} ({})".format(
+        bc.libclang_version(), ci.conf.get_filename()), flush=True)
     _FILE_TO_LIB = bc.build_file_to_lib()
 
     libs = args.libs or bc.TARGET_LIBS

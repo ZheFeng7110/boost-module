@@ -233,11 +233,23 @@ this cycle:
 
 ## 6. Helper Scripts
 
-The scripts depend on **libclang** (`scripts/gen_exports.py` / `scripts/gen_audit.py` use it
-to parse the AST of Boost headers). If libclang is not installed, install it first:
+The scripts use **libclang** to parse Boost's AST. Reproducing the committed snapshots
+requires a full **LLVM 23.1.3** installation: `clang++`, the libclang shared library,
+and its matching builtin headers. `uv sync --project scripts` installs the Python
+bindings, but its bundled libclang 18 is not a substitute for LLVM 23.
+
+Selection order is `LIBCLANG_PATH` (library file/directory or LLVM prefix), `LLVM_PATH`
+(LLVM prefix), then the installation containing `CXX` or `clang++` on `PATH`. The
+full installation is preferred over the wheel; missing builtin headers fail early
+instead of silently dropping exports and failing later in patch replay.
 
 ```bash
-pip install libclang        # or set LIBCLANG_PATH to the libclang.dll of a local LLVM
+uv sync --project scripts
+# Optional when LLVM 23 is not the clang++ on PATH:
+export LIBCLANG_PATH=/path/to/llvm-23
+export CXX=/path/to/llvm-23/bin/clang++
+cd scripts
+uv run ci/verify_generated.py   # requires a clean checkout
 ```
 
 `scripts/gen_exports.py` also drives clang with the mingw target triple
@@ -253,9 +265,9 @@ uv run scripts/fetch_mingw_sysroot.py   # -> scripts/_deps/ (gitignored)
 When `BOOST_MODULE_GEN_SYSROOT` is unset, `scripts/boost_common.py` picks up the
 bundled `scripts/_deps/` sysroot automatically for the default mingw target.
 
-Users with [uv](https://docs.astral.sh/uv/) installed need no manual setup — the scripts
-carry PEP 723 inline metadata, and `uv run` automatically creates a temporary environment
-with libclang:
+The scripts share the [uv](https://docs.astral.sh/uv/) project in `scripts/`.
+From the repository root, use `uv run --project scripts python scripts/<name>.py`;
+the equivalent script invocations (with the Python environment already active) are:
 
 ```bash
 uv run scripts/gen_exports.py --scan                 # regenerate scripts/libs.json
@@ -268,8 +280,8 @@ uv run scripts/import_boost.py                       # re-import the official bo
 uv run scripts/reapply_hand_edits.py          # import_boost wipes the vendored patches; re-run this to replay them (mandatory!)
 ```
 
-> Without uv, run `python scripts/xxx.py` as usual (the shebang stays plain
-> `#!/usr/bin/env python3`; the inline metadata is just a comment).
+> Without uv, install the Python bindings with `pip install libclang` and run
+> `python scripts/xxx.py`; a full LLVM installation is still required.
 
 Script responsibilities:
 
@@ -295,6 +307,8 @@ Script responsibilities:
 - `scripts/gen_audit.py` — outputs the list of static-inline / internal-linkage entities
   needing manual replacement; `--macros` counts the macro-injection surface of each
   library's public headers (verification input for the M10 T3 include-only list).
+  The linkage audit skips hand-written `LIBS_SPECIAL` modules (no generated bundle);
+  their headers still participate in `--macros`.
 - `scripts/reapply_hand_edits.py` — after regenerating `.inc`/`.cppm`, replays all hand
   edits in one shot (core/scope/algorithm gcc workarounds, `.inc` platform guards, algorithm
   header comment conventions), idempotently.

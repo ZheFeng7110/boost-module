@@ -7,16 +7,14 @@ env:
   # Keep the export generator on the same LLVM release on every hosted runner.
   # The MinGW sysroot is GCC 16.1.0; runner-provided clang versions are not a
   # stable parser for that sysroot (notably __builtin_popcountg and mm_malloc.h).
-  XLINGS_VERSION: "2026.10.17.1"
   LLVM_VERSION: "23.1.3"
   LLVM_MAJOR: "23"
-  XLINGS_RELEASE_MIRROR: GLOBAL
 
 on:
   push:
     branches: [b1.92.0wdev]
     paths:
-      - ".github/workflows/scripts.yml"
+      - ".github/workflows/verify-scripts.yml"
       - "scripts/**"
       - "src/**"
       - "deps/boost/**"
@@ -24,7 +22,7 @@ on:
   pull_request:
     branches: [b1.92.0wdev]
     paths:
-      - ".github/workflows/scripts.yml"
+      - ".github/workflows/verify-scripts.yml"
       - "scripts/**"
       - "src/**"
       - "deps/boost/**"
@@ -49,10 +47,16 @@ jobs:
           # one leg, so an update does not trigger three large downloads.
           - os: ubuntu-latest
             check_import_boost: true
+            llvm_archive: LLVM-23.1.3-Linux-X64.tar.xz
+            llvm_sha256: ca9fe385a5d9e2d88132dc0e23a00e9f87f38fa75f67207b5e457d208e71d013
           - os: windows-latest
             check_import_boost: false
+            llvm_archive: clang+llvm-23.1.3-x86_64-pc-windows-msvc.tar.xz
+            llvm_sha256: 9ee6a2192fbb30c776415af529927f76ca6b5d1d55699bb1315f9878e610b5b8
           - os: macos-latest
             check_import_boost: false
+            llvm_archive: LLVM-23.1.3-macOS-ARM64.tar.xz
+            llvm_sha256: 3dcfd88aec10be204a24037bcb0dc0ad777882e9dbe8ac60e2639060d8a794b1
 
     steps:
       - name: Checkout full history
@@ -71,69 +75,54 @@ jobs:
           enable-cache: true
           cache-dependency-glob: scripts/uv.lock
 
-      - name: Install xlings (Unix)
-        if: runner.os != 'Windows'
+      # The slim xlings compiler package omits libclang. Using its headers
+      # with pip's libclang 18 corrupts the AST even though clang++ passes.
+      # Install the full upstream release so the driver, C API and builtin
+      # headers all come from LLVM 23, as used by the committed snapshots.
+      - name: Install full LLVM ${{ env.LLVM_VERSION }}
         shell: bash
         env:
-          XLINGS_NON_INTERACTIVE: "1"
+          LLVM_ARCHIVE: ${{ matrix.llvm_archive }}
+          LLVM_SHA256: ${{ matrix.llvm_sha256 }}
         run: |
           set -euo pipefail
-          curl -fsSL https://raw.githubusercontent.com/openxlings/xlings/main/tools/other/quick_install.sh | bash
-          echo "XLINGS_HOME=$HOME/.xlings" >> "$GITHUB_ENV"
-          echo "$HOME/.xlings/bin" >> "$GITHUB_PATH"
-          echo "$HOME/.xlings/subos/current/bin" >> "$GITHUB_PATH"
+          LLVM_PREFIX="$RUNNER_TEMP/llvm"
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            LLVM_PREFIX="$(cygpath -m "$LLVM_PREFIX")"
+          fi
+          curl --fail --location --retry 3 \
+            "https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VERSION/$LLVM_ARCHIVE" \
+            --output "$RUNNER_TEMP/$LLVM_ARCHIVE"
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          archive = Path(os.environ["RUNNER_TEMP"]) / os.environ["LLVM_ARCHIVE"]
+          with archive.open("rb") as f:
+              digest = hashlib.file_digest(f, "sha256").hexdigest()
+          if digest != os.environ["LLVM_SHA256"]:
+              raise SystemExit("LLVM archive SHA-256 mismatch: " + digest)
+          PY
+          mkdir -p "$LLVM_PREFIX"
+          tar -xf "$RUNNER_TEMP/$LLVM_ARCHIVE" -C "$LLVM_PREFIX" --strip-components=1
+          rm "$RUNNER_TEMP/$LLVM_ARCHIVE"
+          echo "LLVM_PATH=$LLVM_PREFIX" >> "$GITHUB_ENV"
 
-      - name: Install xlings (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          XLINGS_NON_INTERACTIVE: "1"
-        run: |
-          irm https://raw.githubusercontent.com/openxlings/xlings/main/tools/other/quick_install.ps1 | iex
-          "XLINGS_HOME=$env:USERPROFILE\.xlings" >> $env:GITHUB_ENV
-          "$env:USERPROFILE\.xlings\bin" >> $env:GITHUB_PATH
-          "$env:USERPROFILE\.xlings\subos\current\bin" >> $env:GITHUB_PATH
-
-      - name: Cache xlings packages
-        uses: actions/cache@v6
-        with:
-          path: ~/.xlings/data/xpkgs
-          key: xlings-${{ runner.os }}-llvm-${{ env.LLVM_VERSION }}-v${{ env.XLINGS_VERSION }}
-          restore-keys: |
-            xlings-${{ runner.os }}-llvm-${{ env.LLVM_VERSION }}-
-
-      - name: Install LLVM ${{ env.LLVM_VERSION }} with xlings (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          set -euo pipefail
-          xlings install "llvm@${LLVM_VERSION}" -y
-          xlings use llvm "$LLVM_VERSION"
-          xlings list
-
-      - name: Install LLVM ${{ env.LLVM_VERSION }} with xlings (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          xlings install "llvm@$env:LLVM_VERSION" -y
-          xlings use llvm $env:LLVM_VERSION
-          xlings list
-
-      # Do not rely on the xlings shim for the generator.  The absolute LLVM
-      # paths make clang++ and libclang's builtin headers deterministic on all
-      # three runners, including Windows Git Bash.
       - name: Configure LLVM generator environment (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          LLVM_PREFIX="$XLINGS_HOME/data/xpkgs/xim-x-llvm/$LLVM_VERSION"
+          LLVM_PREFIX="$LLVM_PATH"
           test -x "$LLVM_PREFIX/bin/clang++"
           test -f "$LLVM_PREFIX/lib/clang/$LLVM_MAJOR/include/mm_malloc.h"
           echo "$LLVM_PREFIX/bin" >> "$GITHUB_PATH"
           echo "CXX=$LLVM_PREFIX/bin/clang++" >> "$GITHUB_ENV"
           echo "CLANG_RESOURCE_DIR=$LLVM_PREFIX/lib/clang/$LLVM_MAJOR/include" >> "$GITHUB_ENV"
           echo "CLANG_NO_DEFAULT_CONFIG=1" >> "$GITHUB_ENV"
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            echo "LD_LIBRARY_PATH=$LLVM_PREFIX/lib:$LLVM_PREFIX/lib/x86_64-unknown-linux-gnu:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          fi
           "$LLVM_PREFIX/bin/clang++" --version
           "$LLVM_PREFIX/bin/clang++" -print-resource-dir || true
 
@@ -141,7 +130,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $llvmPrefix = Join-Path $env:XLINGS_HOME "data\xpkgs\xim-x-llvm\$env:LLVM_VERSION"
+          $llvmPrefix = $env:LLVM_PATH
           $clangxx = Join-Path $llvmPrefix "bin\clang++.exe"
           $resource = Join-Path $llvmPrefix "lib\clang\$env:LLVM_MAJOR\include"
           if (-not (Test-Path $clangxx)) { throw "missing $clangxx" }
@@ -166,6 +155,12 @@ jobs:
 
       - name: Install script dependencies
         run: uv sync --project scripts --locked
+
+      - name: Check AST parser and script regressions
+        working-directory: scripts
+        run: |
+          uv run --locked python -c "import boost_common as bc; v = bc.libclang_version(); print('AST parser:', v); assert '${{ env.LLVM_VERSION }}' in v, v"
+          uv run --locked python -m unittest discover -s tests
 
       - name: Verify generated scripts (including import_boost when changed)
         if: matrix.check_import_boost
