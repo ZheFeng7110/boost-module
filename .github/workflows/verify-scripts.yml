@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 180
     env:
       GITHUB_EVENT_BEFORE: ${{ github.event.before }}
-      LLVM_PATH: ${{ runner.temp }}/llvm
+      LLVM_PATH: ~/llvm
     strategy:
       fail-fast: false
       matrix:
