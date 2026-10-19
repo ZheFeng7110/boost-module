@@ -19,6 +19,10 @@ on:
       - "src/**"
       - "deps/boost/**"
       - "mcpp.toml"
+      # Script `scripts/ci/verify_generated.py` depends on git, so we need to follow
+      # .gitignore and .gitattributes to triggering workflow run.
+      - ".gitignore"
+      - ".gitattributes"
   pull_request:
     branches: [b1.92.0wdev]
     paths:
@@ -27,6 +31,8 @@ on:
       - "src/**"
       - "deps/boost/**"
       - "mcpp.toml"
+      - ".gitignore"
+      - ".gitattributes"
 
 concurrency:
   group: generated-${{ github.workflow }}-${{ github.ref }}
