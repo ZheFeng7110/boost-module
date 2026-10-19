@@ -192,7 +192,7 @@ def main():
           required=False)  # C4: the entity may be claimed by type_erasure
 
     # M11 (M11 §6.4): new vendored file (mc.exe stub), not an upstream patch.
-    ensure_file("deps/boost/libs/log/src/windows/simple_event_log.h", """
+    ensure_file("deps/boost/libs/log/src/windows/simple_event_log.h", """\
 /*
  *          Copyright Andrey Semashev 2007 - 2015.
  * Distributed under the Boost Software License, Version 1.0.

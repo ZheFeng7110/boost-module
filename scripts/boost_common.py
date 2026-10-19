@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = [
-#     "libclang",
-# ]
-# ///
 """boost_common.py — shared plumbing for the M2 module-export generators.
 
 Handles the M1 vendored layout: all library headers live under deps/boost/boost/
@@ -23,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEPS = ROOT / "deps" / "boost"
 BOOST_ROOT = DEPS / "boost"          # aggregated include root (all lib headers)
 SCRIPTS = ROOT / "scripts"
-LIBS_JSON = SCRIPTS / "libs.json"
+LIBS_JSON = SCRIPTS / "meta_datas" / "libs.json"
 CURATED_DIR = SCRIPTS / "curated"
 GEN_DIR = ROOT / "src" / "gen_exports"
 # gitignored scratch area for generator caches (gate verdicts, incremental-skip
@@ -288,9 +282,22 @@ CLANG_ARGS = [
 def _append_resource_dir():
     """Locate libclang's bundled clang resource dir (bin/libclang.dll or
     lib/libclang.so ↔ ../lib/clang/<ver>/include) and add it to CLANG_ARGS
-    (idempotent). pip's libclang wheel ships no resource dir at all — then the
-    caller must point LIBCLANG_PATH at a full LLVM install; without it parses
-    degrade silently (see CLANG_ARGS note)."""
+    (idempotent). CLANG_RESOURCE_DIR can specify the builtin include directory
+    explicitly; it must belong to the selected libclang's LLVM release.
+    pip's libclang wheel ships no resource dir at all. Refuse to silently
+    generate an incomplete AST when no builtin headers can be found."""
+    explicit = os.environ.get("CLANG_RESOURCE_DIR")
+    if explicit:
+        inc = Path(explicit).expanduser()
+        if not (inc.is_dir() and (inc / "stddef.h").is_file()):
+            raise RuntimeError(
+                "CLANG_RESOURCE_DIR does not contain clang builtin headers: "
+                + str(inc)
+            )
+        flag = "-I{}".format(inc)
+        if flag not in CLANG_ARGS:
+            CLANG_ARGS.append(flag)
+        return
     try:
         import clang.cindex as ci
         # Two loading modes: set_library_path(dir) leaves library_path set,
@@ -305,11 +312,9 @@ def _append_resource_dir():
             cands = sorted(base.glob("libclang.*"))
             dll = cands[0] if cands else base / "libclang.dll"
         else:
-            return
-    except Exception:
-        return
-    if not dll.is_file():
-        return
+            raise RuntimeError("libclang library location is unknown")
+    except ImportError as e:
+        raise RuntimeError("libclang is not installed") from e
     for base in (dll.parent.parent / "lib" / "clang",
                  dll.parent / "lib" / "clang",
                  dll.parent.parent / "include" / "clang"):
@@ -325,6 +330,11 @@ def _append_resource_dir():
         if inc not in CLANG_ARGS:
             CLANG_ARGS.append(inc)
         return
+    raise RuntimeError(
+        "clang builtin headers not found for {}. The pip libclang wheel "
+        "does not include them; set LIBCLANG_PATH to a full LLVM installation "
+        "(with matching libclang and builtin headers).".format(dll)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -348,34 +358,54 @@ def _libclang_in(directory):
 
 
 def load_libclang():
-    """Import clang.cindex, honouring LIBCLANG_PATH (file or directory form)
-    or LLVM_PATH; falls back to a libclang next to clang on PATH."""
+    """Prefer a full LLVM installation over pip's older bundled libclang.
+
+    LIBCLANG_PATH accepts a file or a library directory; LLVM_PATH also
+    accepts an installation prefix. Otherwise use the clang++ gate's LLVM
+    (CXX or PATH), looking in both bin/ (Windows) and lib/ (Unix).
+    """
     import clang.cindex as ci
     env = os.environ.get("LIBCLANG_PATH") or os.environ.get("LLVM_PATH")
     if env:
         p = Path(env)
-        lib = _libclang_in(p) if p.is_dir() else None
-        if lib is not None:
-            ci.Config.set_library_path(str(p))
-        else:
-            ci.Config.set_library_file(env)
+        lib = _libclang_in_installation(p) if p.is_dir() else p
+        if lib is None:
+            raise RuntimeError("libclang not found under " + str(p))
+        ci.Config.set_library_file(str(lib))
         return ci
-    try:
-        ci.Index.create()          # default (bundled) resolution works?
-        return ci
-    except Exception:
-        pass
-    # Common dev setup: libclang next to clang on PATH (scoop/LLVM, Homebrew).
     import shutil
-    exe = shutil.which("clang")
+    exe = shutil.which(os.environ.get("CXX") or "clang++")
     if exe:
-        lib = _libclang_in(Path(exe).resolve().parent)
+        bindir = Path(exe).resolve().parent
+        lib = _libclang_in_installation(bindir.parent)
         if lib is not None:
             ci.Config.set_library_file(str(lib))
             return ci
+    try:
+        ci.Index.create()
+        return ci
+    except Exception:
+        pass
     raise RuntimeError(
         "libclang not found — set LIBCLANG_PATH to the directory containing "
-        "libclang (e.g. pip install libclang, or a local LLVM install)")
+        "libclang in a full LLVM installation")
+
+
+def _libclang_in_installation(prefix):
+    """Find the C API library, not libclang-cpp or compiler-rt libraries."""
+    for directory in (prefix, prefix / "bin", prefix / "lib", prefix / "lib64"):
+        lib = _libclang_in(directory)
+        if lib is not None:
+            return lib
+    return None
+
+
+def libclang_version():
+    """Identity of the AST parser (which need not be the clang++ driver)."""
+    ci = get_ci()
+    version = ci.conf.lib.clang_getClangVersion
+    version.restype = ci._CXString
+    return ci._CXString.from_result(version())
 
 
 def get_ci():

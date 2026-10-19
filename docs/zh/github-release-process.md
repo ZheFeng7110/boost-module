@@ -15,7 +15,7 @@
       features.lst 零漂移)。
 - [ ] `uv run scripts/reapply_hand_edits.py` 幂等复跑零改动
       (vendored 修补全部可回放)。
-- [ ] 计数复核: `src/*.cppm` = 模块数、`scripts/features.lst` = feature 数、
+- [ ] 计数复核: `src/*.cppm` = 模块数、`scripts/meta_datas/features.lst` = feature 数、
       `[features].default` = 默认闭包, 与 CHANGELOG / release notes 中
       数字一致。
 - [ ] `docs/release_notes/<tag>.md` 已就绪 (内容清单 / 已知限制 /

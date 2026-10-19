@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """import_boost.py — import the pinned official Boost release into deps/boost/.
 
 Fetches boost_1_91_0.tar.gz (verified against a pinned SHA-256), then extracts
@@ -62,6 +58,16 @@ ROOT_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".css"}
 
 # Doc-only web files deleted at any depth.
 ANYWHERE_EXTENSIONS = {".htm", ".html"}
+
+# These upstream text files use CRLF in the release tarball, while the
+# vendored tree is committed with LF. Normalize only these known files after
+# extraction; other members are copied byte-for-byte so binary/test data is
+# never modified accidentally.
+NORMALIZE_LF_PATHS = {
+    "libs/fiber/README.md",
+    "libs/mysql/tools/seed_corpus/field_table.csv",
+    "libs/mysql/tools/seed_corpus/protocol_messages.csv",
+}
 
 
 def sha256_of(path: Path) -> str:
@@ -140,13 +146,20 @@ def extract_selected(tf: tarfile.TarFile) -> tuple:
             continue
         dst = DST / Path(*parts)
         dst.parent.mkdir(parents=True, exist_ok=True)
+        normalize_lf = Path(*parts).as_posix() in NORMALIZE_LF_PATHS
         with open(dst, "wb") as out:
-            while True:
-                chunk = src.read(1 << 20)
-                if not chunk:
-                    break
-                out.write(chunk)
-                total_bytes += len(chunk)
+            if normalize_lf:
+                data = src.read()
+                data = data.replace(b"\r\n", b"\n")
+                out.write(data)
+                total_bytes += len(data)
+            else:
+                while True:
+                    chunk = src.read(1 << 20)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    total_bytes += len(chunk)
         imported += 1
     return imported, pruned, total_bytes
 

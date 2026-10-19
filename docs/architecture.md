@@ -164,7 +164,7 @@ alternative export tree generated for every module (`src/gen_exports/<profile>/`
 for any `BOOST_*` not listed as a profile, consumers `#define` it and `#include <boost/...>`
 themselves (giving up that library's module surface; see §2.2/§2.3). The profile list is
 maintained in `scripts/gen_features.py`'s `PROFILE_FEATURES` (do not edit by hand), and
-`scripts/profiles.lst` is consumed by `build.mcpp` for validation. See
+`scripts/meta_datas/profiles.lst` is consumed by `build.mcpp` for validation. See
 [`.agents/docs/2026-09-21-feature-macro-profiles.md`](../.agents/docs/2026-09-21-feature-macro-profiles.md).
 
 ## 4. Known Limitations (consumer notes)
@@ -233,11 +233,23 @@ this cycle:
 
 ## 6. Helper Scripts
 
-The scripts depend on **libclang** (`scripts/gen_exports.py` / `scripts/gen_audit.py` use it
-to parse the AST of Boost headers). If libclang is not installed, install it first:
+The scripts use **libclang** to parse Boost's AST. Reproducing the committed snapshots
+requires a full **LLVM 23.1.3** installation: `clang++`, the libclang shared library,
+and its matching builtin headers. `uv sync --project scripts` installs the Python
+bindings, but its bundled libclang 18 is not a substitute for LLVM 23.
+
+Selection order is `LIBCLANG_PATH` (library file/directory or LLVM prefix), `LLVM_PATH`
+(LLVM prefix), then the installation containing `CXX` or `clang++` on `PATH`. The
+full installation is preferred over the wheel; missing builtin headers fail early
+instead of silently dropping exports and failing later in patch replay.
 
 ```bash
-pip install libclang        # or set LIBCLANG_PATH to the libclang.dll of a local LLVM
+uv sync --project scripts
+# Optional when LLVM 23 is not the clang++ on PATH:
+export LIBCLANG_PATH=/path/to/llvm-23
+export CXX=/path/to/llvm-23/bin/clang++
+cd scripts
+uv run ci/verify_generated.py   # requires a clean checkout
 ```
 
 `scripts/gen_exports.py` also drives clang with the mingw target triple
@@ -247,29 +259,28 @@ once by a companion script (WinLibs GCC 16.1.0, pinned URL + sha256) — no MinG
 toolchain is needed, since the generator only runs `-fsyntax-only`:
 
 ```bash
-uv run scripts/fetch_mingw_sysroot.py   # -> scripts/_deps/ (gitignored)
+uv run --project scripts python scripts/fetch_mingw_sysroot.py   # -> scripts/_deps/ (gitignored)
 ```
 
 When `BOOST_MODULE_GEN_SYSROOT` is unset, `scripts/boost_common.py` picks up the
 bundled `scripts/_deps/` sysroot automatically for the default mingw target.
 
-Users with [uv](https://docs.astral.sh/uv/) installed need no manual setup — the scripts
-carry PEP 723 inline metadata, and `uv run` automatically creates a temporary environment
-with libclang:
+The scripts share the [uv](https://docs.astral.sh/uv/) project in `scripts/`.
+From the repository root, select that project explicitly:
 
 ```bash
-uv run scripts/gen_exports.py --scan                 # regenerate scripts/libs.json
-uv run scripts/gen_exports.py                        # generate export lists for all target libraries
-uv run scripts/gen_exports.py --libs optional system --emit-cppm
-uv run scripts/reapply_hand_edits.py                 # replay hand edits after regeneration (.cppm deviations + .inc platform guards + deps/boost vendored patches)
-uv run scripts/gen_features.py                       # regenerate the [features] block of mcpp.toml + scripts/features.lst
-uv run scripts/gen_audit.py                          # static-inline / internal-linkage audit
-uv run scripts/import_boost.py                       # re-import the official boost tarball
-uv run scripts/reapply_hand_edits.py          # import_boost wipes the vendored patches; re-run this to replay them (mandatory!)
+uv run --project scripts python scripts/gen_exports.py --scan  # regenerate scripts/meta_datas/libs.json
+uv run --project scripts python scripts/gen_exports.py         # generate export lists for all target libraries
+uv run --project scripts python scripts/gen_exports.py --libs optional system --emit-cppm
+uv run --project scripts python scripts/reapply_hand_edits.py  # replay hand edits (.cppm, .inc and vendored patches)
+uv run --project scripts python scripts/gen_features.py        # regenerate [features] + scripts/meta_datas/*.lst
+uv run --project scripts python scripts/gen_audit.py           # static-inline / internal-linkage audit
+uv run --project scripts python scripts/import_boost.py        # re-import the official Boost tarball
+uv run --project scripts python scripts/reapply_hand_edits.py  # mandatory after import_boost wipes vendored patches
 ```
 
-> Without uv, run `python scripts/xxx.py` as usual (the shebang stays plain
-> `#!/usr/bin/env python3`; the inline metadata is just a comment).
+> Without uv, install the Python bindings with `pip install libclang` and run
+> `python scripts/xxx.py`; a full LLVM installation is still required.
 
 Script responsibilities:
 
@@ -288,13 +299,15 @@ Script responsibilities:
   per library, `sources` = the library's `.cppm` + compiled-library TU globs;
   log/unit_test_framework are module-less features with only library TUs, C1;
   `boost.version` is a LIBS_SPECIAL form: has `.cppm` but no TU globs / no `.deps`, C5)
-  from `libs.json` + `src/gen_exports/*.deps`, plus `scripts/features.lst`
+  from `scripts/meta_datas/libs.json` + `src/gen_exports/*.deps`, plus `scripts/meta_datas/features.lst`
   (consumed by build.mcpp).
   The default set is the 49-library closure; everything else is opt-in
   (`--features <feature>` to activate explicitly).
 - `scripts/gen_audit.py` — outputs the list of static-inline / internal-linkage entities
   needing manual replacement; `--macros` counts the macro-injection surface of each
   library's public headers (verification input for the M10 T3 include-only list).
+  The linkage audit skips hand-written `LIBS_SPECIAL` modules (no generated bundle);
+  their headers still participate in `--macros`.
 - `scripts/reapply_hand_edits.py` — after regenerating `.inc`/`.cppm`, replays all hand
   edits in one shot (core/scope/algorithm gcc workarounds, `.inc` platform guards, algorithm
   header comment conventions), idempotently.

@@ -16,7 +16,7 @@
       block and features.lst).
 - [ ] `uv run scripts/reapply_hand_edits.py` re-runs idempotently with zero changes
       (all vendored patches replay cleanly).
-- [ ] Count review: `src/*.cppm` = module count, `scripts/features.lst` = feature count,
+- [ ] Count review: `src/*.cppm` = module count, `scripts/meta_datas/features.lst` = feature count,
       `[features].default` = default closure, all consistent with the numbers in the
       CHANGELOG / release notes.
 - [ ] `docs/release_notes/<tag>.md` is ready (contents / known limitations /

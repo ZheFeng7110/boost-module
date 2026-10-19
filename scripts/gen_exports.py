@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = [
-#     "libclang",
-# ]
-# ///
 """gen_exports.py — generate export using-lists for the Boost module layer.
 
 For each target library, parses one "bundle" TU that includes all of the
@@ -35,7 +29,7 @@ template's enclosing namespaces (A2); macro-expanded / aliased references
 remain uncovered.
 
 Usage:
-    python scripts/gen_exports.py --scan            # regenerate scripts/libs.json
+    python scripts/gen_exports.py --scan            # regenerate scripts/meta_datas/libs.json
     python scripts/gen_exports.py                   # all 27 target libs
     python scripts/gen_exports.py --libs optional system --full-closure
     python scripts/gen_exports.py --emit-cppm       # also draft src/<lib>.cppm
@@ -44,6 +38,7 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from collections import deque
@@ -77,11 +72,24 @@ def _code_hash():
 _CLANG_VERSION = None
 
 
+def _clang_command(*args):
+    """Build the clang++ command used by the syntax gate.
+
+    xlings' host LLVM package installs a default config file for native builds.
+    The generator is a cross-target MinGW parse, so CI can request that clang
+    ignore the host config while retaining the explicit target/sysroot flags.
+    """
+    command = [os.environ.get("CXX") or "clang++"]
+    if os.environ.get("CLANG_NO_DEFAULT_CONFIG"):
+        command.append("--no-default-config")
+    return command + list(args)
+
+
 def _clang_version():
     global _CLANG_VERSION
     if _CLANG_VERSION is None:
         import subprocess
-        r = subprocess.run(["clang++", "--version"], capture_output=True,
+        r = subprocess.run(_clang_command("--version"), capture_output=True,
                            text=True)
         _CLANG_VERSION = (r.stdout or r.stderr).splitlines()[0] \
             if (r.stdout or r.stderr) else "unknown"
@@ -199,6 +207,7 @@ def _skip_key(lib, gfm_headers, upstream_keys, libs, full_closure,
     h.update(b"closure:" + _closure_hash(lib, gfm_headers).encode())
     h.update(b"extra:" + ",".join(EXTRA_DEFINES.get(lib, ())).encode())
     h.update(b"clang_args:" + " ".join(bc.CLANG_ARGS).encode())
+    h.update(b"libclang:" + bc.libclang_version().encode())
     curated = bc.CURATED_DIR / (lib + ".txt")
     if curated.exists():
         h.update(b"curated:" + curated.read_bytes())
@@ -1057,13 +1066,15 @@ def emit_inc(lib, records, out_dir, full_closure, claimed, extra_deps=()):
         lines.append("}" * depth)
         lines.append("")
 
+    # Match the committed LF snapshots on every host. Git attributes govern
+    # checkout, not Python's default Windows text-mode newline translation.
     (out_dir / "src" / "gen_exports").mkdir(parents=True, exist_ok=True)
     (out_dir / "src" / "gen_exports" / (lib + ".inc")).write_text(
-        "\n".join(lines), encoding="utf-8")
+        "\n".join(lines), encoding="utf-8", newline="\n")
 
     if deps:
         (out_dir / "src" / "gen_exports" / (lib + ".deps")).write_text(
-            "\n".join("boost." + d for d in deps) + "\n", encoding="utf-8")
+            "\n".join("boost." + d for d in deps) + "\n", encoding="utf-8", newline="\n")
     return len(exports), deps
 
 
@@ -1098,7 +1109,8 @@ def emit_cppm(lib, out_dir, gfm_headers=None):
         # implemented by gcc, and nothing here needs hiding.
         "",
     ]
-    (out_dir / "src" / (lib + ".cppm")).write_text("\n".join(lines), encoding="utf-8")
+    (out_dir / "src" / (lib + ".cppm")).write_text(
+        "\n".join(lines), encoding="utf-8", newline="\n")
 
 
 # ---------------------------------------------------------------------------
@@ -1444,7 +1456,7 @@ def merge_body_edges(out_dir, order, body_edges):
     for lib, homes in added.items():
         p = deps_dir / (lib + ".deps")
         lines = sorted("boost." + h for h in graph[lib])
-        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         print("  body-dep {}: +{} ({})".format(
             lib, len(homes), ", ".join(
                 "boost.{} ({} refs)".format(h, n)
@@ -1457,7 +1469,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--scan", action="store_true",
-                    help="regenerate scripts/libs.json from the heuristic and exit")
+                    help="regenerate scripts/meta_datas/libs.json from the heuristic and exit")
     ap.add_argument("--libs", nargs="*", default=None,
                     help="subset of target libraries (default: all 27)")
     ap.add_argument("--out", type=Path, default=bc.ROOT,
@@ -1476,13 +1488,15 @@ def main() -> int:
     if args.scan:
         db = bc.scan_libs_json()
         bc.LIBS_JSON.write_text(json.dumps(db, indent=1, sort_keys=True) + "\n",
-                                encoding="utf-8")
+                                encoding="utf-8", newline="\n")
         total = sum(len(v) for v in db.values())
         print("wrote {} with {} headers across {} libraries"
               .format(bc.LIBS_JSON, total, len(db)))
         return 0
 
     ci = bc.get_ci()
+    print("AST parser: {} ({})".format(
+        bc.libclang_version(), ci.conf.get_filename()), flush=True)
     _FILE_TO_LIB = bc.build_file_to_lib()
 
     libs = args.libs or bc.TARGET_LIBS
@@ -1696,7 +1710,7 @@ def _parse_bundle(lib, headers, use_cache=True):
     gate_args = ["-fsyntax-only", *bc.CLANG_ARGS, *extra]
 
     def gate():
-        r = subprocess.run(["clang++", *gate_args, str(bundle)],
+        r = subprocess.run(_clang_command(*gate_args, str(bundle)),
                            capture_output=True, text=True, cwd=str(bc.ROOT))
         return r
 
@@ -1707,6 +1721,7 @@ def _parse_bundle(lib, headers, use_cache=True):
     gh.update(b"closure:" + _closure_hash(lib, gfm).encode())
     gh.update(b"extra:" + ",".join(extra).encode())
     gh.update(("gate:clang++ " + " ".join(gate_args)).encode())
+    gh.update(b"clang-command:" + " ".join(_clang_command()).encode())
     gh.update(b"clang:" + _clang_version().encode())
     gkey = gh.hexdigest()
     gate_cache = bc.CACHE_DIR / (lib + ".gate.json")

@@ -1,0 +1,11 @@
+[project]
+name = "boost-module-scripts"
+version = "0.1.0"
+description = "Tooling for generating and auditing Boost module sources"
+requires-python = ">=3.9"
+dependencies = [
+    "libclang",
+]
+
+[tool.uv]
+package = false

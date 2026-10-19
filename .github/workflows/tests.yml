@@ -17,13 +17,13 @@
 # 解压到 ~/.mcpp (mcpp 从二进制位置解析 MCPP_HOME), 加 ~/.mcpp/bin 进 PATH。
 # 工具链经 mcpp 自带 xlings 沙箱安装 (~/.mcpp/registry), 由 actions/cache 按 job 缓存。
 
-name: Tests
+name: Build and Tests
 
 on:
   push:
     branches: [ b1.91.0wdev ]
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/tests.yml'
       - 'build.mcpp'
       - 'mcpp.toml'
       - 'src/**'
@@ -33,7 +33,7 @@ on:
   pull_request:
     branches: [ b1.91.0wdev ]
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/tests.yml'
       - 'build.mcpp'
       - 'mcpp.toml'
       - 'src/**'

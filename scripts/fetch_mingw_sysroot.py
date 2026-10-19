@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.9"
-# dependencies = []
-# ///
 """fetch_mingw_sysroot.py — fetch the pinned MinGW-w64 GCC sysroot used by the
 export generator.
 
@@ -38,6 +34,10 @@ executable is on PATH); otherwise it falls back to the .zip. To opt in:
 The sysroot lands under `scripts/_deps/` (gitignored) and is picked up
 automatically by `scripts/boost_common.py` when `BOOST_MODULE_GEN_SYSROOT`
 is unset.
+
+The downloaded archive is kept in `scripts/_deps/_archives/` and is verified
+against the pinned SHA-256 before it is reused. CI caches that directory
+between runner invocations; use `--force` to replace a valid local archive.
 """
 
 import argparse
@@ -348,8 +348,11 @@ def probe(root, target=TARGET, quiet=False):
            "#include <vector>\n"
            "int probe() { std::vector<std::string> v; "
            "v.emplace_back(\"x\"); return (int)v.size(); }\n")
-    cmd = [clangxx, "--target=" + target, "--sysroot=" + str(root),
-           "-std=c++23", "-w", "-fsyntax-only", "-x", "c++", "-"]
+    cmd = [clangxx]
+    if os.environ.get("CLANG_NO_DEFAULT_CONFIG"):
+        cmd.append("--no-default-config")
+    cmd.extend(["--target=" + target, "--sysroot=" + str(root),
+                "-std=c++23", "-w", "-fsyntax-only", "-x", "c++", "-"])
     r = subprocess.run(cmd, input=src, capture_output=True, text=True,
                        cwd=str(ROOT))
     if r.returncode != 0:
