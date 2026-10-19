@@ -25,7 +25,7 @@ on:
   push:
     branches: [ b1.92.0wdev ]
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/tests.yml'
       - 'build.mcpp'
       - 'mcpp.toml'
       - 'src/**'
@@ -35,7 +35,7 @@ on:
   pull_request:
     branches: [ b1.92.0wdev ]
     paths:
-      - '.github/workflows/**'
+      - '.github/workflows/tests.yml'
       - 'build.mcpp'
       - 'mcpp.toml'
       - 'src/**'
