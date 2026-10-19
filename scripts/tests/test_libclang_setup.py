@@ -77,7 +77,7 @@ class LibclangSetupTests(unittest.TestCase):
         with mock.patch("shutil.which", return_value=str(driver)) as which:
             bc.load_libclang()
         which.assert_called_once_with(str(driver))
-        self.ci.Config.set_library_file.assert_called_once_with(str(library))
+        self.ci.Config.set_library_file.assert_called_once_with(str(library.resolve()))
         self.ci.Index.create.assert_not_called()
 
     def test_path_driver_symlink_resolves_to_full_installation(self):
@@ -91,7 +91,25 @@ class LibclangSetupTests(unittest.TestCase):
         with mock.patch("shutil.which", return_value=str(shim)) as which:
             bc.load_libclang()
         which.assert_called_once_with("clang++")
-        self.ci.Config.set_library_file.assert_called_once_with(str(library))
+        self.ci.Config.set_library_file.assert_called_once_with(str(library.resolve()))
+
+    def test_driver_under_symlinked_prefix_uses_canonical_library_path(self):
+        # Reproduce macOS /var -> /private/var even on a Linux test host.
+        #
+        # macOS resolves `/var` through `/private/var`. Driver-discovery tests must
+        # expect canonical library paths, matching production's `Path.resolve()`.
+        # A directory-symlink regression test reproduces this on Linux as well.
+        driver = self.file("real-llvm/bin/clang++")
+        library = self.file("real-llvm/lib/libclang.dylib")
+        prefix = self.root / "linked-llvm"
+        try:
+            prefix.symlink_to(driver.parent.parent, target_is_directory=True)
+        except OSError:
+            self.skipTest("directory symlink creation is not available")
+        linked_driver = prefix / "bin" / "clang++"
+        with mock.patch("shutil.which", return_value=str(linked_driver)):
+            bc.load_libclang()
+        self.ci.Config.set_library_file.assert_called_once_with(str(library.resolve()))
 
     def test_not_confused_with_clang_cpp_or_compiler_rt(self):
         self.file("lib/libclang-cpp.so.23.1")
