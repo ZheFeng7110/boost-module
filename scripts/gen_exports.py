@@ -1066,13 +1066,15 @@ def emit_inc(lib, records, out_dir, full_closure, claimed, extra_deps=()):
         lines.append("}" * depth)
         lines.append("")
 
+    # Match the committed LF snapshots on every host. Git attributes govern
+    # checkout, not Python's default Windows text-mode newline translation.
     (out_dir / "src" / "gen_exports").mkdir(parents=True, exist_ok=True)
     (out_dir / "src" / "gen_exports" / (lib + ".inc")).write_text(
-        "\n".join(lines), encoding="utf-8")
+        "\n".join(lines), encoding="utf-8", newline="\n")
 
     if deps:
         (out_dir / "src" / "gen_exports" / (lib + ".deps")).write_text(
-            "\n".join("boost." + d for d in deps) + "\n", encoding="utf-8")
+            "\n".join("boost." + d for d in deps) + "\n", encoding="utf-8", newline="\n")
     return len(exports), deps
 
 
@@ -1107,7 +1109,8 @@ def emit_cppm(lib, out_dir, gfm_headers=None):
         # implemented by gcc, and nothing here needs hiding.
         "",
     ]
-    (out_dir / "src" / (lib + ".cppm")).write_text("\n".join(lines), encoding="utf-8")
+    (out_dir / "src" / (lib + ".cppm")).write_text(
+        "\n".join(lines), encoding="utf-8", newline="\n")
 
 
 # ---------------------------------------------------------------------------
@@ -1453,7 +1456,7 @@ def merge_body_edges(out_dir, order, body_edges):
     for lib, homes in added.items():
         p = deps_dir / (lib + ".deps")
         lines = sorted("boost." + h for h in graph[lib])
-        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
         print("  body-dep {}: +{} ({})".format(
             lib, len(homes), ", ".join(
                 "boost.{} ({} refs)".format(h, n)
@@ -1485,7 +1488,7 @@ def main() -> int:
     if args.scan:
         db = bc.scan_libs_json()
         bc.LIBS_JSON.write_text(json.dumps(db, indent=1, sort_keys=True) + "\n",
-                                encoding="utf-8")
+                                encoding="utf-8", newline="\n")
         total = sum(len(v) for v in db.values())
         print("wrote {} with {} headers across {} libraries"
               .format(bc.LIBS_JSON, total, len(db)))
