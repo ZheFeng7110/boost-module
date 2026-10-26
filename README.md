@@ -1,5 +1,9 @@
 # boost-module
 
+> **This repository is no longer maintained.** Development has moved to
+> [mcpplibs/boost-m](https://github.com/mcpplibs/boost-m), and the package is now published as
+> **`mcpplibs.mwrap.boost`**. Please migrate; builds of this repository print the same advisory.
+
 > 中文文档: [`README_zh.md`](README_zh.md)
 
 C++23 named modules wrapper for the [Boost libraries](https://www.boost.org/), built with the
@@ -21,15 +25,15 @@ The package is published on the mcpp package index (namespace `ZheFeng7110`):
 ```toml
 # Default: 49-library closure
 [dependencies.ZheFeng7110]
-boost = { version = "1.91.0.0.1.0" }
+boost = { version = "1.91.0.0.1.1" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110]
-boost = { version = "1.91.0.0.1.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
+boost = { version = "1.91.0.0.1.1", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # Everything
 [dependencies.ZheFeng7110]
-boost = { version = "1.91.0.0.1.0", features = ["all"] }
+boost = { version = "1.91.0.0.1.1", features = ["all"] }
 ```
 
 Alternatively, depend on the git repository directly:
@@ -38,7 +42,7 @@ Alternatively, depend on the git repository directly:
 [dependencies.ZheFeng7110.boost]
 # Mainland China mirror: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.91.0.0.1.0"
+tag = "v1.91.0.0.1.1"
 ```
 
 Both channels carry the same package; the mcpp package index is the recommended one.
@@ -60,7 +64,7 @@ For example, the current development branch `b1.91.0wdev` corresponds to the mod
 for Boost v1.91.0.
 
 Tags carry both version numbers as a six-segment numeric version, `v<boost version>.<wrapper version>`
-(each three segments), e.g. **`v1.91.0.0.1.0`** means Boost v1.91.0 with wrapper version 0.1.0.
+(each three segments), e.g. **`v1.91.0.0.1.1`** means Boost v1.91.0 with wrapper version 0.1.1.
 
 The version must be pure digits and dots: mcpp's version grammar requires a digit first (no `b`/`v`
 prefix) and rejects letters in the numeric core. The leading `v` belongs to the git tag only — the

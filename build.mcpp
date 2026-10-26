@@ -39,6 +39,15 @@ int main()
 {
     namespace fs = std::filesystem;
 
+    // Deprecation advisory (2026-10-26): this wrapper is no longer maintained;
+    // mcpplibs/boost-m succeeds it. mcpp::warning() is the only channel that
+    // reaches the user on a SUCCESSFUL build — a build program's stderr is
+    // captured and shown only on failure — and mcpp replays it on a build-cache
+    // hit, so the advisory survives a cached run.
+    mcpp::warning("boost-module is no longer maintained; it has moved to "
+                  "https://github.com/mcpplibs/boost-m and the package is now "
+                  "named mcpplibs.mwrap.boost. Please migrate.");
+
     const std::string manifestDir = mcpp::manifest_dir();
     if (manifestDir.empty()) {
         std::fputs("build.mcpp: MCPP_MANIFEST_DIR not set\n", stderr);
