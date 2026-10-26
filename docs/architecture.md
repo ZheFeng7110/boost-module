@@ -30,15 +30,15 @@ The package is published on the mcpp package index (namespace `ZheFeng7110`):
 ```toml
 # Default: 49-library closure
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0" }
+boost = { version = "1.92.0.0.0.1" }
 
 # Pick a few libraries only (default-features = false disables the default set)
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
+boost = { version = "1.92.0.0.0.1", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # Everything
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", features = ["all"] }
+boost = { version = "1.92.0.0.0.1", features = ["all"] }
 ```
 
 Alternatively, depend on the git repository directly:
@@ -47,7 +47,7 @@ Alternatively, depend on the git repository directly:
 [dependencies.ZheFeng7110.boost]
 # Mainland China mirror: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
+tag = "v1.92.0.0.0.1"
 ```
 
 Both channels carry the same package; the mcpp package index is the recommended one.
@@ -324,7 +324,7 @@ Script responsibilities:
 ## 7. Related Documents
 
 - User guide (quick reference for consumers): [`usage.md`](usage.md)
-- Release notes: [`release_notes/v1.92.0.0.0.0.md`](release_notes/v1.92.0.0.0.0.md)
+- Release notes: [`release_notes/v1.92.0.0.0.1.md`](release_notes/v1.92.0.0.0.1.md)
 - Consolidated design (replaces all older design/plan documents):
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - Preview release plan: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

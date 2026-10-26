@@ -1,5 +1,8 @@
 # boost-module
 
+> **本仓库已停止维护。** 已迁移至 [mcpplibs/boost-m](https://github.com/mcpplibs/boost-m)，
+> 包名称迁移为 **`mcpplibs.mwrap.boost`**，请尽快迁移；本仓库的构建过程也会打印同样的提示。
+
 > English documentation: [`README.md`](README.md)
 
 使用 [mcpp](https://github.com/mcpp-community/mcpp) 构建工具对 [Boost 库](https://www.boost.org/)进行模块化封装
@@ -19,15 +22,15 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0" }
+boost = { version = "1.92.0.0.0.1" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
+boost = { version = "1.92.0.0.0.1", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", features = ["all"] }
+boost = { version = "1.92.0.0.0.1", features = ["all"] }
 ```
 
 也可以直接以 git 依赖消费：
@@ -36,7 +39,7 @@ boost = { version = "1.92.0.0.0.0", features = ["all"] }
 [dependencies.ZheFeng7110.boost]
 # 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
+tag = "v1.92.0.0.0.1"
 ```
 
 两种渠道内容一致，推荐使用 mcpp package index。
@@ -57,7 +60,7 @@ tag = "v1.92.0.0.0.0"
 例如当前开发分支 `b1.92.0wdev` 对应 Boost v1.92.0 的模块封装开发。
 
 Tag 采用六段纯数字版本，格式为 `v<boost版本>.<封装版本>`（各三段），例如
-**`v1.92.0.0.0.0`** 表示 Boost v1.92.0、模块封装版本 0.0.0。
+**`v1.92.0.0.0.1`** 表示 Boost v1.92.0、模块封装版本 0.0.1。
 
 版本号必须是纯数字加点：mcpp 的版本语法要求首字符为数字（不能带 `b`/`v` 前缀），且数值核心
 不接受字母。开头的 `v` 只属于 git tag —— `[package].version` 字段与下游的 `version = "..."`

@@ -8,6 +8,30 @@ six-segment numeric `v<boost version>.<wrapper version>` format
 2026-09-22 use the historical `b<boost version>w<wrapper version>` spelling and are kept
 verbatim.
 
+## 1.92.0.0.0.1 (2026-10-26, stable patch)
+
+Deprecation-only patch and the **final release of this repository** (git tag
+`v1.92.0.0.0.1`). Module/feature counts and the consumable surface are identical to
+`1.92.0.0.0.0`. The wrapper is no longer maintained: it has moved to
+[mcpplibs/boost-m](https://github.com/mcpplibs/boost-m) and the package name is now
+**`mcpplibs.mwrap.boost`**.
+
+### Changes Since v1.92.0.0.0.0
+
+- **Build-time advisory**: `build.mcpp` calls `mcpp::warning(...)` on every run that reaches
+  it, naming the successor repository and package. It is attributed to the package, does not
+  fail the build, and is replayed on a build-cache hit.
+- **Docs**: `README.md`, `README_zh.md`, `docs/usage.md` and `docs/zh/usage.md` lead with the
+  deprecation/migration notice.
+- **Version**: `[package].version` is now `1.92.0.0.0.1`; consumer examples and the release
+  runbook point at the new tag.
+- No module, feature, count, or API changes; supported library set unchanged.
+
+### Known Limitations
+
+Unchanged from `1.92.0.0.0.0`; disclosed there. See
+[`docs/release_notes/v1.92.0.0.0.1.md`](docs/release_notes/v1.92.0.0.0.1.md).
+
 ## 1.92.0.0.0.0 (2026-10-10, stable)
 
 First stable release for Boost 1.92.0 (git tag `v1.92.0.0.0.0`). The vendored upstream is

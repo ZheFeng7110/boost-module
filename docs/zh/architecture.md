@@ -28,15 +28,15 @@ named modules 封装: 把 Boost 的头文件 API 以模块接口 (`.cppm` +
 ```toml
 # 默认: 49 库闭包
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0" }
+boost = { version = "1.92.0.0.0.1" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
+boost = { version = "1.92.0.0.0.1", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", features = ["all"] }
+boost = { version = "1.92.0.0.0.1", features = ["all"] }
 ```
 
 也可以直接以 git 依赖消费：
@@ -45,7 +45,7 @@ boost = { version = "1.92.0.0.0.0", features = ["all"] }
 [dependencies.ZheFeng7110.boost]
 # 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
+tag = "v1.92.0.0.0.1"
 ```
 
 两种渠道内容一致，推荐使用 mcpp package index。
@@ -296,7 +296,7 @@ uv run scripts/reapply_hand_edits.py          # import_boost 会抹掉 vendored 
 ## 7. 相关文档
 
 - 使用文档 (消费者用法速查): [`usage.md`](usage.md)
-- release notes: [`release_notes/v1.92.0.0.0.0.md`](release_notes/v1.92.0.0.0.0.md)
+- release notes: [`release_notes/v1.92.0.0.0.1.md`](release_notes/v1.92.0.0.0.1.md)
 - 总体设计汇总（替代全部旧设计/计划文档）:
   [`.agents/docs/2026-09-08-consolidated-design.md`](../../.agents/docs/2026-09-08-consolidated-design.md)
 - 发布预览版计划: [`.agents/plan/2026-09-08-release-preview-plan.md`](../../.agents/plan/2026-09-08-release-preview-plan.md)

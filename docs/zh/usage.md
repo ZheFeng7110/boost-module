@@ -1,5 +1,9 @@
 # boost-module 使用文档
 
+> **本包已停止维护。** 已迁移至 [mcpplibs/boost-m](https://github.com/mcpplibs/boost-m)，
+> 包名称迁移为 **`mcpplibs.mwrap.boost`**，请将依赖声明迁移过去；下文描述的是定格于
+> 1.92.0 的快照。
+
 ## 1. 依赖声明
 
 已上架 mcpp package index（命名空间 `ZheFeng7110`）：
@@ -7,15 +11,15 @@
 ```toml
 # 默认: 49 库闭包
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0" }
+boost = { version = "1.92.0.0.0.1" }
 
 # 只选若干库 (default-features = false 关闭默认集)
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", default-features = false, features = ["optional", "type_traits", "json", "version"] }
+boost = { version = "1.92.0.0.0.1", default-features = false, features = ["optional", "type_traits", "json", "version"] }
 
 # 全量
 [dependencies.ZheFeng7110]
-boost = { version = "1.92.0.0.0.0", features = ["all"] }
+boost = { version = "1.92.0.0.0.1", features = ["all"] }
 ```
 
 也可以直接以 git 依赖消费：
@@ -24,7 +28,7 @@ boost = { version = "1.92.0.0.0.0", features = ["all"] }
 [dependencies.ZheFeng7110.boost]
 # 中国大陆镜像: https://gitcode.com/ZheFeng7/boost-module
 git = "https://github.com/ZheFeng7110/boost-module"
-tag = "v1.92.0.0.0.0"
+tag = "v1.92.0.0.0.1"
 ```
 
 两种渠道内容一致，推荐使用 mcpp package index。

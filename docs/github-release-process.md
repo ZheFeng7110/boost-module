@@ -2,9 +2,9 @@
 
 > Applies to releases of any version; independent of a specific release.
 > Version naming: six-segment numeric `v<boost version>.<wrapper version>`; below, `<tag>`
-> denotes the tag name of the release being published (e.g. `v1.92.0.0.0.0`), and the release
-> notes file is `docs/release_notes/<tag>.md` (v-prefixed, e.g. `v1.92.0.0.0.0.md`).
-> `<version>` is the same string without the leading `v` (e.g. `1.92.0.0.0.0`), used for the
+> denotes the tag name of the release being published (e.g. `v1.92.0.0.0.1`), and the release
+> notes file is `docs/release_notes/<tag>.md` (v-prefixed, e.g. `v1.92.0.0.0.1.md`).
+> `<version>` is the same string without the leading `v` (e.g. `1.92.0.0.0.1`), used for the
 > CHANGELOG entry — and it is what `[package].version` / a consumer's `version = "..."` must
 > carry.
 
@@ -117,6 +117,6 @@ gh release create <tag> \
 | Item | Preview | Stable |
 |---|---|---|
 | `--prerelease` | yes (set automatically by the workflow for `-preview` tags) | no |
-| tag suffix | `-preview` | none (e.g. `v1.92.0.0.0.0`) |
+| tag suffix | `-preview` | none (e.g. `v1.92.0.0.0.1`) |
 | mcpp package index (T3) | not published | registered automatically by the `publish-index` job (descriptor PR; registry consumption probe still recommended) |
 | Known-limitation disclosure | full list | reduced to still-valid entries |
